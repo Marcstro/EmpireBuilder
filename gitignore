@@ -1,6 +1,7 @@
 # Ignore build files
 /bin/
 /build/
+build/
 *.class
 
 # Ignore IDE settings
