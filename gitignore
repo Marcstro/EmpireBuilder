@@ -1,0 +1,24 @@
+# Ignore build files
+/bin/
+/build/
+*.class
+
+# Ignore IDE settings
+.idea/
+.vscode/
+*.iml
+
+# Ignore dependency directories
+/lib/
+*.jar
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore logs and temp files
+*.log
+*.tmp
+
+# Ignore Git-related files
+.gitignore
