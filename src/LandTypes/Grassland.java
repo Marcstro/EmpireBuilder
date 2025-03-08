@@ -8,7 +8,6 @@ import java.util.Arrays;
 
 public class Grassland extends Land {
     
-    int fertilityLevel;
     ArrayList<Color> fertilityLevelColor;
     Color color;
     
@@ -21,7 +20,6 @@ public class Grassland extends Land {
             new Color(79, 226, 79), 
             new Color(8, 177, 8)
         ));
-        fertilityLevel = 1;
         color = LandType.getBaseColor(LandType.GRASSLAND);
     }
 
@@ -30,21 +28,8 @@ public class Grassland extends Land {
         
     }
     
-    public void improveFertility(){
-        if(fertilityLevel != 5){
-            fertilityLevel++;
-            color = fertilityLevelColor.get(fertilityLevel-1);
-        }
-    }
-
-    public void setFertilityLevel(int fertilityLevel) {
-        this.fertilityLevel = fertilityLevel;
-    }
-    
-    
-    
-    public int getFertilityLevel(){
-        return fertilityLevel;
+    public void updateColor(int fertilityLevel){
+         color = fertilityLevelColor.get(fertilityLevel-1);
     }
 
     @Override

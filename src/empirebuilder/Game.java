@@ -239,8 +239,7 @@ class Game{
             if (calculateDistance(farmCenter, village.getPoint()) < (VILLAGE_DOMAIN_LIMIT*2)){
                 return;
             }
-        }        
-        //System.out.println("VILLAGE CREATED");     
+        }          
         
         List<Point> villagePoints = gm.getMap().getAllValidAdjecantPointsToTarget(farmCenter);
         villagePoints.add(farmCenter);

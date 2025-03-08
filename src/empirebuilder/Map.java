@@ -267,8 +267,8 @@ public class Map {
                     }
                     continue; // Skip the rest of the loop for this point
                 }
-                if (land instanceof Grassland grassland) {
-                    int fertilityLevel = grassland.getFertilityLevel();
+                if (p.getBuilding() instanceof Farm farm) {
+                    int fertilityLevel = farm.getFertilityLevel();
                     int adjacentGrasslands = 0;
 
                     for (int dx = -1; dx <= 1; dx++) {
@@ -289,7 +289,7 @@ public class Map {
                     double probability = (Math.pow(adjacentGrasslands, 2)) / 100.0;
 
                     if (random.nextDouble() < probability) {
-                        grassland.improveFertility();
+                        farm.improveFertility();
                     }
                 }
             }

@@ -15,11 +15,13 @@ public class Farm extends Building{
     int food;
     Village village;
     int timeUntilNextDeath;
+    int fertilityLevel;
 
         
     public Farm(int people, Point point) {
         super(point);
         this.people = people;
+        fertilityLevel = 1;
         food=0;
         land=point.getLand();
         timeUntilNextDeath = (int)(Math.random()*MAXIMUM_TIME_BEFORE_DEATH);
@@ -30,16 +32,13 @@ public class Farm extends Building{
     }
     
     public void tick(){
-        //System.out.println(toString());
-        if(land instanceof Grassland grassland){
-            food+=grassland.getFertilityLevel();
-        }
+        food+=getFertilityLevel();
         timeUntilNextDeath--;
-        if (getFood() >= FOOD_COST_TO_MULTIPLY && people < (FARM_CAPACITY+((Grassland)land).getFertilityLevel())){
+        if (getFood() >= FOOD_COST_TO_MULTIPLY && people < (FARM_CAPACITY+getFertilityLevel())){
             increasePeople();
             setFood(0);
-            if (hasVillage() && ((Grassland)land).getFertilityLevel() == 2){
-                ((Grassland)land).improveFertility();
+            if (hasVillage() && getFertilityLevel() == 2){
+                improveFertility();
             }
         }
     }
@@ -48,15 +47,32 @@ public class Farm extends Building{
         return village != null;
     }
     
+    public void improveFertility(){
+        if(fertilityLevel != 5){
+            fertilityLevel++;
+            if (land instanceof Grassland grassland){
+                grassland.updateColor(fertilityLevel);
+            }
+           
+        }
+    }
+
+    public void setFertilityLevel(int fertilityLevel) {
+        this.fertilityLevel = fertilityLevel;
+    }
+    
+    
+    
+    public int getFertilityLevel(){
+        return fertilityLevel;
+    }
+    
     public boolean lastPersonDied(){
         if (timeUntilNextDeath <= 0){
             people--;
             //System.out.println("Farm " + getId() + " person died, " + people + " people left");
             if (people == 1){
-                if (land instanceof Grassland grassland){
-                    grassland.setFertilityLevel(1);
-                    //System.out.println("Farm " + getId() + " decreased fertility to level " + grassland.getFertilityLevel() + "");
-                }
+                setFertilityLevel(1);
             }
             else if (people <= 0){
                         //System.out.println("Farm " + getId() + " lost its last person and should be deleted");
@@ -71,16 +87,13 @@ public class Farm extends Building{
     
     // TODO maybe a farm should be limited to grasslands and not have any type of land
     public void increaseFood(){
-        if(land instanceof Grassland grassland){
-            food+=grassland.getFertilityLevel();
-        }
+        food+=getFertilityLevel();
     }
     
     public void increasePeople(){
         people++;
-        if (land instanceof Grassland grassland && grassland.getFertilityLevel() == 1 && people >= 3){
-            grassland.improveFertility();
-            //System.out.println("Farm " + getId() + " increased fertility to level " + grassland.getFertilityLevel() + "");
+        if (getFertilityLevel() ==1 && people >= 3){
+            improveFertility();
         }
         //System.out.println("Farm " + getId() + " increased to " + people + " people");
     }
@@ -160,7 +173,7 @@ public class Farm extends Building{
     public String getInfo(){
                 return "Farm{" + "people=" + people 
                         + ", land=" + land 
-                        + ", fertility level: " + ((Grassland)(land)).getFertilityLevel()
+                        + ", fertility level: " + getFertilityLevel()
                         + ", FARM_CAPACITY=" + FARM_CAPACITY 
                         + ", food=" + food 
                         + ", has village: " + hasVillage()
