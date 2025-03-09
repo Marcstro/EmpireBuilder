@@ -7,7 +7,6 @@ import empirebuilder.Point;
 public class Farm extends Building{
     
     int people;
-    Land land;
     static final int EXPAND_TRESHHOLD = 5;
     final int MAXIMUM_TIME_BEFORE_DEATH = 25;
     final int FOOD_COST_TO_MULTIPLY = 10;
@@ -23,7 +22,6 @@ public class Farm extends Building{
         this.people = people;
         fertilityLevel = 1;
         food=0;
-        land=point.getLand();
         timeUntilNextDeath = (int)(Math.random()*MAXIMUM_TIME_BEFORE_DEATH);
     }
     
@@ -50,7 +48,7 @@ public class Farm extends Building{
     public void improveFertility(){
         if(fertilityLevel != 5){
             fertilityLevel++;
-            if (land instanceof Grassland grassland){
+            if (getPoint().getLand() instanceof Grassland grassland){
                 grassland.updateColor(fertilityLevel);
             }
            
@@ -111,9 +109,7 @@ public class Farm extends Building{
     public void halvePeopleAmount(){
         people=people/2;
     }
-
-
-
+    
     public Village getVillage() {
         return village;
     }
@@ -146,14 +142,6 @@ public class Farm extends Building{
         this.food = food;
     }
     
-    
-    
-
-
-    public Land getLand() {
-        return land;
-    }
-    
     public int getInhabitants() {
         return people;
     }
@@ -164,20 +152,21 @@ public class Farm extends Building{
 
     @Override
     public String toString() {
-        return "Farm{" + "people=" + people + ", land=" + land + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + FARM_CAPACITY + ", food=" + food + ", village=" + village + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
+        return "Farm{" + "people=" + people + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + FARM_CAPACITY + ", food=" + food + ", village=" + village + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
     }
 
 
 
     @Override
     public String getInfo(){
-                return "Farm{" + "people=" + people 
-                        + ", land=" + land 
-                        + ", fertility level: " + getFertilityLevel()
-                        + ", FARM_CAPACITY=" + FARM_CAPACITY 
-                        + ", food=" + food 
-                        + ", has village: " + hasVillage()
-                        + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
+        return "Farm{" + "people=" + people 
+                + ", fertility level: " + getFertilityLevel()
+                + ", FARM_CAPACITY=" + FARM_CAPACITY 
+                + ", food=" + food 
+                + ", timeUntilNextDeath=" + timeUntilNextDeath 
+                + ", has village: " + hasVillage()
+                + (hasVillage() ? getVillage().getInfo() : "")
+                + '}';
     }
     
     

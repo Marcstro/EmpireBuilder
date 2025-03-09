@@ -20,7 +20,6 @@ public class ButtonPanel extends JPanel {
         this.gameManager = gameManager;
         
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        //setLayout(new GridLayout(5, 1, 10, 10));
         setLayout(new BorderLayout());
 
         JButton button1 = new JButton("Start");
@@ -57,7 +56,6 @@ public class ButtonPanel extends JPanel {
         
         JLabel tickRateTitle = new JLabel("Tick rate:", SwingConstants.CENTER);
         tickRateLabel = new TextField(String.format("%.3f ", gameManager.getEngine().getTickRate(), SwingConstants.CENTER));
-        //tickRateLabel.setEnabled(false);
         tickRateLabel.setFocusable(false);
         
         

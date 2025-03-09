@@ -91,7 +91,7 @@ public class Village extends Building{
     
     @Override
     public String getInfo(){
-                return "Village{" + "amount of farms controlled: " + farms.size() +
+                return "Village{" + "amount of farms controlled: " + getFarms().size() +
                 ", emptyLand remaining: " + emptyLand.size() +
                 ", villageCenter=" + villageCenter.getX() + "," + villageCenter.getY() +
                 ", food=" + food + '}';

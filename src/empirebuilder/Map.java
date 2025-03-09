@@ -155,7 +155,7 @@ public class Map {
 
     public void setLandTypeAtPoint(int x, int y, LandType landType){
         
-        grid[x][y].setLandType(landType);
+        grid[x][y].createNewLandForPoint(landType);
     }
     
     public Point getRandomPoint(){
