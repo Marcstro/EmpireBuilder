@@ -16,10 +16,10 @@ class GameManager{
     
     public GameManager(){
         
+        engine = new Engine(this);
         map = new Map(this, (WIDTH/TILE_SIZE), (HEIGHT/TILE_SIZE));
         gridPanel = new GridPanel(this, map, WIDTH/TILE_SIZE, HEIGHT/TILE_SIZE, TILE_SIZE, BUTTON_PANEL_WIDTH);
         buttonPanel = new ButtonPanel(this);
-        engine = new Engine(this);
         mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
         game = new Game(this);
         

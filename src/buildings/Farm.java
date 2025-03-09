@@ -32,7 +32,7 @@ public class Farm extends Building{
     }
     
     public void tick(){
-        food+=getFertilityLevel();
+        food += getFertilityLevel();
         timeUntilNextDeath--;
         if (getFood() >= FOOD_COST_TO_MULTIPLY && people < (FARM_CAPACITY+getFertilityLevel())){
             increasePeople();

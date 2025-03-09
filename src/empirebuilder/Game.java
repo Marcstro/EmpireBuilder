@@ -52,10 +52,6 @@ class Game{
         
         for(Farm farm: farms){
             
-            
-            
-            
-            
             if (farm.getLand() instanceof Grassland grassland){
                 farm.tick();
                 if (farm.lastPersonDied()){
@@ -64,12 +60,7 @@ class Game{
                 }
             }
             
-            //THE FOLLOWING IS THE OLD ALGORITHM, REVERT FROM BELOW
-            
-            
             if (farm.hasEnoughToStartNewFarm()){
-                
-                
                 boolean farmWasCreatedNearby = true;
                 Point newFarmPoint = null;
                 boolean abortCreation = false;
@@ -127,85 +118,7 @@ class Game{
                         farmToConvertToVillage.add(newFarm);
                     }
                 }
-                
-                //create suitable point
-                
-                //create farm at point
-                //set variables for farm
-                
-                //village stuff:
-                
-                //if farm belongs to village AND was created locally
-                //new farm should belong to same village
-                
-                //otherwise
-                 //assuming
-                 // new farm does NOT belong to village or was NOT created locally
-                 //see if new farm should become a village
-                
             }
-            
-            /*
-            
-            if (
-                   //TODO add 
-                    // !farm.hasvillage()
-                    //because if there is a village, then the village should produce new farms, not the farms themselves
-                    farm.hasEnoughToStartNewFarm()) {
-                boolean farmWasCreatedNearby = true; //default value
-                Point point;
-                if (random.nextInt(10)==0){
-                    farmWasCreatedNearby=false;
-                    point = gm.getMap().createGrassAtRandomPoint();
-                }
-                else if (farm.hasVillage()){
-                    
-                    point = farm.getVillage().getEmptyLand().pollFirst();
-                    
-                    if (point==null){
-                        continue;
-                    }
-                }
-                else {
-                    point = gm.getMap().getRandomEmptyPointAdjecantToTarget(farm.getPoint());
-                    if(point==null){
-                        continue;
-                    }
-                }
-                
-                point.setLandType(LandType.GRASSLAND);
-                //gm.getMap().setPoint(point);
-                Farm newFarm = new Farm(point);
-                newFarm.setInhabitants(1);
-                //farm.halfPeopleAmount();
-                farmsToAdd.add(newFarm);
-                point.setBuilding(newFarm);
-                if (farm.hasVillage() && farmWasCreatedNearby){
-                    newFarm.setVillage(farm.getVillage());
-                }
-                if (!farm.hasVillage() && farmWasCreatedNearby){
-                    int foodStarter = 
-                            gm.getMap().getIndependentFarmsNearby(point, 2).size();
-                    newFarm.setFood(foodStarter*2);
-                } 
-                else if(farm.hasVillage()) {
-                    newFarm.setFood(10);
-                }
-                System.out.println("Farm "+farm.getId()+") split and a new farm " + newFarm.getId() + " was created at " + point.toString());
-
-                if (
-                    (!farm.hasVillage() && farmWasCreatedNearby)
-                    //&& farmWasCreatedNearby // TODO decide on this later
-                    && gm.getMap().independentFarmsNearby(farm.getPoint(), DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION) > FARMS_TO_CREATE_VILLAGE){
-                    farmToConvertToVillage.add(farm);
-                }    
-                else if (!farmWasCreatedNearby
-                        && gm.getMap().independentFarmsNearby(point, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION) > FARMS_TO_CREATE_VILLAGE){
-                            farmToConvertToVillage.add(newFarm);
-                }
-            }
-            
-            */
         }
         
         farms.addAll(farmsToAdd);

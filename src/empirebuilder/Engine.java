@@ -7,7 +7,8 @@ public class Engine {
     private int tickCounter;
     
     public static double REFRESH_RATE = 0.05;
-
+    private static final double MIN_REFRESH_RATE = 0.01;
+    private static final double MAX_REFRESH_RATE = 5.0;
 
     Engine(GameManager gameManager) {
         this.gameManager = gameManager;
@@ -25,7 +26,7 @@ public class Engine {
             while (running) {
                 tick();
                 try {
-                    Thread.sleep((int)(REFRESH_RATE*1000)); //milliseconds
+                    Thread.sleep((int)(REFRESH_RATE * 1000)); //milliseconds
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -59,4 +60,22 @@ public class Engine {
     public boolean isRunning() {
         return running;
     }
+    
+    public void increaseSpeed() {
+        if (REFRESH_RATE > MIN_REFRESH_RATE) {
+            REFRESH_RATE /= 2;
+        }
+    }
+
+    public void decreaseSpeed() {
+        if (REFRESH_RATE < MAX_REFRESH_RATE) {
+            REFRESH_RATE *= 2;
+        }
+    }
+
+    public double getTickRate() {
+        return REFRESH_RATE;
+    }
+    
+    
 }

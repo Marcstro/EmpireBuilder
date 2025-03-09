@@ -59,9 +59,14 @@ public class GridPanel extends JPanel {
         // Ensure we don't go out of bounds
         if (gridX >= 0 && gridX < width && gridY >= 0 && gridY < height) {
             Point clickedPoint = map.getPoint(gridX, gridY);
-            selectedPoint = clickedPoint;
-            System.out.println("Clicked on: (" + gridX + ", " + gridY + ")");
-            System.out.println("Point Info: " + clickedPoint.getInfo());
+            if (clickedPoint == selectedPoint){
+                selectedPoint = null;
+            }
+            else {
+                selectedPoint = clickedPoint;
+                System.out.println("Clicked on: (" + gridX + ", " + gridY + ")");
+                System.out.println("Point Info: " + clickedPoint.getInfo());  
+            }
         }
         updateUI();
     }
