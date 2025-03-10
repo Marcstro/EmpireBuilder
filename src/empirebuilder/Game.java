@@ -1,10 +1,9 @@
 package empirebuilder;
 
-import LandTypes.Grassland;
 import LandTypes.LandType;
 import buildings.Farm;
 import buildings.Village;
-import empirebuilder.Point;
+import buildings.Town;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -20,6 +19,7 @@ class Game{
     int tickCounter;
     List<Farm> farms;
     List<Village> villages;
+    List<Town> towns;
     
     int experimentTicker=1;
     
@@ -36,6 +36,7 @@ class Game{
         random = new Random();
         farms = new LinkedList();
         villages = new LinkedList();
+        towns = new LinkedList();
         tickCounter=0;
     }
     
@@ -191,6 +192,18 @@ class Game{
             }
         }
         newVillage.setFarms((LinkedList)(farmsBelongingToVillage));
+        
+//        if (villages.size() > 3){
+//            System.out.println("OMG OMG");
+//            List<Point> townPoints = newVillage.getControlledLand();// gm.getMap().getAllValidAdjecantPointsToTarget(farm.getPoint());
+//            //townPoints.add(farm.getPoint());
+//            Town town = new Town(farmCenter);
+//            for (Point point: townPoints){
+//                point.setBuilding(town);
+//                point.createNewLandForPoint(LandType.TOWN);
+//            }
+//            towns.add(town);
+//        }
     }
     
     public void destroyVillage(Village village){

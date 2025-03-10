@@ -11,6 +11,7 @@ public class LandFactory {
             case DIRT -> new Dirt();
             case RUINED -> new Ruined();
             case VILLAGE -> new VillageLand();
+            case TOWN -> new TownLand();
         };
     }
 }
