@@ -51,87 +51,122 @@ class Game{
         List<Farm> farmsToRemove = new ArrayList();
         List<Farm> farmToConvertToVillage = new ArrayList();
         
-        for(Farm farm: farms){
-            
-            farm.tick();
-            if (farm.getPoint().getLandType() != LandType.VILLAGE && farm.lastPersonDied()){ //TODO adjust when farms in villages no longer die
-                farmsToRemove.add(farm);
-                continue;
-            }
-            
-            if (farm.hasEnoughToStartNewFarm()){
-                boolean farmWasCreatedNearby = true;
-                Point newFarmPoint;
-                
-                Farm newFarm;
-                
-                if (random.nextInt(10)==0){
-                    farmWasCreatedNearby=false;
-                    newFarmPoint = gm.getMap().getRandomEmptyPoint();
-                    if (newFarmPoint.hasVillage()){
-                        continue;
-                    }
-                    newFarm = new Farm(newFarmPoint);
-                }
-                else if (farm.hasVillage()){
-                    newFarmPoint = farm.getVillage().getRandomEmptySpotWithinDomain();
-                    if (newFarmPoint == null){
-                        continue;
-                    }
-                    newFarm = new Farm(newFarmPoint);
-                    farm.getVillage().addFarm(newFarm);
-                }
-                else {
-                    newFarmPoint = gm.getMap().getRandomEmptyPointAdjecantToTarget(farm.getPoint());
-                    if (newFarmPoint == null){
-                        continue;
-                    }
-                    newFarm = new Farm(newFarmPoint);
-                }
-                
-                if (newFarmPoint.getLandType() != LandType.VILLAGE){
-                   newFarmPoint.createNewLandForPoint(LandType.GRASSLAND); 
-                }
-                
-                farmsToAdd.add(newFarm);
-                farm.halvePeopleAmount();
-                newFarmPoint.setBuilding(newFarm);
+        for(Farm farm: farms) {
 
-                if (LOGGING){
-                    System.out.println("Farm "+farm.getId()+") split and a new farm " + newFarm.getId() + " was created at " + newFarmPoint.toString());
+            farm.tick();
+
+            if (!farm.hasVillage()) {
+
+                if (farm.getPoint().getLandType() != LandType.VILLAGE && farm.lastPersonDied()) { //TODO adjust when farms in villages no longer die
+                    farmsToRemove.add(farm);
+                    continue;
                 }
-                if (farm.hasVillage() && farmWasCreatedNearby){
-                    newFarm.setFood(10);
+
+                if (farm.hasEnoughToStartNewFarm()) {
+                    boolean farmWasCreatedNearby = true;
+
+                    Point newFarmPoint;
+                    Farm newFarm;
+
+                    if (random.nextInt(10) == 0) {
+                        farmWasCreatedNearby = false;
+                        newFarmPoint = gm.getMap().getRandomEmptyPoint();
+                        if (newFarmPoint.hasVillage()) {
+                            continue;
+                        }
+                        newFarm = new Farm(newFarmPoint);
+                    }
+//                    else if (farm.hasVillage()) {
+//                        newFarmPoint = farm.getVillage().getRandomEmptySpotWithinDomain();
+//                        if (newFarmPoint == null) {
+//                            continue;
+//                        }
+//                        newFarm = new Farm(newFarmPoint);
+//                        farm.getVillage().addFarm(newFarm);
+//                    }
+                    else {
+                        newFarmPoint = gm.getMap().getRandomEmptyPointAdjecantToTarget(farm.getPoint());
+                        if (newFarmPoint == null) {
+                            continue;
+                        }
+                        newFarm = new Farm(newFarmPoint);
+                    }
+
+                    if (newFarmPoint.getLandType() != LandType.VILLAGE) {
+                        newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
+                    }
+
+                    farmsToAdd.add(newFarm);
+                    farm.halvePeopleAmount();
+                    newFarmPoint.setBuilding(newFarm);
+
+                    if (LOGGING) {
+                        System.out.println("Farm " + farm.getId() + ") split and a new farm " + newFarm.getId() + " was created at " + newFarmPoint.toString());
+                    }
+//                    if (farm.hasVillage() && farmWasCreatedNearby) {
+//                        newFarm.setFood(10);
+//                    } else
+                    if (farmWasCreatedNearby) {
+                        int foodStarter =
+                                gm.getMap().getIndependentFarmsNearby(newFarmPoint, 2).size();
+                        newFarm.setFood(foodStarter * 2);
+                    }
+
+//                    if (farm.hasVillage() && farmWasCreatedNearby) {
+//                        newFarm.setVillage(farm.getVillage());
+//                    } else {
+                        int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
+                        if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
+                            farmToConvertToVillage.add(newFarm);
+                        }
+//                    }
                 }
-                else if (farmWasCreatedNearby){
-                    int foodStarter = 
-                        gm.getMap().getIndependentFarmsNearby(newFarmPoint, 2).size();
-                    newFarm.setFood(foodStarter*2);
-                }
-                
-                if (farm.hasVillage() && farmWasCreatedNearby){
-                    newFarm.setVillage(farm.getVillage());
+            }
+
+//            else {//independent farms, Anything to add here?
+//
+//            }
+        }
+
+        for (Village village: villages){
+            if (village.createsNewLocalFarm()){
+                Point newFarmPoint;
+                boolean wasCreatedWithinDomain = true;
+                if (random.nextInt(10) == 0) {
+                    newFarmPoint = gm.getMap().getRandomEmptyPoint();
+                    wasCreatedWithinDomain = false;
                 }
                 else {
-                    int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
-                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE){
-                        farmToConvertToVillage.add(newFarm);
-                    }
+                    newFarmPoint = village.getRandomEmptySpotWithinDomain();
                 }
+                if (newFarmPoint == null){
+                    System.out.println("OBS OBS SHOULD NOT HAPPEN");
+                    throw new RuntimeException("village failed to create farm");
+                }
+                if (newFarmPoint.getLandType() != LandType.VILLAGE) {
+                    newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
+                }
+                Farm newFarm = new Farm(newFarmPoint);
+                if(wasCreatedWithinDomain){
+                    newFarm.setVillage(village);
+                    village.addFarm(newFarm);
+                }
+                farmsToAdd.add(newFarm);
             }
         }
-        
+
+
+
         farms.addAll(farmsToAdd);
-        for(Farm farm: farmsToRemove){
-            if (farm.hasVillage()){
-                farm.getVillage().addEmptyPoint(farm.getPoint());
+        for (Farm toRemoveFarm : farmsToRemove) {
+            if (toRemoveFarm.hasVillage()) {
+                toRemoveFarm.getVillage().addEmptyPoint(toRemoveFarm.getPoint());
             }
-            destroyFarm(farm);
+            destroyFarm(toRemoveFarm);
         }
         farms.removeAll(farmsToRemove);
-        farmToConvertToVillage.forEach(farm -> convertFarmToVillageCenter(farm));
-        
-        
+        farmToConvertToVillage.forEach(farmToConvert -> convertFarmToVillageCenter(farmToConvert));
+
         gm.getGridPanel().updateUI();
     }
     
@@ -158,6 +193,7 @@ class Game{
         //first set up village center
         Village newVillage = new Village(farmCenter, farmCenter);
         villages.add(newVillage);
+        farms.remove(farm);
         farmCenter.setBuilding(newVillage);
         
         //set all adjecant points to have village land (While having farm building)

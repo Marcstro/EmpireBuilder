@@ -44,7 +44,7 @@ public class GridPanel extends JPanel {
         }
         if (selectedPoint != null){
                     g.setColor(Color.RED);
-                    g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize, pixelSize);
+                    g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);
         }
     }
     

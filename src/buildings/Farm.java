@@ -30,6 +30,15 @@ public class Farm extends Building{
     }
     
     public void tick(){
+        if(hasVillage()){
+            hasVillageTick();
+        }
+        else {
+            independentTick();
+        }
+    }
+
+    public void independentTick(){
         food += getFertilityLevel();
         timeUntilNextDeath--;
         if (getFood() >= FOOD_COST_TO_MULTIPLY && people < (FARM_CAPACITY+getFertilityLevel())){
@@ -39,6 +48,23 @@ public class Farm extends Building{
                 improveFertility();
             }
         }
+    }
+
+    public void hasVillageTick(){
+        if (people <= FARM_CAPACITY + getFertilityLevel()){
+            food += getFertilityLevel();
+            if (getFood() >= FOOD_COST_TO_MULTIPLY) {
+                increasePeople();
+                setFood(0);
+            }
+        }
+        else {
+            village.increaseFood(getFertilityLevel());
+        }
+        if (getFertilityLevel() == 2){
+            improveFertility();
+        }
+
     }
     
     public boolean hasVillage(){

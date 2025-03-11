@@ -11,6 +11,8 @@ MANIFEST.MF
 .idea/
 .vscode/
 *.iml
+*.iws
+out/
 
 # Ignore dependency directories
 /lib/

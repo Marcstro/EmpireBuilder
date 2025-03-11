@@ -14,7 +14,9 @@ public class Village extends Building{
     LinkedList<Point> emptyLand;
     Point villageCenter;
     int food;
-    
+
+    int foodNeededToCreateNewFarm = 30;
+
     public Village(Point point, Point villageCenter) {
         super(point);
         farms = new LinkedList();
@@ -43,6 +45,20 @@ public class Village extends Building{
     public void addEmptyPoint(Point point){
         emptyLand.add(point);
         Collections.shuffle(emptyLand);
+    }
+
+    public boolean createsNewLocalFarm(){
+        if (getEmptyLand().isEmpty()){
+            return false;
+        }
+        else {
+            if (getFood() > foodNeededToCreateNewFarm){
+                food = 0;
+                foodNeededToCreateNewFarm += 5;
+                return true;
+            }
+        }
+        return false;
     }
 
     public LinkedList<Farm> getFarms() {
@@ -94,7 +110,9 @@ public class Village extends Building{
                 return "Village{" + "amount of farms controlled: " + getFarms().size() +
                 ", emptyLand remaining: " + emptyLand.size() +
                 ", villageCenter=" + villageCenter.getX() + "," + villageCenter.getY() +
-                ", food=" + food + '}';
+                ", food=" + food +
+                ", foodNeededToCreateNewFarm=" + foodNeededToCreateNewFarm + "}";
+
     }
     
 }
