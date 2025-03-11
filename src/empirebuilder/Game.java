@@ -57,7 +57,9 @@ class Game{
 
             if (!farm.hasVillage()) {
 
-                if (farm.getPoint().getLandType() != LandType.VILLAGE && farm.lastPersonDied()) { //TODO adjust when farms in villages no longer die
+                if (
+//                        farm.getPoint().getLandType() != LandType.VILLAGE &&
+                        farm.lastPersonDied()) { //TODO adjust when farms in villages no longer die
                     farmsToRemove.add(farm);
                     continue;
                 }
@@ -76,14 +78,6 @@ class Game{
                         }
                         newFarm = new Farm(newFarmPoint);
                     }
-//                    else if (farm.hasVillage()) {
-//                        newFarmPoint = farm.getVillage().getRandomEmptySpotWithinDomain();
-//                        if (newFarmPoint == null) {
-//                            continue;
-//                        }
-//                        newFarm = new Farm(newFarmPoint);
-//                        farm.getVillage().addFarm(newFarm);
-//                    }
                     else {
                         newFarmPoint = gm.getMap().getRandomEmptyPointAdjecantToTarget(farm.getPoint());
                         if (newFarmPoint == null) {
@@ -103,41 +97,36 @@ class Game{
                     if (LOGGING) {
                         System.out.println("Farm " + farm.getId() + ") split and a new farm " + newFarm.getId() + " was created at " + newFarmPoint.toString());
                     }
-//                    if (farm.hasVillage() && farmWasCreatedNearby) {
-//                        newFarm.setFood(10);
-//                    } else
                     if (farmWasCreatedNearby) {
                         int foodStarter =
                                 gm.getMap().getIndependentFarmsNearby(newFarmPoint, 2).size();
                         newFarm.setFood(foodStarter * 2);
                     }
-
-//                    if (farm.hasVillage() && farmWasCreatedNearby) {
-//                        newFarm.setVillage(farm.getVillage());
-//                    } else {
                         int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
                         if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
                             farmToConvertToVillage.add(newFarm);
                         }
-//                    }
                 }
             }
-
-//            else {//independent farms, Anything to add here?
-//
-//            }
         }
 
         for (Village village: villages){
-            if (village.createsNewLocalFarm()){
+            if (village.hasFoodToCreateNewFarm()){
                 Point newFarmPoint;
+                village.deductNewFarmCost();
                 boolean wasCreatedWithinDomain = true;
-                if (random.nextInt(10) == 0) {
-                    newFarmPoint = gm.getMap().getRandomEmptyPoint();
-                    wasCreatedWithinDomain = false;
+                if (!village.getEmptyLand().isEmpty()){
+                    newFarmPoint = village.getRandomEmptySpotWithinDomain();
                 }
                 else {
-                    newFarmPoint = village.getRandomEmptySpotWithinDomain();
+                    boolean createdAtRandomPlace = random.nextInt(10) == 0;
+                    if (createdAtRandomPlace){
+                        wasCreatedWithinDomain = false;
+                        newFarmPoint = gm.getMap().getRandomEmptyPoint();
+                    }
+                    else {
+                        continue;
+                    }
                 }
                 if (newFarmPoint == null){
                     System.out.println("OBS OBS SHOULD NOT HAPPEN");
@@ -146,7 +135,9 @@ class Game{
                 if (newFarmPoint.getLandType() != LandType.VILLAGE) {
                     newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
                 }
+                
                 Farm newFarm = new Farm(newFarmPoint);
+                newFarmPoint.setBuilding(newFarm);
                 if(wasCreatedWithinDomain){
                     newFarm.setVillage(village);
                     village.addFarm(newFarm);

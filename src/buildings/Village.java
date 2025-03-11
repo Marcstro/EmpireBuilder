@@ -46,20 +46,34 @@ public class Village extends Building{
         emptyLand.add(point);
         Collections.shuffle(emptyLand);
     }
-
-    public boolean createsNewLocalFarm(){
-        if (getEmptyLand().isEmpty()){
-            return false;
+    
+    public void deductNewFarmCost(){
+        food = 0;
+        if (!getEmptyLand().isEmpty()){
+            foodNeededToCreateNewFarm += 5;
         }
-        else {
-            if (getFood() > foodNeededToCreateNewFarm){
-                food = 0;
-                foodNeededToCreateNewFarm += 5;
-                return true;
-            }
-        }
-        return false;
     }
+    
+    public boolean hasFoodToCreateNewFarm(){
+        return getFood() > foodNeededToCreateNewFarm;
+    }
+
+//    public boolean createsNewFarm(){
+//        if (getEmptyLand().isEmpty()){
+//            return false;
+//        }
+//        else {
+//            if (getFood() > foodNeededToCreateNewFarm){
+//                food = 0;
+//                foodNeededToCreateNewFarm += 5;
+//                if(getEmptyLand().isEmpty()){
+//                    foodNeededToCreateNewFarm += 20;
+//                }
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     public LinkedList<Farm> getFarms() {
         return farms;
