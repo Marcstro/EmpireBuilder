@@ -1,7 +1,6 @@
 package buildings;
 
 import LandTypes.Grassland;
-import LandTypes.Land;
 import empirebuilder.Point;
 
 public class Farm extends Building{

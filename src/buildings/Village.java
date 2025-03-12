@@ -1,5 +1,6 @@
 package buildings;
 
+import LandTypes.LandType;
 import empirebuilder.Point;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,16 @@ public class Village extends Building{
         food -=1;
     }
     
+    public void markArea(){
+        for(Point point: controlledLand){
+            point.createNewLandForPoint(LandType.TOWN);
+        }
+    }
+    
+    public void markCenter(){
+        villageCenter.createNewLandForPoint(LandType.TOWN);
+    }
+    
     //TODO maybe fix
     public Farm getRandomFarm(){
         return farms.peekLast();
@@ -51,8 +62,6 @@ public class Village extends Building{
     public void setTown(Town town) {
         this.town = town;
     }
-    
-    
     
     public void increaseFood(int foodAdd){
         food+=foodAdd;

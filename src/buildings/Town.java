@@ -25,6 +25,10 @@ public class Town extends Building{
     public LinkedList<Village> getVillages() {
         return villages;
     }
+
+    public void setVillages(LinkedList<Village> villages) {
+        this.villages = villages;
+    }
     
     
 

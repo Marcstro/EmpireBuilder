@@ -28,6 +28,11 @@ class Game{
     final int FARMS_TO_CREATE_VILLAGE = 8;
     final int DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION = 3;
     final int VILLAGE_DOMAIN_LIMIT = 4;
+    final int VILLAGE_DISTANCE_FOR_TOWN_FORMATION = 25;
+    final int TownCheckDistance = 25;
+    final int townFormDistance = 15;
+    final int villageJoinTownDistance = 10;
+    final int farmsForTownCreation = 5;
     
     final boolean LOGGING = false;
     
@@ -216,7 +221,66 @@ class Game{
         }
         
         newVillage.setFarms((LinkedList)(farmsBelongingToVillage));
+        
+        boolean notNearTown = true;
+        for(Town town: towns){
+            for(Village village: villages){
+                if(calculateDistance(village.getPoint(), newVillage.getPoint()) < villageJoinTownDistance){
+                    notNearTown=false;
+                    newVillage.setTown(town);
+                    town.addVillage(newVillage);
+                    newVillage.markCenter();
+                }
+            }
+        }
+        if(notNearTown){
+            checkForTownFormation(newVillage);
+        }
+        
+        
     }
+    
+    public void checkForTownFormation(Village newVillage) {
+        // check if there's sufficient villages to create town
+        List<Village> nearbyIndependentVillages = villages.stream()
+                .filter(v -> !v.hasTown())
+                .filter(v -> calculateDistance(newVillage.getPoint(), v.getPoint()) <= TownCheckDistance)
+                .collect(Collectors.toList());
+        if (nearbyIndependentVillages.size() < farmsForTownCreation){
+            return;
+        }
+        
+        
+        // find what village to become a towncenter
+        for (Village candidate : nearbyIndependentVillages) {
+            List<Village> surrounding = nearbyIndependentVillages.stream()
+                    .filter(v -> v != candidate)
+                    .filter(v -> calculateDistance(candidate.getPoint(), v.getPoint()) <= townFormDistance)
+                    .collect(Collectors.toCollection(LinkedList::new));
+
+            surrounding.add(candidate);
+
+            if (surrounding.size() >= farmsForTownCreation) {
+                createTown(candidate, surrounding);
+                return;
+            }
+        }
+    }
+    
+    public void createTown(Village villageCenter, List<Village> surroundingVillages){
+        villageCenter.markArea();
+        villages.remove(villageCenter);
+        Point p = villageCenter.getPoint();
+        Town town = new Town(p);
+        towns.add(town);
+        p.setBuilding(town);
+        for(Village village: surroundingVillages){
+            village.setTown(town);
+            village.markCenter();
+        }
+        town.setVillages((LinkedList<Village>) surroundingVillages);
+    }
+
     
     public void destroyVillage(Village village){
         for (Point point: village.getControlledLand()){
