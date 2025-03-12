@@ -91,12 +91,12 @@ public class Map {
             .count(); 
     }
     
-    public LinkedList<Point> getIndependentFarmsNearby(Point point, int radius){
+    public LinkedList<Farm> getIndependentFarmsNearby(Point point, int radius) {
         return getAllPointsInCircleAroundTarget(point, radius).stream()
-            .filter(point1 -> point1.getBuilding() instanceof Farm) // Keep only Farms
-            .map(point2 -> (Farm) point2.getBuilding())            // Cast Building to Farm
-            .filter(farm -> !farm.hasVillage())                  // Keep only farms with no village
-            .map(Farm::getPoint)                                 // Get the original Point
+            .map(Point::getBuilding)
+            .filter(building -> building instanceof Farm)
+            .map(building -> (Farm) building)
+            .filter(farm -> !farm.hasVillage())
             .collect(Collectors.toCollection(LinkedList::new));
     }
     

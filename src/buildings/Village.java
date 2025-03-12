@@ -14,6 +14,7 @@ public class Village extends Building{
     LinkedList<Point> emptyLand;
     Point villageCenter;
     int food;
+    Town town;
 
     int foodNeededToCreateNewFarm = 30;
 
@@ -26,12 +27,43 @@ public class Village extends Building{
         food = 0;
     }
     
+    public void tick(){
+        food -=1;
+    }
+    
+    //TODO maybe fix
+    public Farm getRandomFarm(){
+        return farms.peekLast();
+    }
+    
+    public void destroyFarm(Farm farm){
+        farms.remove(farm);
+    }
+    
+    public boolean hasTown(){
+        return town != null;
+    }
+
+    public Town getTown() {
+        return town;
+    }
+
+    public void setTown(Town town) {
+        this.town = town;
+    }
+    
+    
+    
     public void increaseFood(int foodAdd){
         food+=foodAdd;
     }
     
     public int getFood(){
         return food;
+    }
+    
+    public void setFood(int food){
+        this.food = food;
     }
 
     public Point getVillageCenter() {
@@ -57,23 +89,6 @@ public class Village extends Building{
     public boolean hasFoodToCreateNewFarm(){
         return getFood() > foodNeededToCreateNewFarm;
     }
-
-//    public boolean createsNewFarm(){
-//        if (getEmptyLand().isEmpty()){
-//            return false;
-//        }
-//        else {
-//            if (getFood() > foodNeededToCreateNewFarm){
-//                food = 0;
-//                foodNeededToCreateNewFarm += 5;
-//                if(getEmptyLand().isEmpty()){
-//                    foodNeededToCreateNewFarm += 20;
-//                }
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
 
     public LinkedList<Farm> getFarms() {
         return farms;

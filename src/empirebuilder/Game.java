@@ -43,27 +43,21 @@ class Game{
     public void tick(){
         
         tickCounter++;
-
-        //gm.getMap().tick();
-        
         
         List<Farm> farmsToAdd = new ArrayList();
         List<Farm> farmsToRemove = new ArrayList();
         List<Farm> farmToConvertToVillage = new ArrayList();
+        List<Village> villagesToDestroy = new ArrayList();
         
         for(Farm farm: farms) {
 
             farm.tick();
 
             if (!farm.hasVillage()) {
-
-                if (
-//                        farm.getPoint().getLandType() != LandType.VILLAGE &&
-                        farm.lastPersonDied()) { //TODO adjust when farms in villages no longer die
+                if (farm.lastPersonDied()) {
                     farmsToRemove.add(farm);
                     continue;
                 }
-
                 if (farm.hasEnoughToStartNewFarm()) {
                     boolean farmWasCreatedNearby = true;
 
@@ -111,6 +105,8 @@ class Game{
         }
 
         for (Village village: villages){
+            
+            //TODO implement slow village decline
             if (village.hasFoodToCreateNewFarm()){
                 Point newFarmPoint;
                 village.deductNewFarmCost();
@@ -147,6 +143,9 @@ class Game{
         }
 
 
+        //TODO create destroy village
+        //TODO create destroy building
+        villages.removeAll(villagesToDestroy);
 
         farms.addAll(farmsToAdd);
         for (Farm toRemoveFarm : farmsToRemove) {
@@ -183,13 +182,13 @@ class Game{
         
         //first set up village center
         Village newVillage = new Village(farmCenter, farmCenter);
+        newVillage.setFood(10);
         villages.add(newVillage);
         farms.remove(farm);
         farmCenter.setBuilding(newVillage);
         
         //set all adjecant points to have village land (While having farm building)
         for(Point point: villagePoints){
-            //point.setLand(LandType.VILLAGE);
             point.createNewLandForPoint(LandType.VILLAGE);
         }
         
@@ -211,26 +210,12 @@ class Game{
                 pointsBelongingToVillage.stream()
                 .filter(point -> point.getBuilding() == null)
                 .collect(Collectors.toCollection(LinkedList::new))); 
-        List<Point> farmsBelongingToVillage = gm.getMap().getIndependentFarmsNearby(farmCenter, VILLAGE_DOMAIN_LIMIT);
-        
-        for(Point point: farmsBelongingToVillage){
-            if (point.getBuilding() instanceof Farm farm1){
-                farm1.setVillage(newVillage);
-            }
+        List<Farm> farmsBelongingToVillage = gm.getMap().getIndependentFarmsNearby(farmCenter, VILLAGE_DOMAIN_LIMIT);
+        for (Farm nearbyFarm: farmsBelongingToVillage){
+            nearbyFarm.setVillage(newVillage);
         }
-        newVillage.setFarms((LinkedList)(farmsBelongingToVillage));
         
-//        if (villages.size() > 3){
-//            System.out.println("OMG OMG");
-//            List<Point> townPoints = newVillage.getControlledLand();// gm.getMap().getAllValidAdjecantPointsToTarget(farm.getPoint());
-//            //townPoints.add(farm.getPoint());
-//            Town town = new Town(farmCenter);
-//            for (Point point: townPoints){
-//                point.setBuilding(town);
-//                point.createNewLandForPoint(LandType.TOWN);
-//            }
-//            towns.add(town);
-//        }
+        newVillage.setFarms((LinkedList)(farmsBelongingToVillage));
     }
     
     public void destroyVillage(Village village){

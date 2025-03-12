@@ -167,14 +167,6 @@ public class Farm extends Building{
     public void setFood(int food) {
         this.food = food;
     }
-    
-    public int getInhabitants() {
-        return people;
-    }
-
-    public void setInhabitants(int inhabitants) {
-        this.people = inhabitants;
-    }
 
     @Override
     public String toString() {
