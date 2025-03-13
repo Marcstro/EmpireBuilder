@@ -15,7 +15,10 @@ public class Town extends Building{
 
     @Override
     public String getInfo() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return "Town: " + getId() +
+                ", point="+getPoint().getPositionString() +
+                ", villages=" + getVillages().size()
+                + ".";
     }
     
     public void addVillage(Village village){
@@ -29,9 +32,4 @@ public class Town extends Building{
     public void setVillages(LinkedList<Village> villages) {
         this.villages = villages;
     }
-    
-    
-
-
-
 }

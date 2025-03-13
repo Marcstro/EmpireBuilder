@@ -136,7 +136,9 @@ class Game{
                 if (newFarmPoint.getLandType() != LandType.VILLAGE) {
                     newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
                 }
-                
+                if (newFarmPoint.getLandType() == LandType.TOWN) {
+                    continue;
+                }
                 Farm newFarm = new Farm(newFarmPoint);
                 newFarmPoint.setBuilding(newFarm);
                 if(wasCreatedWithinDomain){
@@ -222,18 +224,16 @@ class Game{
         
         newVillage.setFarms((LinkedList)(farmsBelongingToVillage));
         
-        boolean notNearTown = true;
+        boolean nearTown = false;
         for(Town town: towns){
-            for(Village village: villages){
-                if(calculateDistance(village.getPoint(), newVillage.getPoint()) < villageJoinTownDistance){
-                    notNearTown=false;
-                    newVillage.setTown(town);
-                    town.addVillage(newVillage);
-                    newVillage.markCenter();
-                }
+            if(calculateDistance(town.getPoint(), newVillage.getPoint()) < villageJoinTownDistance){
+                nearTown=true;
+                newVillage.setTown(town);
+                town.addVillage(newVillage);
+                newVillage.markCenter();
             }
         }
-        if(notNearTown){
+        if(!nearTown){
             checkForTownFormation(newVillage);
         }
         
@@ -243,13 +243,15 @@ class Game{
     public void checkForTownFormation(Village newVillage) {
         // check if there's sufficient villages to create town
         List<Village> nearbyIndependentVillages = villages.stream()
+                .filter(v -> v != newVillage)
                 .filter(v -> !v.hasTown())
                 .filter(v -> calculateDistance(newVillage.getPoint(), v.getPoint()) <= TownCheckDistance)
                 .collect(Collectors.toList());
+
+        nearbyIndependentVillages.add(newVillage);
         if (nearbyIndependentVillages.size() < farmsForTownCreation){
             return;
         }
-        
         
         // find what village to become a towncenter
         for (Village candidate : nearbyIndependentVillages) {
@@ -257,7 +259,6 @@ class Game{
                     .filter(v -> v != candidate)
                     .filter(v -> calculateDistance(candidate.getPoint(), v.getPoint()) <= townFormDistance)
                     .collect(Collectors.toCollection(LinkedList::new));
-
             surrounding.add(candidate);
 
             if (surrounding.size() >= farmsForTownCreation) {

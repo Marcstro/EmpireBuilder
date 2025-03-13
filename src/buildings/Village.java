@@ -145,9 +145,13 @@ public class Village extends Building{
     
     @Override
     public String getInfo(){
-                return "Village{" + "amount of farms controlled: " + getFarms().size() +
+                return "Village{" +
+                "id=" + getId() + 
+                ", point=" + getPoint().getPositionString() +
+                ", amount of farms controlled: " + getFarms().size() +
                 ", emptyLand remaining: " + emptyLand.size() +
                 ", villageCenter=" + villageCenter.getX() + "," + villageCenter.getY() +
+                ", town=" + (hasTown() ? (town.getPoint().getPositionString()) : "()") +
                 ", food=" + food +
                 ", foodNeededToCreateNewFarm=" + foodNeededToCreateNewFarm + "}";
 

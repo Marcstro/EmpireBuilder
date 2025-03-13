@@ -90,9 +90,8 @@ public class Point {
                 + ", land=" + land
                 + ", " + buildingInfo;
     }
-
-
     
-    
-    
+    public String getPositionString(){
+        return getX() + "," + getY();
+    }
 }
