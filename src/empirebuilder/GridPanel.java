@@ -70,5 +70,11 @@ public class GridPanel extends JPanel {
         }
         updateUI();
     }
+
+    public empirebuilder.Point getSelectedPoint() {
+        return selectedPoint;
+    }
+    
+    
     
 }

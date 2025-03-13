@@ -269,6 +269,7 @@ class Game{
     }
     
     public void createTown(Village villageCenter, List<Village> surroundingVillages){
+        //TODO set all points in villageCenter to belong to the new town
         villageCenter.markArea();
         villages.remove(villageCenter);
         Point p = villageCenter.getPoint();
@@ -388,5 +389,7 @@ class Game{
         gm.getGridPanel().updateUI();
         return farm;
     }
+    
+    
     
 }
