@@ -74,7 +74,4 @@ public class GridPanel extends JPanel {
     public empirebuilder.Point getSelectedPoint() {
         return selectedPoint;
     }
-    
-    
-    
 }

@@ -255,14 +255,14 @@ class Game{
         
         // find what village to become a towncenter
         for (Village candidate : nearbyIndependentVillages) {
-            List<Village> surrounding = nearbyIndependentVillages.stream()
+            List<Village> surroundingVillags = nearbyIndependentVillages.stream()
                     .filter(v -> v != candidate)
                     .filter(v -> calculateDistance(candidate.getPoint(), v.getPoint()) <= townFormDistance)
                     .collect(Collectors.toCollection(LinkedList::new));
-            surrounding.add(candidate);
+            surroundingVillags.add(candidate);
 
-            if (surrounding.size() >= farmsForTownCreation) {
-                createTown(candidate, surrounding);
+            if (surroundingVillags.size() >= farmsForTownCreation) {
+                createTown(candidate, surroundingVillags);
                 return;
             }
         }
@@ -376,6 +376,24 @@ class Game{
         return farm;
     }
     
+    public void createCompleteVillageAt(int x, int y){
+        Point point = gm.getMap().getPoint(x, y);
+        List<Point> surroundings = gm.getMap().getAllValidAdjecantPointsToTarget(point);
+        surroundings.add(point);
+        for(Point p: surroundings){
+            p.createNewLandForPoint(LandType.GRASSLAND);
+            Farm farm = new Farm(p);
+            p.setBuilding(farm);
+            farm.setFood(30);
+            farm.setPeople(3);
+            farms.add(farm);
+            
+        }
+        convertFarmToVillageCenter((Farm)point.getBuilding());
+        gm.getGridPanel().updateUI();
+    }
+    
+    
     
     public Farm createFarmAtRandomPoint(){
         //TODO make the 
@@ -389,7 +407,5 @@ class Game{
         gm.getGridPanel().updateUI();
         return farm;
     }
-    
-    
     
 }
