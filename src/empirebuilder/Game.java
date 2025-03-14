@@ -4,6 +4,7 @@ import LandTypes.LandType;
 import buildings.Farm;
 import buildings.Village;
 import buildings.Town;
+import buildings.TownArea;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -183,6 +184,11 @@ class Game{
                 return;
             }
         }          
+        for (Town town: towns){
+            if (calculateDistance(farmCenter, town.getPoint()) < (VILLAGE_DOMAIN_LIMIT*2)){
+                return;
+            }
+        }      
         
         List<Point> villagePoints = gm.getMap().getAllValidAdjecantPointsToTarget(farmCenter);
         villagePoints.add(farmCenter);
@@ -259,10 +265,10 @@ class Game{
                     .filter(v -> v != candidate)
                     .filter(v -> calculateDistance(candidate.getPoint(), v.getPoint()) <= townFormDistance)
                     .collect(Collectors.toCollection(LinkedList::new));
-            surroundingVillags.add(candidate);
+            //surroundingVillags.add(candidate);
 
             if (surroundingVillags.size() >= farmsForTownCreation) {
-                createTown(candidate, surroundingVillags);
+                createTown2(candidate, surroundingVillags);
                 return;
             }
         }
@@ -276,6 +282,36 @@ class Game{
         Town town = new Town(p);
         towns.add(town);
         p.setBuilding(town);
+        for(Village village: surroundingVillages){
+            village.setTown(town);
+            village.markCenter();
+        }
+        town.setVillages((LinkedList<Village>) surroundingVillages);
+    }
+    
+    public void createTown2(Village villageCenter, List<Village> surroundingVillages){
+        Point midPoint = villageCenter.getPoint();
+        List<Point> townPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
+        
+        villages.remove(villageCenter);
+        Town town = new Town(midPoint);
+        midPoint.setBuilding(town);
+        towns.add(town);
+        for (Point p: villageCenter.getControlledLand()){
+            if (townPoints.contains(p)){
+                if (p.getBuilding() instanceof Farm farm){
+                    farm.setVillage(null);
+                    farms.remove(farm);
+                }
+                TownArea ta = new TownArea(p, town);
+                p.setBuilding(ta);
+                town.addTownArea(ta);
+                p.createNewLandForPoint(LandType.TOWN);
+            }
+            if(p.getBuilding() instanceof Farm farm){
+                farm.setVillage(null);
+            }
+        }
         for(Village village: surroundingVillages){
             village.setTown(town);
             village.markCenter();

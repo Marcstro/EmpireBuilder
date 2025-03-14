@@ -108,6 +108,20 @@ public class Map {
                 .collect(Collectors.toCollection(LinkedList::new));
     }
     
+    public List<Point> getTownShapePointList(int centerX, int centerY) {
+        List<Point> result = new ArrayList<>();
+
+        for (int[] offset : circleSearch.getTownShapePointList()) {
+            int newX = centerX + offset[0];
+            int newY = centerY + offset[1];
+
+            if (isValid(newX, newY)) {
+                result.add(grid[newX][newY]);
+            }
+        }
+
+        return result;
+    }    
     
     public LinkedList<Point> getAllEmptyPointsInCircleAroundTarget(Point originalPoint, int radius){
         return getAllPointsInCircleAroundTarget(originalPoint, radius).stream()

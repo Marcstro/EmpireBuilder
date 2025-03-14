@@ -1,11 +1,12 @@
 package math;
 
-import empirebuilder.Point;
 import java.util.*;
 
 public class CircleSearch {
     private final Map<Integer, List<int[]>> precomputedOffsets = new HashMap<>();
     private final Map<Integer, List<int[]>> precomputedCircles = new HashMap<>();
+    private final List<int[]> townShapePointList = new ArrayList<>();
+
     private final int maxRadius;
     int gridHeight;
     int gridWidth;
@@ -15,6 +16,7 @@ public class CircleSearch {
         this.gridHeight = gridHeight;
         this.gridWidth = gridWidth;
         precomputeOffsets();
+        precomputeTownShape();
     }
 
     // Precompute relative positions for each radius
@@ -26,7 +28,7 @@ public class CircleSearch {
             for (int dx = -r; dx <= r; dx++) {
                 for (int dy = -r; dy <= r; dy++) {
                     double distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance <= r && distance > (r - 1)) { // Ensures the outermost ring is selected
+                    if (distance <= r && distance > (r - 1)) { 
                         offsets.add(new int[]{dx, dy});
                     }
                 }
@@ -43,9 +45,7 @@ public class CircleSearch {
                     double distance = Math.sqrt(dx * dx + dy * dy);
                     if (
                             distance <= r 
-                            //&& 
-                            //distance > (r - 1)
-                            ) { // Select outermost ring of radius r
+                            ) { 
                         offsets.add(new int[]{dx, dy});
                     }
                 }
@@ -103,6 +103,42 @@ public class CircleSearch {
         }
         return result;
     }
+    
+    public void precomputeTownShape() {
+        
+        townShapePointList.add(new int[]{-2, -2}); //towers
+        townShapePointList.add(new int[]{0, -2});
+        townShapePointList.add(new int[]{2, -2});
+
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dy = -1; dy < 3; dy++) {
+                townShapePointList.add(new int[]{dx, dy});
+            }
+        }
+    }
+    
+    //probably remove
+    public List<int[]> getTownShapePoints(int centerX, int centerY, int gridWidth, int gridHeight) {
+        List<int[]> result = new ArrayList<>();
+
+        for (int[] offset : townShapePointList) {
+            int newX = centerX + offset[0];
+            int newY = centerY + offset[1];
+
+            if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
+                result.add(new int[]{newX, newY});
+            }
+        }
+
+        return result;
+    }
+
+    public List<int[]> getTownShapePointList() {
+        return townShapePointList;
+    }
+    
+    
+
     
     public List<int[]> getValidAdjacentPoints(int x, int y) {
         List<int[]> result = new ArrayList<>();
