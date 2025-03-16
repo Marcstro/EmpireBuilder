@@ -11,7 +11,8 @@ public class Farm extends Building{
     final int FOOD_COST_TO_MULTIPLY = 10;
     final int FARM_CAPACITY = 6;
     int food;
-    Village village; // TODO should also have FarmOwningBuilding which might not be the same thing, or?
+    Village village; // TODO change this to FarmOwningBuilding. I checked all circumstances and it always works
+    //only the fertilityLevel should check what actual building it is
     int timeUntilNextDeath;
     int fertilityLevel;
 
