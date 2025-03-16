@@ -73,7 +73,7 @@ class Game{
                     if (random.nextInt(10) == 0) {
                         farmWasCreatedNearby = false;
                         newFarmPoint = gm.getMap().getRandomEmptyPoint();
-                        if (newFarmPoint.hasVillage()) {
+                        if (newFarmPoint == null || newFarmPoint.hasVillage()) {
                             continue;
                         }
                         newFarm = new Farm(newFarmPoint);
@@ -92,7 +92,7 @@ class Game{
 
                     farmsToAdd.add(newFarm);
                     farm.halvePeopleAmount();
-                    newFarmPoint.setBuilding(newFarm);
+                    gm.getMap().setBuildingOnPoint(newFarmPoint, newFarm);
 
                     if (LOGGING) {
                         System.out.println("Farm " + farm.getId() + ") split and a new farm " + newFarm.getId() + " was created at " + newFarmPoint.toString());
@@ -125,6 +125,9 @@ class Game{
                     if (createdAtRandomPlace){
                         wasCreatedWithinDomain = false;
                         newFarmPoint = gm.getMap().getRandomEmptyPoint();
+                        if (newFarmPoint == null){
+                            continue;
+                        }
                     }
                     else {
                         continue;
@@ -141,7 +144,7 @@ class Game{
                     continue;
                 }
                 Farm newFarm = new Farm(newFarmPoint);
-                newFarmPoint.setBuilding(newFarm);
+                gm.getMap().setBuildingOnPoint(newFarmPoint, newFarm);
                 if(wasCreatedWithinDomain){
                     newFarm.setVillage(village);
                     village.addFarm(newFarm);
@@ -198,7 +201,7 @@ class Game{
         newVillage.setFood(10);
         villages.add(newVillage);
         farms.remove(farm);
-        farmCenter.setBuilding(newVillage);
+        gm.getMap().setBuildingOnPoint(farmCenter, newVillage);
         
         //set all adjecant points to have village land (While having farm building)
         for(Point point: villagePoints){
@@ -281,7 +284,7 @@ class Game{
         Point p = villageCenter.getPoint();
         Town town = new Town(p);
         towns.add(town);
-        p.setBuilding(town);
+        gm.getMap().setBuildingOnPoint(p, town);
         for(Village village: surroundingVillages){
             village.setTown(town);
             village.markCenter();
@@ -295,7 +298,7 @@ class Game{
         
         villages.remove(villageCenter);
         Town town = new Town(midPoint);
-        midPoint.setBuilding(town);
+        gm.getMap().setBuildingOnPoint(midPoint, town);
         towns.add(town);
         for (Point p: villageCenter.getControlledLand()){
             if (townPoints.contains(p)){
@@ -304,7 +307,7 @@ class Game{
                     farms.remove(farm);
                 }
                 TownArea ta = new TownArea(p, town);
-                p.setBuilding(ta);
+                gm.getMap().setBuildingOnPoint(p, ta);
                 town.addTownArea(ta);
                 p.createNewLandForPoint(LandType.TOWN);
             }
@@ -328,7 +331,7 @@ class Game{
     
     public void destroyFarm(Farm farm){
         farm.getPoint().createNewLandForPoint(LandType.DIRT);
-        farm.getPoint().setBuilding(null);
+        gm.getMap().setBuildingOnPoint(farm.getPoint(), null);
     }
     
     public void experiment(){
@@ -338,7 +341,7 @@ class Game{
         
         Farm farm = new Farm(newPoint);
         
-        newPoint.setBuilding(farm);
+        gm.getMap().setBuildingOnPoint(newPoint, farm);
         farms.add(farm);
         //gm.getMap().setPoint(newPoint);
         gm.getGridPanel().updateUI();
@@ -405,7 +408,7 @@ class Game{
         point.createNewLandForPoint(LandType.GRASSLAND);
         Farm farm = new Farm(point);
         
-        point.setBuilding(farm);
+        gm.getMap().setBuildingOnPoint(point, farm);
         farms.add(farm);
         System.out.println("Farm created at " + farm.toString());
         gm.getGridPanel().updateUI();
@@ -419,7 +422,7 @@ class Game{
         for(Point p: surroundings){
             p.createNewLandForPoint(LandType.GRASSLAND);
             Farm farm = new Farm(p);
-            p.setBuilding(farm);
+            gm.getMap().setBuildingOnPoint(p, farm);
             farm.setFood(30);
             farm.setPeople(3);
             farms.add(farm);
@@ -437,7 +440,7 @@ class Game{
         randomPoint.createNewLandForPoint(LandType.GRASSLAND);
         Farm farm = new Farm(randomPoint);
         
-        randomPoint.setBuilding(farm);
+        gm.getMap().setBuildingOnPoint(randomPoint, farm);
         farms.add(farm);
         System.out.println("Farm created at " + farm.toString());
         gm.getGridPanel().updateUI();

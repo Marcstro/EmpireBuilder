@@ -40,7 +40,7 @@ public class Farm extends Building{
     public void independentTick(){
         food += getFertilityLevel();
         timeUntilNextDeath--;
-        if (getFood() >= FOOD_COST_TO_MULTIPLY && people < (FARM_CAPACITY+getFertilityLevel())){
+        if (getFood() >= FOOD_COST_TO_MULTIPLY && people <= (FARM_CAPACITY+getFertilityLevel())){
             increasePeople();
             setFood(0);
             if (hasVillage() && getFertilityLevel() == 2){
@@ -83,8 +83,6 @@ public class Farm extends Building{
     public void setFertilityLevel(int fertilityLevel) {
         this.fertilityLevel = fertilityLevel;
     }
-    
-    
     
     public int getFertilityLevel(){
         return fertilityLevel;

@@ -3,13 +3,16 @@ package empirebuilder;
 import LandTypes.LandType;
 import LandTypes.Grassland;
 import LandTypes.Land;
+import buildings.Building;
 import buildings.Farm;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import math.CircleSearch;
 
@@ -19,7 +22,9 @@ public class Map {
         
     int width;
     int height;
-    private Point[][] grid;
+    private final Point[][] grid;
+    Set<Point> emptyPoints;
+    private List<Point> emptyPointList;
     Random random;
     CircleSearch circleSearch;
     final int FARM_EXTEND_DISTANCE = 10;
@@ -34,12 +39,16 @@ public class Map {
         random = new Random();
         this.circleSearch = new CircleSearch(FARM_EXTEND_DISTANCE, width, height);
 
-        // Initialize the grid with default color (white)
+        emptyPoints = new HashSet();
+        emptyPointList = new LinkedList();
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 grid[x][y] = new Point(x, y, LandType.DIRT);
+                emptyPoints.add(grid[x][y]);
+                emptyPointList.add(grid[x][y]);
             }
         }
+        Collections.shuffle(emptyPointList);
     }
     
     public void setPoint(Point point){
@@ -53,16 +62,26 @@ public class Map {
         return null;
     }
     
-    public Point getRandomEmptyPoint(){
-        Point point = null;
-        while (point == null){
-            // TODO create stop if no empty places
-            Point p = getRandomPoint();
-            if(p.isEmpty()){
-                point = p;
-            }
-        }
-        return point;
+    public Point getRandomEmptyPoint() {
+//        if(emptyPoints.isEmpty()){
+//            return null;
+//        }
+//        return emptyPoints.iterator().next();
+        if (emptyPointList.isEmpty()) return null;
+
+        int index = new Random().nextInt(emptyPointList.size());
+        return emptyPointList.get(index);
+    }
+    
+    public void buildingHasBeenRemovedAtPoint(Point point){
+        emptyPoints.add(point);
+        emptyPoints.add(point);
+    }
+    
+    public void setBuildingOnPoint(Point point, Building building){
+        point.setBuilding(building);
+        emptyPoints.remove(point);
+        emptyPointList.remove(point);
     }
     
     public Point findNeighboringSpotForFarm(int x, int y) {
