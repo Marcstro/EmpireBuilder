@@ -125,7 +125,7 @@ class Game{
                     if (createdAtRandomPlace){
                         wasCreatedWithinDomain = false;
                         newFarmPoint = gm.getMap().getRandomEmptyPoint();
-                        if (newFarmPoint == null){
+                        if (newFarmPoint == null || newFarmPoint.hasVillage()){
                             continue;
                         }
                     }
@@ -152,6 +152,48 @@ class Game{
                 farmsToAdd.add(newFarm);
             }
         }
+        
+        // TODO merge this with village, loop through all farmOwningBuildings at once
+//        for (Town town: towns){
+//                if (town.hasFoodToCreateNewFarm()){
+//                Point newFarmPoint;
+//                town.deductNewFarmCost();
+//                boolean wasCreatedWithinDomain = true;
+//                if (!village.getEmptyLand().isEmpty()){
+//                    newFarmPoint = village.getRandomEmptySpotWithinDomain();
+//                }
+//                else {
+//                    boolean createdAtRandomPlace = random.nextInt(10) == 0;
+//                    if (createdAtRandomPlace){
+//                        wasCreatedWithinDomain = false;
+//                        newFarmPoint = gm.getMap().getRandomEmptyPoint();
+//                        if (newFarmPoint == null){
+//                            continue;
+//                        }
+//                    }
+//                    else {
+//                        continue;
+//                    }
+//                }
+//                if (newFarmPoint == null){
+//                    System.out.println("OBS OBS SHOULD NOT HAPPEN");
+//                    throw new RuntimeException("village failed to create farm");
+//                }
+//                if (newFarmPoint.getLandType() != LandType.VILLAGE) {
+//                    newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
+//                }
+//                if (newFarmPoint.getLandType() == LandType.TOWN) {
+//                    continue;
+//                }
+//                Farm newFarm = new Farm(newFarmPoint);
+//                gm.getMap().setBuildingOnPoint(newFarmPoint, newFarm);
+//                if(wasCreatedWithinDomain){
+//                    newFarm.setVillage(village);
+//                    village.addFarm(newFarm);
+//                }
+//                farmsToAdd.add(newFarm);
+//            }
+//        }
 
 
         //TODO create destroy village
@@ -291,6 +333,8 @@ class Game{
         }
         town.setVillages((LinkedList<Village>) surroundingVillages);
     }
+    
+    // TODO here are some necessary fixes
     
     public void createTown2(Village villageCenter, List<Village> surroundingVillages){
         Point midPoint = villageCenter.getPoint();

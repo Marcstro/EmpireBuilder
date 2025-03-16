@@ -11,7 +11,7 @@ public class Farm extends Building{
     final int FOOD_COST_TO_MULTIPLY = 10;
     final int FARM_CAPACITY = 6;
     int food;
-    Village village;
+    Village village; // TODO should also have FarmOwningBuilding which might not be the same thing, or?
     int timeUntilNextDeath;
     int fertilityLevel;
 
@@ -58,7 +58,7 @@ public class Farm extends Building{
             }
         }
         else {
-            village.increaseFood(getFertilityLevel());
+            village.addFood(getFertilityLevel());
         }
         if (getFertilityLevel() == 2){
             improveFertility();

@@ -2,6 +2,7 @@ package buildings;
 
 import empirebuilder.Point;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -10,18 +11,83 @@ public abstract class FarmOwningBuilding extends Building{
     LinkedList<Farm> farms;
     List<Point> controlledLand;
     LinkedList<Point> emptyLand;
+    int food;
+    int foodNeededToCreateNewFarm;
 
-    public FarmOwningBuilding(Point point) {
+    public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm) {
         super(point);
         farms = new LinkedList();
         controlledLand = new ArrayList();
         emptyLand = new LinkedList();
+        food = 0;
+        this.foodNeededToCreateNewFarm = foodNeededToCreateNewFarm;
+    }
+    
+    public Farm getRandomFarm(){
+        return farms.peekLast();
+    }
+        
+    public void destroyFarm(Farm farm){
+        farms.remove(farm);
+    }
+    
+    public void addFood(int foodAdd){
+        food+=foodAdd;
+    }
+    
+    public int getFood(){
+        return food;
+    }
+    
+    public void setFood(int food){
+        this.food = food;
+    }
+    
+    public void addEmptyPoint(Point point){
+        emptyLand.add(point);
+        Collections.shuffle(emptyLand);
+    }
+    
+    public void deductNewFarmCost(){
+        food = 0;
+        if (!getEmptyLand().isEmpty()){
+            foodNeededToCreateNewFarm += 5;
+        }
+    }
+    
+    public boolean hasFoodToCreateNewFarm(){
+        return getFood() > foodNeededToCreateNewFarm;
     }
 
-    @Override
-    public String getInfo() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public LinkedList<Farm> getFarms() {
+        return farms;
+    }
+
+    public void setFarms(LinkedList<Farm> farms) {
+        this.farms = farms;
     }
     
+    public void addFarm(Farm farm){
+        farms.add(farm);
+    }
+
+    public List<Point> getControlledLand() {
+        return controlledLand;
+    }
+
+    public void setControlledLand(List<Point> controlledLand) {
+        this.controlledLand = controlledLand;
+    }
+
+    public LinkedList<Point> getEmptyLand() {
+        return emptyLand;
+    }
+
+    public void setEmptyLand(LinkedList<Point> emptyLand) {
+        this.emptyLand = emptyLand;
+    }
     
+    public Point getRandomEmptySpotWithinDomain(){
+        return emptyLand.pollFirst();
+    }
 }
