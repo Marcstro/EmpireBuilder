@@ -86,7 +86,7 @@ public class Map {
     
     public Point findNeighboringSpotForFarm(int x, int y) {
         for (int radius = 1; radius <= FARM_EXTEND_DISTANCE; radius++) {
-            ArrayList<int[]> possiblePoints = new ArrayList<>(circleSearch.getPositionsAroundTargetInCircle(x, y, radius));
+            ArrayList<int[]> possiblePoints = new ArrayList<>(circleSearch.getPositionsAroundTargetInCircleExcludingCenter(x, y, radius));
 
             possiblePoints.removeIf(p -> !grid[p[0]][p[1]].isEmpty());
 
@@ -121,7 +121,7 @@ public class Map {
     
     
     public LinkedList<Point> getAllPointsInCircleAroundTarget(Point originalPoint, int radius){
-                return circleSearch.getAllPositionsAroundTargetInCircle(
+                return circleSearch.getPositionsAroundTargetInCircleExcludingCenter(
                 originalPoint.getX(), originalPoint.getY(), radius).stream()
                 .map(pos -> grid[pos[0]][pos[1]])
                 .collect(Collectors.toCollection(LinkedList::new));
@@ -160,7 +160,6 @@ public class Map {
             .filter(p -> grid[p[0]][p[1]].isEmpty())
             .collect(Collectors.toCollection(LinkedList::new));
 
-
         if (emptyPoints.isEmpty()) return null;
 
         Collections.shuffle(emptyPoints, random);
@@ -175,7 +174,7 @@ public class Map {
     ArrayList<Point> result = new ArrayList<>();
     
     // Get relative positions for the given radius
-    ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getPositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
+    ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getPositionsAroundTargetInCircleExcludingCenter(originalPoint.getX(), originalPoint.getY(), radius));
 
     // Convert coordinates to actual Point objects
     for (int[] pos : relativePositions) {
