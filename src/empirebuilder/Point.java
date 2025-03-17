@@ -4,32 +4,33 @@ import buildings.Building;
 import LandTypes.Land;
 import LandTypes.LandFactory;
 import LandTypes.LandType;
-import buildings.Village;
+import buildings.FarmOwningBuilding;
+
 import java.awt.*;
 
 public class Point {
     private int x, y;
     private Land land;
     private Building building;
-    private Village belongsToVillage;
+    private FarmOwningBuilding ownedByBuilding;
 
     public Point(int x, int y, LandType landType) {
         this.x = x;
         this.y = y;
         this.land = LandFactory.createLand(landType);
-        belongsToVillage = null;
+        ownedByBuilding = null;
     }
     
-    public boolean hasVillage(){
-        return belongsToVillage != null;
+    public boolean isOwnedByBuilding(){
+        return ownedByBuilding != null;
     }
 
-    public Village getVillage() {
-        return belongsToVillage;
+    public FarmOwningBuilding getOwnerBuilding() {
+        return ownedByBuilding;
     }
 
-    public void setVillage(Village village) {
-        this.belongsToVillage = village;
+    public void setOwnerBuilding(FarmOwningBuilding ownedByBuilding) {
+        this.ownedByBuilding = ownedByBuilding;
     }
 
     public Building getBuilding() {
@@ -42,6 +43,10 @@ public class Point {
     
     public boolean isEmpty(){
         return building == null;
+    }
+
+    public boolean isEmptyAndUnowned(){
+        return building == null && !isOwnedByBuilding();
     }
     
     public int getX() {
@@ -88,7 +93,8 @@ public class Point {
                return "Point{" + "x=" + x 
                 + ", y=" + y 
                 + ", land=" + land
-                + ", " + buildingInfo;
+                + ", " + buildingInfo
+                + ", belongs to building: "+ (isOwnedByBuilding() ? getOwnerBuilding().getInfo() : " ");
     }
     
     public String getPositionString(){

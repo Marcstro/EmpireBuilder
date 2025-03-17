@@ -1,3 +1,4 @@
+package buildings;
 
 import buildings.Farm;
 import empirebuilder.Point;

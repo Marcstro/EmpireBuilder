@@ -23,7 +23,7 @@ public class Map {
     int width;
     int height;
     private final Point[][] grid;
-    Set<Point> emptyPoints;
+    private Set<Point> emptyPoints;
     private List<Point> emptyPointList;
     Random random;
     CircleSearch circleSearch;
@@ -61,12 +61,18 @@ public class Map {
         }
         return null;
     }
+
+    public Set<Point> getEmptyPoints() {
+        return emptyPoints;
+    }
+
+    public List<Point> getEmptyPointList() {
+        return emptyPointList;
+    }
+    
+    
     
     public Point getRandomEmptyPoint() {
-//        if(emptyPoints.isEmpty()){
-//            return null;
-//        }
-//        return emptyPoints.iterator().next();
         if (emptyPointList.isEmpty()) return null;
 
         int index = new Random().nextInt(emptyPointList.size());
@@ -86,7 +92,7 @@ public class Map {
     
     public Point findNeighboringSpotForFarm(int x, int y) {
         for (int radius = 1; radius <= FARM_EXTEND_DISTANCE; radius++) {
-            ArrayList<int[]> possiblePoints = new ArrayList<>(circleSearch.getPositionsAroundTargetInCircle(x, y, radius));
+            ArrayList<int[]> possiblePoints = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(x, y, radius));
 
             possiblePoints.removeIf(p -> !grid[p[0]][p[1]].isEmpty());
 
@@ -106,7 +112,7 @@ public class Map {
             .map(Point::getBuilding)  
             .filter(building -> building instanceof Farm)
             .map(building -> (Farm) building) 
-            .filter(farm -> !farm.hasVillage())
+            .filter(farm -> !farm.hasFarmOwningBuilding())
             .count(); 
     }
     
@@ -115,13 +121,13 @@ public class Map {
             .map(Point::getBuilding)
             .filter(building -> building instanceof Farm)
             .map(building -> (Farm) building)
-            .filter(farm -> !farm.hasVillage())
+            .filter(farm -> !farm.hasFarmOwningBuilding())
             .collect(Collectors.toCollection(LinkedList::new));
     }
     
     
     public LinkedList<Point> getAllPointsInCircleAroundTarget(Point originalPoint, int radius){
-                return circleSearch.getAllPositionsAroundTargetInCircle(
+                return circleSearch.getAllPositionsInCircle(
                 originalPoint.getX(), originalPoint.getY(), radius).stream()
                 .map(pos -> grid[pos[0]][pos[1]])
                 .collect(Collectors.toCollection(LinkedList::new));
@@ -160,7 +166,6 @@ public class Map {
             .filter(p -> grid[p[0]][p[1]].isEmpty())
             .collect(Collectors.toCollection(LinkedList::new));
 
-
         if (emptyPoints.isEmpty()) return null;
 
         Collections.shuffle(emptyPoints, random);
@@ -175,7 +180,7 @@ public class Map {
     ArrayList<Point> result = new ArrayList<>();
     
     // Get relative positions for the given radius
-    ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getPositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
+    ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
 
     // Convert coordinates to actual Point objects
     for (int[] pos : relativePositions) {

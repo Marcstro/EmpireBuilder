@@ -61,8 +61,9 @@ public class CircleSearch {
     // [-2, 3] means 2 steps left and 3 steps up from the original point
     // The entire list will create a single point line in the form of a circle around the target point 
     // DOES check for border edges
-    public List<int[]> getPositionsAroundTargetInCircle(int x, int y, int radius) {
+    public List<int[]> getSingleLinePositionsAroundTargetInCircle(int x, int y, int radius) {
         List<int[]> results = new ArrayList<>();
+
         if (radius < 1 || radius > maxRadius || !precomputedOffsets.containsKey(radius)) {
             return results; // Return empty if radius is out of range
         }
@@ -86,7 +87,7 @@ public class CircleSearch {
     // [-2, 3] means 2 steps left and 3 steps up from the original point
     // The entire list will create a FILLED circle of positions around the target point 
     // DOES check for border edges
-    public List<int[]> getAllPositionsAroundTargetInCircle(int centerX, int centerY, int radius) {
+    public List<int[]> getAllPositionsInCircle(int centerX, int centerY, int radius) {
         List<int[]> result = new ArrayList<>();
 
         if (!precomputedCircles.containsKey(radius)) {
