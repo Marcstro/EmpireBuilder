@@ -106,7 +106,7 @@ public class Map {
             .map(Point::getBuilding)  
             .filter(building -> building instanceof Farm)
             .map(building -> (Farm) building) 
-            .filter(farm -> !farm.hasVillage())
+            .filter(farm -> !farm.hasFarmOwningBuilding())
             .count(); 
     }
     
@@ -115,7 +115,7 @@ public class Map {
             .map(Point::getBuilding)
             .filter(building -> building instanceof Farm)
             .map(building -> (Farm) building)
-            .filter(farm -> !farm.hasVillage())
+            .filter(farm -> !farm.hasFarmOwningBuilding())
             .collect(Collectors.toCollection(LinkedList::new));
     }
     

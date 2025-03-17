@@ -11,8 +11,7 @@ public class Farm extends Building{
     final int FOOD_COST_TO_MULTIPLY = 10;
     final int FARM_CAPACITY = 6;
     int food;
-    Village village; // TODO change this to FarmOwningBuilding. I checked all circumstances and it always works
-    //only the fertilityLevel should check what actual building it is
+    FarmOwningBuilding farmOwningBuilding;
     int timeUntilNextDeath;
     int fertilityLevel;
 
@@ -30,8 +29,8 @@ public class Farm extends Building{
     }
     
     public void tick(){
-        if(hasVillage()){
-            hasVillageTick();
+        if(hasFarmOwningBuilding()){
+            hasFarmOwningBuildingTick();
         }
         else {
             independentTick();
@@ -44,13 +43,13 @@ public class Farm extends Building{
         if (getFood() >= FOOD_COST_TO_MULTIPLY && people <= (FARM_CAPACITY+getFertilityLevel())){
             increasePeople();
             setFood(0);
-            if (hasVillage() && getFertilityLevel() == 2){
+            if (hasFarmOwningBuilding() && getFertilityLevel() == 2){
                 improveFertility();
             }
         }
     }
 
-    public void hasVillageTick(){
+    public void hasFarmOwningBuildingTick(){
         if (people <= FARM_CAPACITY + getFertilityLevel()){
             food += getFertilityLevel();
             if (getFood() >= FOOD_COST_TO_MULTIPLY) {
@@ -59,16 +58,27 @@ public class Farm extends Building{
             }
         }
         else {
-            village.addFood(getFertilityLevel());
+            farmOwningBuilding.addFood(getFertilityLevel());
         }
         if (getFertilityLevel() == 2){
             improveFertility();
         }
+    }
 
+    public void checkForFertilityLevel(){
+        if (getFertilityLevel()==1 && getPeople() >= 3){
+            improveFertility();
+        }
+        else if (getFertilityLevel()==2 && hasFarmOwningBuilding()) {
+            improveFertility();
+        }
+        else if (getFertilityLevel() == 3 && getFarmOwningBuilding() instanceof Town){
+            improveFertility();
+        }
     }
     
-    public boolean hasVillage(){
-        return village != null;
+    public boolean hasFarmOwningBuilding(){
+        return farmOwningBuilding != null;
     }
     
     public void improveFertility(){
@@ -120,7 +130,7 @@ public class Farm extends Building{
         //System.out.println("Farm " + getId() + " increased to " + people + " people");
     }
     
-    public boolean hasEnoughToStartNewFarm(){
+    public boolean isTimeToCreateNewFarm(){
         if( people >= EXPAND_TRESHHOLD 
                 //&& food > FOOD_COST_TO_MULTIPLY
                 ){
@@ -134,16 +144,16 @@ public class Farm extends Building{
         people=people/2;
     }
     
-    public Village getVillage() {
-        return village;
+    public FarmOwningBuilding getFarmOwningBuilding() {
+        return farmOwningBuilding;
     }
 
-    public void setVillage(Village village) {
-        this.village = village;
+    public void setFarmOwningBuilding(FarmOwningBuilding farmOwningBuilding) {
+        this.farmOwningBuilding = farmOwningBuilding;
     }
     
-    public void removeVillage(){
-        this.village=null;
+    public void removeFarmingOwningBuilding(){
+        this.farmOwningBuilding =null;
     }
     
     public void increaseFoodBy1(){
@@ -168,7 +178,7 @@ public class Farm extends Building{
 
     @Override
     public String toString() {
-        return "Farm{" + "people=" + people + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + FARM_CAPACITY + ", food=" + food + ", village=" + village + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
+        return "Farm{" + "people=" + people + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + FARM_CAPACITY + ", food=" + food + ", FarmOwningBuilding=" + farmOwningBuilding + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
     }
 
 
@@ -180,8 +190,8 @@ public class Farm extends Building{
                 + ", FARM_CAPACITY=" + FARM_CAPACITY 
                 + ", food=" + food 
                 + ", timeUntilNextDeath=" + timeUntilNextDeath 
-                + ", has village: " + hasVillage()
-                + (hasVillage() ? getVillage().getInfo() : "")
+                + ", has farmOwningBuilding: " + hasFarmOwningBuilding()
+                + (hasFarmOwningBuilding() ? getFarmOwningBuilding().getInfo() : "")
                 + '}';
     }
     
