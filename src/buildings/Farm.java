@@ -29,7 +29,7 @@ public class Farm extends Building{
     }
     
     public void tick(){
-        if(hasFarmOwningBuilding()){
+        if(belongsToFarmOwningBuilding()){
             hasFarmOwningBuildingTick();
         }
         else {
@@ -43,13 +43,14 @@ public class Farm extends Building{
         if (getFood() >= FOOD_COST_TO_MULTIPLY && people <= (FARM_CAPACITY+getFertilityLevel())){
             increasePeople();
             setFood(0);
-            if (hasFarmOwningBuilding() && getFertilityLevel() == 2){
+            if (belongsToFarmOwningBuilding() && getFertilityLevel() == 2){
                 improveFertility();
             }
         }
     }
 
     public void hasFarmOwningBuildingTick(){
+        //TODO change this to use checkforFertility
         if (people <= FARM_CAPACITY + getFertilityLevel()){
             food += getFertilityLevel();
             if (getFood() >= FOOD_COST_TO_MULTIPLY) {
@@ -69,15 +70,15 @@ public class Farm extends Building{
         if (getFertilityLevel()==1 && getPeople() >= 3){
             improveFertility();
         }
-        else if (getFertilityLevel()==2 && hasFarmOwningBuilding()) {
+        else if (getFertilityLevel() == 2 && belongsToFarmOwningBuilding()) {
             improveFertility();
         }
-        else if (getFertilityLevel() == 3 && getFarmOwningBuilding() instanceof Town){
+        else if (getFertilityLevel() == 3 && (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasTown()))){
             improveFertility();
         }
     }
     
-    public boolean hasFarmOwningBuilding(){
+    public boolean belongsToFarmOwningBuilding(){
         return farmOwningBuilding != null;
     }
     
@@ -190,8 +191,8 @@ public class Farm extends Building{
                 + ", FARM_CAPACITY=" + FARM_CAPACITY 
                 + ", food=" + food 
                 + ", timeUntilNextDeath=" + timeUntilNextDeath 
-                + ", has farmOwningBuilding: " + hasFarmOwningBuilding()
-                + (hasFarmOwningBuilding() ? (farmOwningBuilding.getClass() + ", " + farmOwningBuilding.getPoint().getPositionString()) : " false ")
+                + ", has farmOwningBuilding: " + belongsToFarmOwningBuilding()
+                + (belongsToFarmOwningBuilding() ? (farmOwningBuilding.getClass() + ", " + farmOwningBuilding.getPoint().getPositionString()) : " false ")
                 + '}';
     }
     

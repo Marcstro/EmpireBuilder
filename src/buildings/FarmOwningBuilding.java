@@ -29,6 +29,7 @@ public abstract class FarmOwningBuilding extends Building{
         
     public void destroyFarm(Farm farm){
         farms.remove(farm);
+        emptyLand.add(farm.getPoint());
     }
     
     public void addFood(int foodAdd){
@@ -69,6 +70,7 @@ public abstract class FarmOwningBuilding extends Building{
     
     public void addFarm(Farm farm){
         farms.add(farm);
+        emptyLand.remove(farm.getPoint());
     }
 
     public List<Point> getControlledLand() {
@@ -89,5 +91,9 @@ public abstract class FarmOwningBuilding extends Building{
     
     public Point getRandomEmptySpotWithinDomain(){
         return emptyLand.pollFirst();
+    }
+
+    public void occupyPoint(Point point){
+        emptyLand.remove(point);
     }
 }

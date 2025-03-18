@@ -32,9 +32,11 @@ public class ButtonPanel extends JPanel {
         JButton button9 = new JButton("Create farm at point");
         JButton button10 = new JButton("Create complete village at point");
         JButton button11 = new JButton("Print Map info");
+        JButton button12 = new JButton("check village domains");
         
         
-        ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6, button7, button8, button9, button10, button11));
+        ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
+                button7, button8, button9, button10, button11, button12));
         buttons.forEach(button -> {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
         });
@@ -55,7 +57,8 @@ public class ButtonPanel extends JPanel {
         buttonArea.add(button8);
         buttonArea.add(button9);  
         buttonArea.add(button10);    
-        buttonArea.add(button11);    
+        buttonArea.add(button11);
+        buttonArea.add(button12);
         
         JPanel tickRatePanel = new JPanel();
         tickRatePanel.setLayout(new GridLayout(3,1));
@@ -92,6 +95,7 @@ public class ButtonPanel extends JPanel {
         button10.addActionListener(e -> gameManager.getGame().createCompleteVillageAt(
             gameManager.getGridPanel().getSelectedPoint().getX(), gameManager.getGridPanel().getSelectedPoint().getY()));
         button11.addActionListener(e -> gameManager.getGame().printMapInfo());
+        button12.addActionListener(e -> gameManager.getGame().checkVillageDomain());
 
         increaseSpeedButton.addActionListener(e -> {
             gameManager.getEngine().increaseSpeed();

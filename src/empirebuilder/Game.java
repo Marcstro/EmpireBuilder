@@ -3,6 +3,7 @@ package empirebuilder;
 import LandTypes.LandType;
 import buildings.*;
 
+import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -57,14 +58,11 @@ class Game{
     public void tick(){
         
         tickCounter++;
-        
-
-        
         for(Farm farm: farms) {
 
             farm.tick();
 
-            if (!farm.hasFarmOwningBuilding()) {
+            if (!farm.belongsToFarmOwningBuilding()) {
                 if (farm.lastPersonDied()) {
                     farmsToRemove.add(farm);
                     continue;
@@ -81,16 +79,14 @@ class Game{
                         if (newFarmPoint == null || newFarmPoint.isOwnedByBuilding()) {
                             continue;
                         }
-                        newFarm = new Farm(newFarmPoint);
                     }
                     else {
                         newFarmPoint = gm.getMap().getRandomEmptyPointAdjecantToTarget(farm.getPoint());
                         if (newFarmPoint == null) {
                             continue;
                         }
-                        newFarm = new Farm(newFarmPoint);
                     }
-
+                    newFarm = new Farm(newFarmPoint);
                     if (newFarmPoint.getLandType() != LandType.VILLAGE) {
                         newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
                     }
@@ -107,10 +103,14 @@ class Game{
                                 gm.getMap().getIndependentFarmsNearby(newFarmPoint, 2).size();
                         newFarm.setFood(foodStarter * 2);
                     }
-                        int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
-                        if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
-                            farmToConvertToVillage.add(newFarm);
-                        }
+                    if (newFarmPoint.getOwnerBuilding() != null){
+                        newFarm.setFarmOwningBuilding(newFarmPoint.getOwnerBuilding());
+                        newFarmPoint.getOwnerBuilding().addFarm(newFarm);
+                    }
+                    int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
+                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
+                        farmToConvertToVillage.add(newFarm);
+                    }
                 }
             }
         }
@@ -124,7 +124,7 @@ class Game{
 
         farms.addAll(farmsToAdd);
         for (Farm toRemoveFarm : farmsToRemove) {
-            if (toRemoveFarm.hasFarmOwningBuilding()) {
+            if (toRemoveFarm.belongsToFarmOwningBuilding()) {
                 toRemoveFarm.getFarmOwningBuilding().addEmptyPoint(toRemoveFarm.getPoint());
             }
             destroyFarm(toRemoveFarm);
@@ -168,7 +168,7 @@ class Game{
                     System.out.println("OBS OBS SHOULD NOT HAPPEN");
                     throw new RuntimeException("village failed to create farm");
                 }
-                if (newFarmPoint.getLandType() != LandType.VILLAGE) {
+                if (newFarmPoint.getLandType() != LandType.VILLAGE || newFarmPoint.getLandType() == LandType.TOWN) {
                     newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
                 }
                 if (newFarmPoint.getLandType() == LandType.TOWN) {
@@ -176,9 +176,13 @@ class Game{
                 }
                 Farm newFarm = new Farm(newFarmPoint);
                 gm.getMap().setBuildingOnPoint(newFarmPoint, newFarm);
-                if(wasCreatedWithinDomain){
+                if (wasCreatedWithinDomain){
                     newFarm.setFarmOwningBuilding(building);
                     building.addFarm(newFarm);
+                }
+                else if (newFarmPoint.getOwnerBuilding() != null){
+                    newFarm.setFarmOwningBuilding(newFarmPoint.getOwnerBuilding());
+                    newFarmPoint.getOwnerBuilding().addFarm(newFarm);
                 }
                 farmsToAdd.add(newFarm);
             }
@@ -215,7 +219,8 @@ class Game{
         newVillage.setFood(10);
         villages.add(newVillage);
         farms.remove(farm);
-        gm.getMap().setBuildingOnPoint(farmCenter, newVillage);
+
+        gm.getMap().replaceBuilding(farmCenter, newVillage);
         
         //set all adjecant points to have village land (While having farm building)
         for(Point point: villagePoints){
@@ -240,13 +245,14 @@ class Game{
         newVillage.setEmptyLand(
                 pointsBelongingToVillage.stream()
                 .filter(point -> point.getBuilding() == null)
-                .collect(Collectors.toCollection(LinkedList::new))); 
-        List<Farm> farmsBelongingToVillage = gm.getMap().getIndependentFarmsNearby(farmCenter, VILLAGE_DOMAIN_LIMIT);
-        for (Farm nearbyFarm: farmsBelongingToVillage){
+                .collect(Collectors.toCollection(LinkedList::new)));
+
+        List<Farm> independentFarmsWithinVillageDomain = gm.getMap().getIndependentFarmsNearby(farmCenter, VILLAGE_DOMAIN_LIMIT);
+        for (Farm nearbyFarm: independentFarmsWithinVillageDomain){
             nearbyFarm.setFarmOwningBuilding(newVillage);
         }
         
-        newVillage.setFarms((LinkedList)(farmsBelongingToVillage));
+        newVillage.setFarms((LinkedList)(independentFarmsWithinVillageDomain));
         
         boolean nearTown = false;
         for(Town town: towns){
@@ -260,18 +266,6 @@ class Game{
         if(!nearTown){
             checkForTownFormation(newVillage);
         }
-    }
-    
-    public void printMapInfo(){
-        System.out.println("map info: ");
-        System.out.println("empty set points: " + gm.getMap().getEmptyPoints().size());
-        System.out.println("empty list points: " + gm.getMap().getEmptyPointList().size());
-        System.out.println("Farms: " + farms.size());
-        System.out.println("Villages: " + villages.size());
-        System.out.println("Towns: " + towns.size());
-        int total = gm.getMap().getGrid().length * gm.getMap().getGrid()[0].length;
-        System.out.println("Whole map size: " + total);
-        System.out.println("All buildings is total: " + (farms.size()+towns.size()+villages.size()));
     }
     
     public void checkForTownFormation(Village newVillage) {
@@ -301,17 +295,14 @@ class Game{
             }
         }
     }
-    
 
-    
-    // TODO here are some necessary fixes
     public void createTown(Village villageCenter, List<Village> surroundingVillages){
         Point midPoint = villageCenter.getPoint();
         List<Point> townPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
         
         villages.remove(villageCenter);
         Town town = new Town(midPoint);
-        gm.getMap().setBuildingOnPoint(midPoint, town);
+        gm.getMap().replaceBuilding(midPoint, town);
         towns.add(town);
         town.setControlledLand(villageCenter.getControlledLand());
         for (Point point: villageCenter.getControlledLand()){
@@ -323,6 +314,7 @@ class Game{
                 else if (point.getBuilding() != null && point.getBuilding() != town){
                     throw new RuntimeException("townArea had building that wasnt farm, fix this code");
                 }
+
                 TownArea townArea = new TownArea(point, town);
                 gm.getMap().setBuildingOnPoint(point, townArea);
                 town.addTownArea(townArea);
@@ -353,19 +345,18 @@ class Game{
     
     public void destroyFarm(Farm farm){
         farm.getPoint().createNewLandForPoint(LandType.DIRT);
-        gm.getMap().setBuildingOnPoint(farm.getPoint(), null);
+        gm.getMap().removeBuildingFromPoint(farm.getPoint());
     }
     
     public void experiment(){
         Point prevPoint = farms.get(farms.size()-1).getPoint();
-        Point newPoint = gm.getMap().getGrid()[prevPoint.getX()+1][prevPoint.getY()];//.setLandType(LandType.GRASSLAND));
+        Point newPoint = gm.getMap().getGrid()[prevPoint.getX()+1][prevPoint.getY()];
         newPoint.createNewLandForPoint(LandType.GRASSLAND);
         
         Farm farm = new Farm(newPoint);
         
         gm.getMap().setBuildingOnPoint(newPoint, farm);
         farms.add(farm);
-        //gm.getMap().setPoint(newPoint);
         gm.getGridPanel().updateUI();
     }
     
@@ -424,6 +415,19 @@ class Game{
             farm.setFood(10);
         }
     }
+
+    public void checkVillageDomain(){
+        for(Village village: villages){
+            for(Point point: village.getControlledLand()){
+                if (point.getBuilding() != null && point.getBuilding() instanceof Farm farm && farm.getFarmOwningBuilding() != village){
+                    System.out.println("SITUATION 32");
+                    System.out.println(village.getInfo());
+                    System.out.println(farm.getInfo());
+                    System.out.println(point.getInfo());
+                }
+            }
+        }
+    }
     
     public Farm createFarmAtPoint(int x, int y){
         Point point = gm.getMap().getPoint(x, y);
@@ -435,6 +439,18 @@ class Game{
         System.out.println("Farm created at " + farm.toString());
         gm.getGridPanel().updateUI();
         return farm;
+    }
+
+    public void printMapInfo(){
+        System.out.println("map info: ");
+        System.out.println("empty set points: " + gm.getMap().getEmptyPoints().size());
+        System.out.println("empty list points: " + gm.getMap().getEmptyPointList().size());
+        System.out.println("Farms: " + farms.size());
+        System.out.println("Villages: " + villages.size());
+        System.out.println("Towns: " + towns.size());
+        int total = gm.getMap().getGrid().length * gm.getMap().getGrid()[0].length;
+        System.out.println("Whole map size: " + total);
+        System.out.println("All buildings is total: " + (farms.size()+towns.size()+villages.size()));
     }
     
     public void createCompleteVillageAt(int x, int y){

@@ -82,7 +82,7 @@ public class Point {
         return "Point{" + "x=" + x 
                 + ", y=" + y 
                 + ", land=" + land 
-                + ", building=" + getBuilding().toString() + '}';
+                + ", building=" + ((getBuilding() != null) ? getBuilding().getInfo() : "") + '}';
     }
     
     public String getInfo(){

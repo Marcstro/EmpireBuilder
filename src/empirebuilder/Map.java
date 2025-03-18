@@ -78,16 +78,36 @@ public class Map {
         int index = new Random().nextInt(emptyPointList.size());
         return emptyPointList.get(index);
     }
-    
-    public void buildingHasBeenRemovedAtPoint(Point point){
-        emptyPoints.add(point);
-        emptyPoints.add(point);
+
+    public void replaceBuilding(Point point, Building building){
+        removeBuildingFromPoint(point);
+        setBuildingOnPoint(point, building);
     }
     
     public void setBuildingOnPoint(Point point, Building building){
+
+        if (point.getBuilding() != null){
+            if (point.getBuilding() instanceof Farm farm){
+                if (farm.belongsToFarmOwningBuilding()) {
+                    farm.getFarmOwningBuilding().destroyFarm(farm);
+                }
+            }
+            removeBuildingFromPoint(point);
+        }
         point.setBuilding(building);
-        emptyPoints.remove(point);
-        emptyPointList.remove(point);
+        if (emptyPoints.contains(point)){
+            emptyPoints.remove(point);
+            emptyPointList.remove(point);
+        }
+    }
+
+    public void removeBuildingFromPoint(Point point){
+        if (point.getBuilding() == null){
+            throw new RuntimeException("Tried to remove building at " + point.getPositionString() + " but no building there!");
+        }
+        point.setBuilding(null);
+        emptyPoints.add(point);
+        emptyPointList.add(point);
     }
     
     public Point findNeighboringSpotForFarm(int x, int y) {
@@ -112,7 +132,7 @@ public class Map {
             .map(Point::getBuilding)  
             .filter(building -> building instanceof Farm)
             .map(building -> (Farm) building) 
-            .filter(farm -> !farm.hasFarmOwningBuilding())
+            .filter(farm -> !farm.belongsToFarmOwningBuilding())
             .count(); 
     }
     
@@ -121,7 +141,7 @@ public class Map {
             .map(Point::getBuilding)
             .filter(building -> building instanceof Farm)
             .map(building -> (Farm) building)
-            .filter(farm -> !farm.hasFarmOwningBuilding())
+            .filter(farm -> !farm.belongsToFarmOwningBuilding())
             .collect(Collectors.toCollection(LinkedList::new));
     }
     
@@ -178,11 +198,9 @@ public class Map {
     
  public ArrayList<Point> getPointsInCircleAroundTarget(Point originalPoint, int radius) {
     ArrayList<Point> result = new ArrayList<>();
-    
-    // Get relative positions for the given radius
+
     ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
 
-    // Convert coordinates to actual Point objects
     for (int[] pos : relativePositions) {
         result.add(grid[pos[0]][pos[1]]);
     }
@@ -192,7 +210,6 @@ public class Map {
 
 
     public void setLandTypeAtPoint(int x, int y, LandType landType){
-        
         grid[x][y].createNewLandForPoint(landType);
     }
     
@@ -201,8 +218,6 @@ public class Map {
         int randomY = random.nextInt(height);
         return grid[randomX][randomY];
     }
-
-
 
     public Point[][] getGrid() {
         return grid;
@@ -264,73 +279,5 @@ public class Map {
     
     private boolean isValid(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
-    }
-    
-    public void tick(){
-        
-    }
-    
-    /***
-     * Deprecated
-     */
-    public void oldTick(){
-
-        for (int x = 0; x < 350; x++) {
-            for (int y = 0; y < 200; y++) {
-                Point p = grid[x][y];
-                Land land = p.getLand();
-
-                if (p.getLandType() == LandType.DIRT) {
-                    int adjacentGrasslands = 0;
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dy = -1; dy <= 1; dy++) {
-                            if (dx == 0 && dy == 0) continue;
-
-                            int nx = x + dx;
-                            int ny = y + dy;
-
-                            if (nx >= 0 && nx < 350 && ny >= 0 && ny < 200) {
-                                Point neighbor = grid[nx][ny];
-                                if (neighbor.getLand() instanceof Grassland neighborGrassland) {
-                                    //if (neighborGrassland.getFertilityLevel() >= fertilityLevel) {
-                                        adjacentGrasslands++;
-                                    //}
-                                }
-                            }
-                        }
-                    }
-                    double probability = (Math.pow(adjacentGrasslands+1, 5)) / 10000.0;
-                    if (random.nextDouble() < probability) {
-                        grid[x][y] = new Point(x, y, LandType.GRASSLAND);
-                    }
-                    continue; // Skip the rest of the loop for this point
-                }
-                if (p.getBuilding() instanceof Farm farm) {
-                    int fertilityLevel = farm.getFertilityLevel();
-                    int adjacentGrasslands = 0;
-
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dy = -1; dy <= 1; dy++) {
-                            if (dx == 0 && dy == 0) continue; // Skip the current point
-                            int nx = x + dx;
-                            int ny = y + dy;
-                            if (nx >= 0 && nx < 350 && ny >= 0 && ny < 200) {
-                                Point neighbor = grid[nx][ny];
-                                if (neighbor.getLand() instanceof Grassland neighborGrassland) {
-                                    //if (neighborGrassland.getFertilityLevel() >= fertilityLevel) {
-                                        adjacentGrasslands++;
-                                    //}
-                                }
-                            }
-                        }
-                    }
-                    double probability = (Math.pow(adjacentGrasslands, 2)) / 100.0;
-
-                    if (random.nextDouble() < probability) {
-                        farm.improveFertility();
-                    }
-                }
-            }
-        }
     }
 }
