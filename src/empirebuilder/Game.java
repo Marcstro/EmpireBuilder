@@ -3,7 +3,6 @@ package empirebuilder;
 import LandTypes.LandType;
 import buildings.*;
 
-import java.sql.SQLOutput;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -87,9 +86,8 @@ class Game{
                         }
                     }
                     newFarm = new Farm(newFarmPoint);
-                    if (newFarmPoint.getLandType() != LandType.VILLAGE) {
-                        newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
-                    }
+                    checkIfNewFarmIsPartOfVillageCenter(newFarm);
+                    newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
 
                     farmsToAdd.add(newFarm);
                     farm.halvePeopleAmount();
@@ -103,12 +101,12 @@ class Game{
                                 gm.getMap().getIndependentFarmsNearby(newFarmPoint, 2).size();
                         newFarm.setFood(foodStarter * 2);
                     }
-                    if (newFarmPoint.getOwnerBuilding() != null){
-                        newFarm.setFarmOwningBuilding(newFarmPoint.getOwnerBuilding());
-                        newFarmPoint.getOwnerBuilding().addFarm(newFarm);
+                    if (newFarmPoint.getPointOwner() != null){ //TODO this should be earlier in the chain
+                        newFarm.setFarmOwningBuilding(newFarmPoint.getPointOwner());
+                        newFarmPoint.getPointOwner().addFarm(newFarm);
                     }
                     int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
-                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
+                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) { //TODO remove when upgrades happe in different loop
                         farmToConvertToVillage.add(newFarm);
                     }
                 }
@@ -168,23 +166,30 @@ class Game{
                     System.out.println("OBS OBS SHOULD NOT HAPPEN");
                     throw new RuntimeException("village failed to create farm");
                 }
-                if (newFarmPoint.getLandType() != LandType.VILLAGE || newFarmPoint.getLandType() == LandType.TOWN) {
-                    newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
-                }
-                if (newFarmPoint.getLandType() == LandType.TOWN) {
+                newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
+                if (newFarmPoint.getBuilding() instanceof Town || newFarmPoint.getBuilding() instanceof TownArea) {
                     continue;
                 }
                 Farm newFarm = new Farm(newFarmPoint);
+                checkIfNewFarmIsPartOfVillageCenter(newFarm);
                 gm.getMap().setBuildingOnPoint(newFarmPoint, newFarm);
                 if (wasCreatedWithinDomain){
                     newFarm.setFarmOwningBuilding(building);
                     building.addFarm(newFarm);
                 }
-                else if (newFarmPoint.getOwnerBuilding() != null){
-                    newFarm.setFarmOwningBuilding(newFarmPoint.getOwnerBuilding());
-                    newFarmPoint.getOwnerBuilding().addFarm(newFarm);
+                else if (newFarmPoint.getPointOwner() != null){
+                    newFarm.setFarmOwningBuilding(newFarmPoint.getPointOwner());
+                    newFarmPoint.getPointOwner().addFarm(newFarm);
                 }
                 farmsToAdd.add(newFarm);
+            }
+        }
+    }
+
+    public void checkIfNewFarmIsPartOfVillageCenter(Farm farm){
+        for (Point point: gm.getMap().getAllValidAdjecantPointsToTarget(farm.getPoint())){
+            if (point.getBuilding() instanceof Village){
+                farm.setIsPartOfVillageCenter(true);
             }
         }
     }
@@ -210,24 +215,22 @@ class Game{
                 return;
             }
         }      
-        
+
+        // TODO this could be done better, maybe filter in Map class
         List<Point> villagePoints = gm.getMap().getAllValidAdjecantPointsToTarget(farmCenter);
-        villagePoints.add(farmCenter);
-        
-        //first set up village center
+        for (Point point: villagePoints){
+            if(point.getBuilding() instanceof Farm surroundingFarm){
+                surroundingFarm.setIsPartOfVillageCenter(true);
+            }
+        }
+
         Village newVillage = new Village(farmCenter, farmCenter);
         newVillage.setFood(10);
         villages.add(newVillage);
         farms.remove(farm);
 
         gm.getMap().replaceBuilding(farmCenter, newVillage);
-        
-        //set all adjecant points to have village land (While having farm building)
-        for(Point point: villagePoints){
-            point.createNewLandForPoint(LandType.VILLAGE);
-        }
-        
-        //set all points within village distance radius to have village = this one
+
         List<Point> pointsBelongingToVillage = new LinkedList<>(
                 gm.getMap()
             .getAllPointsInCircleAroundTarget(farmCenter, VILLAGE_DOMAIN_LIMIT)
@@ -335,7 +338,6 @@ class Game{
         }
         town.setVillages((LinkedList<Village>) surroundingVillages);
     }
-
     
     public void destroyVillage(Village village){
         for (Point point: village.getControlledLand()){

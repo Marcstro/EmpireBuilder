@@ -1,9 +1,12 @@
 package buildings;
 
-import LandTypes.Grassland;
+import LandTypes.LandType;
+import buildingsTools.FarmFertilityColors;
 import empirebuilder.Point;
 
-public class Farm extends Building{
+import java.awt.*;
+
+public class Farm extends Building {
     
     int people;
     static final int EXPAND_TRESHHOLD = 5;
@@ -14,23 +17,37 @@ public class Farm extends Building{
     FarmOwningBuilding farmOwningBuilding;
     int timeUntilNextDeath;
     int fertilityLevel;
+    final static int STARTING_FERTILITY_LEVEL = 1;
+    boolean partOfVillageCenter = false;
 
         
     public Farm(int people, Point point) {
-        super(point);
+        super(point, FarmFertilityColors.getColor(STARTING_FERTILITY_LEVEL));
         this.people = people;
         fertilityLevel = 1;
         food=0;
         timeUntilNextDeath = (int)(Math.random()*MAXIMUM_TIME_BEFORE_DEATH);
     }
-    
+
     public Farm(Point point) {
         this(1, point);
     }
-    
+
+    public boolean isPartOfVillageCenter(){
+        return partOfVillageCenter;
+    }
+
+    public void setIsPartOfVillageCenter(boolean val){
+        partOfVillageCenter = val;
+        if(partOfVillageCenter){
+            setColor(LandType.getBaseColor(LandType.VILLAGE));
+        }
+    }
+
     public void tick(){
+        //TODO check for fertilitylevel update here. or do it on rarer occasion?
         if(belongsToFarmOwningBuilding()){
-            hasFarmOwningBuildingTick();
+            belongsToFarmOwningBuildingTick();
         }
         else {
             independentTick();
@@ -49,8 +66,7 @@ public class Farm extends Building{
         }
     }
 
-    public void hasFarmOwningBuildingTick(){
-        //TODO change this to use checkforFertility
+    public void belongsToFarmOwningBuildingTick(){
         if (people <= FARM_CAPACITY + getFertilityLevel()){
             food += getFertilityLevel();
             if (getFood() >= FOOD_COST_TO_MULTIPLY) {
@@ -64,8 +80,16 @@ public class Farm extends Building{
         if (getFertilityLevel() == 2){
             improveFertility();
         }
+        else if (getFertilityLevel() == 3 && belongsToFarmOwningBuilding()){
+            improveFertility();
+        }
+        else if (getFertilityLevel() == 4 && belongsToFarmOwningBuilding() &&
+                (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasTown()))){
+            improveFertility();
+        }
     }
 
+    // TODO maybe use or combine with other
     public void checkForFertilityLevel(){
         if (getFertilityLevel()==1 && getPeople() >= 3){
             improveFertility();
@@ -85,10 +109,13 @@ public class Farm extends Building{
     public void improveFertility(){
         if(fertilityLevel != 5){
             fertilityLevel++;
-            if (getPoint().getLand() instanceof Grassland grassland){
-                grassland.updateColor(fertilityLevel);
-            }
-           
+            updateColor();
+        }
+    }
+
+    public void updateColor(){
+        if (!isPartOfVillageCenter()){
+            setColor(FarmFertilityColors.getColor(getFertilityLevel()));
         }
     }
 
@@ -103,17 +130,15 @@ public class Farm extends Building{
     public boolean lastPersonDied(){
         if (timeUntilNextDeath <= 0){
             people--;
-            //System.out.println("Farm " + getId() + " person died, " + people + " people left");
             if (people == 1){
                 setFertilityLevel(1);
             }
             else if (people <= 0){
-                        //System.out.println("Farm " + getId() + " lost its last person and should be deleted");
-
+                // Game file removes this farm
                 return true;
             }
             timeUntilNextDeath = (int)(Math.random()*MAXIMUM_TIME_BEFORE_DEATH);
-            
+
         }
         return false;
     }
@@ -128,14 +153,11 @@ public class Farm extends Building{
         if (getFertilityLevel() ==1 && people >= 3){
             improveFertility();
         }
-        //System.out.println("Farm " + getId() + " increased to " + people + " people");
     }
     
     public boolean isTimeToCreateNewFarm(){
-        if( people >= EXPAND_TRESHHOLD 
-                //&& food > FOOD_COST_TO_MULTIPLY
-                ){
-            food=0; 
+        if( people >= EXPAND_TRESHHOLD ){
+            //food=0; // TODO uncomment if farms spread too fast
             return true;
         }
         return false;
@@ -189,10 +211,10 @@ public class Farm extends Building{
         return "Farm{" + "people=" + people 
                 + ", fertility level: " + getFertilityLevel()
                 + ", FARM_CAPACITY=" + FARM_CAPACITY 
-                + ", food=" + food 
-                + ", timeUntilNextDeath=" + timeUntilNextDeath 
-                + ", has farmOwningBuilding: " + belongsToFarmOwningBuilding()
-                + (belongsToFarmOwningBuilding() ? (farmOwningBuilding.getClass() + ", " + farmOwningBuilding.getPoint().getPositionString()) : " false ")
+                + ", food=" + food
+                + ", timeUntilNextDeath=" + timeUntilNextDeath
+                + ", Belongs to building = " +(belongsToFarmOwningBuilding() ? (farmOwningBuilding.getClass() + ", " + farmOwningBuilding.getPoint().getPositionString()) : " false ")
+                + ", isPartOfVillageCenter=" + isPartOfVillageCenter()
                 + '}';
     }
     

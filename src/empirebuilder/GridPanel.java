@@ -37,8 +37,7 @@ public class GridPanel extends JPanel {
         // Draw the grid
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                Point point = map.getPoint(x, y);
-                g.setColor(point.getColor());
+                g.setColor(map.getPoint(x, y).getColor());
                 g.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
             }
         }

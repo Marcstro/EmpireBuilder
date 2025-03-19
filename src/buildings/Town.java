@@ -1,6 +1,10 @@
 package buildings;
 
+import LandTypes.LandType;
+import buildingsTools.FarmFertilityColors;
 import empirebuilder.Point;
+
+import java.awt.*;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -14,7 +18,7 @@ public class Town extends FarmOwningBuilding{
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
     
     public Town(Point point) {
-        super(point, INITIAL_FOOD_NEEDED_TO_GROW);
+        super(point, INITIAL_FOOD_NEEDED_TO_GROW, LandType.getBaseColor(LandType.TOWN));
         villages = new LinkedList<>();
         farms = new LinkedList();
         food = 0;

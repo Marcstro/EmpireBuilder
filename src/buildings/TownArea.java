@@ -1,15 +1,23 @@
 package buildings;
 
+import LandTypes.LandType;
 import empirebuilder.Point;
+
+import java.awt.*;
 
 public class TownArea extends Building{
     
     Town townCenter;
 
     public TownArea(Point point, Town townCenter) {
-        super(point);
+        super(point, LandType.getBaseColor(LandType.TOWN));
         this.townCenter = townCenter;
     }
+
+    //Override
+    //public Color getColor() {
+    //    return LandType.getBaseColor(LandType.TOWN);
+    //}
 
     @Override
     public String getInfo() {

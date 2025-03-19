@@ -9,11 +9,12 @@ public abstract class Building{
     private static int idCounter=1;
     private final int id;
     private Point point;
-    Color color;
+    private Color color;
     
-    public Building(Point point){
+    public Building(Point point, Color color){
         this.id = idCounter++;
         this.point=point;
+        this.color = color;
     }
     
     public Point getPoint(){
@@ -24,7 +25,13 @@ public abstract class Building{
         return id;
     }
 
-    //public abstract Color getColor();
+    public Color getColor(){
+        return color;
+    };
+
+    public void setColor(Color color){
+        this.color = color;
+    };
     
     public abstract String getInfo();
     

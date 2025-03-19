@@ -25,7 +25,7 @@ public class Point {
         return ownedByBuilding != null;
     }
 
-    public FarmOwningBuilding getOwnerBuilding() {
+    public FarmOwningBuilding getPointOwner() {
         return ownedByBuilding;
     }
 
@@ -70,6 +70,9 @@ public class Point {
     }
 
     public Color getColor() {
+        if (getBuilding() != null){
+            return getBuilding().getColor();
+        }
         return land.getColor();
     }
     
@@ -94,7 +97,7 @@ public class Point {
                 + ", y=" + y 
                 + ", land=" + land
                 + ", " + buildingInfo
-                + ", belongs to building: "+ (isOwnedByBuilding() ? getOwnerBuilding().getInfo() : " ");
+                + ", belongs to building: "+ (isOwnedByBuilding() ? getPointOwner().getInfo() : " ");
     }
     
     public String getPositionString(){

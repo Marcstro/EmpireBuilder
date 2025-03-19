@@ -1,6 +1,8 @@
 package buildings;
 
 import empirebuilder.Point;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -14,8 +16,8 @@ public abstract class FarmOwningBuilding extends Building{
     int food;
     int foodNeededToCreateNewFarm;
 
-    public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm) {
-        super(point);
+    public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color) {
+        super(point, color);
         farms = new LinkedList();
         controlledLand = new ArrayList();
         emptyLand = new LinkedList();
