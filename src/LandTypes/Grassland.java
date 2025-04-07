@@ -9,6 +9,7 @@ public class Grassland extends Land {
     
     ArrayList<Color> fertilityLevelColor;
     Color color;
+    boolean isWalkable = true;
     
     public Grassland() {
         super(LandType.GRASSLAND);
@@ -26,6 +27,17 @@ public class Grassland extends Land {
     public void applyEffects() {
         
     }
+
+    @Override
+    public double getTerrainWalkingCost() {
+        return defaultWalkingCost;
+    }
+
+    @Override
+    public boolean isWalkable(){
+        return isWalkable;
+    }
+
     
     public void updateColor(int fertilityLevel){
          color = fertilityLevelColor.get(fertilityLevel-1);

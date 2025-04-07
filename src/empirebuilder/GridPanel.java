@@ -35,7 +35,8 @@ public class GridPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setStroke(new BasicStroke(2.0F));
         // Draw the grid
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
@@ -43,14 +44,14 @@ public class GridPanel extends JPanel {
                 g.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
             }
         }
-        /*
-        g.setColor(Color.black);
+
+        g.setColor(new Color( 237, 180, 102 ));
         for(Village village: gameManager.getGame().villages){
             if (village.hasTown()){
-                g.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
+                g2d.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
                         village.getTown().getPoint().getX()* pixelSize, village.getTown().getPoint().getY()* pixelSize);
             }
-        }*/
+        }
         if (selectedPoint != null){
                     g.setColor(Color.RED);
                     g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);

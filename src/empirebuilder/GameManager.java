@@ -1,5 +1,7 @@
 package empirebuilder;
 
+import pathfinding.AStarPathfinder;
+
 class GameManager{
     
     Engine engine;
@@ -8,6 +10,7 @@ class GameManager{
     MainWindow mainWindow;
     Map map;
     Game game;
+    AStarPathfinder pathfinder;
     
     static final int WIDTH = 1400;
     static final int HEIGHT = 800;
@@ -22,6 +25,7 @@ class GameManager{
         buttonPanel = new ButtonPanel(this);
         mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
         game = new Game(this);
+        pathfinder = new AStarPathfinder(map);
         
         gridPanel.updateUI();
     }

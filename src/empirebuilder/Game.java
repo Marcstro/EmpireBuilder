@@ -552,7 +552,20 @@ class Game{
         gm.getGridPanel().updateUI();
     }
     
-    
+    public void createWaterPath(){
+        System.out.println("xx3");
+        Point selectedPoint = gm.getGridPanel().getSelectedPoint();
+        if (selectedPoint == null){
+            return;
+        }
+        Point target = gm.getMap().getPoint(150,150);
+        List<Point> road = gm.pathfinder.getPathBetween(selectedPoint, target);
+        for(Point p: road){
+            p.createNewLandForPoint(LandType.WATER);
+        }
+        System.out.println(road.size() + " = raodens langd");
+        gm.getGridPanel().updateUI();
+    }
     
     public Farm createFarmAtRandomPoint(){
         //TODO make the 

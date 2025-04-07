@@ -9,6 +9,7 @@ public abstract class Land {
     int danger;
     int idCounter=1;
     final int id;
+    double defaultWalkingCost = 1;
 
     public Land(LandType landType) {
         this.id = idCounter++;
@@ -28,8 +29,10 @@ public abstract class Land {
     public void setLandType(LandType landType) {
         this.landType = landType;
     }
-    
-    
+
+    public abstract double getTerrainWalkingCost();
+
+    public abstract boolean isWalkable();
 
     public abstract Color getColor();
 

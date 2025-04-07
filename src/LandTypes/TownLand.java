@@ -9,6 +9,7 @@ import java.awt.Color;
 class TownLand extends Land{
 
     LandType landType = LandType.TOWN;
+    boolean isWalkable = false;
 
     public TownLand() {
         super(LandType.VILLAGE);
@@ -22,6 +23,16 @@ class TownLand extends Land{
     @Override
     public Color getColor() {
         return Color.RED;
+    }
+
+    @Override
+    public double getTerrainWalkingCost() {
+        return defaultWalkingCost;
+    }
+
+    @Override
+    public boolean isWalkable(){
+        return isWalkable;
     }
     
 }

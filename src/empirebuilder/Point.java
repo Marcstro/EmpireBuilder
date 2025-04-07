@@ -20,6 +20,14 @@ public class Point {
         this.land = LandFactory.createLand(landType);
         ownedByBuilding = null;
     }
+
+    public double getWalkingCost(){
+        return land.getTerrainWalkingCost();
+    }
+
+    public boolean isWalkable(){
+        return land.isWalkable();
+    }
     
     public boolean isOwnedByBuilding(){
         return ownedByBuilding != null;

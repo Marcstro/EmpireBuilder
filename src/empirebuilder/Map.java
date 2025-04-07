@@ -1,5 +1,6 @@
 package empirebuilder;
 
+import LandTypes.Dirt;
 import LandTypes.LandType;
 import LandTypes.Grassland;
 import LandTypes.Land;
@@ -69,8 +70,6 @@ public class Map {
     public List<Point> getEmptyPointList() {
         return emptyPointList;
     }
-    
-    
     
     public Point getRandomEmptyPoint() {
         if (emptyPointList.isEmpty()) return null;
@@ -279,5 +278,28 @@ public class Map {
     
     private boolean isValid(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
+    }
+
+    private boolean isValidAndWalkable(int x, int y){
+        return isValid(x, y) && grid[x][y].isWalkable();
+    }
+
+    public List<Point> getAllWalkableValidNeighbours(Point point){
+        List<Point> validNeighbours = new ArrayList<>();
+
+        int x = point.getX();
+        int y = point.getY();
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0){
+                    continue;
+                }
+                if (isValidAndWalkable(x, y)){
+                    validNeighbours.add(getPoint((x+dx), (y+dy)));
+                }
+
+            }
+        }
+        return validNeighbours;
     }
 }

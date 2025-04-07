@@ -7,6 +7,7 @@ import java.awt.Color;
 public class Ruined extends Land {
     
     LandType landType = LandType.RUINED;
+    boolean isWalkable = true;
 
     public Ruined() {
         super(LandType.RUINED);
@@ -20,6 +21,16 @@ public class Ruined extends Land {
     @Override
     public Color getColor() {
         return LandType.getBaseColor(landType);
+    }
+
+    @Override
+    public double getTerrainWalkingCost() {
+        return defaultWalkingCost;
+    }
+
+    @Override
+    public boolean isWalkable(){
+        return isWalkable;
     }
     
 }
