@@ -32,11 +32,11 @@ class Game{
     final int FARMS_TO_CREATE_VILLAGE = 8;
     final int DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION = 3;
     final int VILLAGE_DOMAIN_LIMIT = 4;
-    final int VILLAGE_DISTANCE_FOR_TOWN_FORMATION = 25;
     final int TownCheckDistance = 25;
     final int townFormDistance = 15;
-    final int villageJoinTownDistance = 10;
     final int farmsForTownCreation = 5;
+    final int townDomainRange = 20;
+    final int townToTownMinimumDistance = 15;
     
     final boolean LOGGING = false;
     
@@ -53,8 +53,12 @@ class Game{
         farmToConvertToVillage = new LinkedList();
         villagesToDestroy = new LinkedList();
     }
+
+    public void tickUnits(){
+
+    }
     
-    public void tick(){
+    public void tickWorld(){
         
         tickCounter++;
         for(Farm farm: farms) {
@@ -106,7 +110,7 @@ class Game{
                         newFarmPoint.getPointOwner().addFarm(newFarm);
                     }
                     int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
-                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) { //TODO remove when upgrades happe in different loop
+                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
                         farmToConvertToVillage.add(newFarm);
                     }
                 }
@@ -136,6 +140,57 @@ class Game{
         farmsToRemove.clear();;
         farmToConvertToVillage.clear();
         villagesToDestroy.clear();
+    }
+
+    public void checkForBuildingUpgrades(){
+
+        List<Village> villagesToTurnToTowns = new LinkedList<>();
+        //check for possible village->town formation
+        for(Village village: villages){
+            if (village.hasTown()){
+                continue;
+            }
+            List<Village> nearbyIndependentVillages = villages.stream()
+                    .filter(v -> v != village)
+                    .filter(v -> !v.hasTown())
+                    .filter(v -> calculateDistance(village.getPoint(), v.getPoint()) <= townDomainRange)
+                    .toList();
+            if (nearbyIndependentVillages.size() >= farmsForTownCreation){
+                villagesToTurnToTowns.add(village);
+            }
+        }
+
+        // TODO check for possible town -> city formation
+
+        // convert village to town
+        for (Village village: villagesToTurnToTowns){
+            boolean hasNearbyTown = false;
+            for (Town town: towns){
+                if (calculateDistance(village.getPoint(), town.getPoint()) < townToTownMinimumDistance){
+                    hasNearbyTown = true;
+                    break;
+                }
+            }
+            if (!hasNearbyTown){
+                createTown(village);
+            }
+        }
+    }
+
+    public void tickBuildingControl(){
+
+        // update nearby villages to come into towns domain
+        for (Town town: towns){
+            List<Village> nearbyIndependentVillages = villages.stream()
+                    .filter(v -> !v.hasTown())
+                    .filter(v -> calculateDistance(town.getPoint(), v.getPoint()) <= townDomainRange)
+                    .toList();
+            for (Village village: nearbyIndependentVillages){
+                village.setTown(town);
+                village.markCenter();
+                town.addVillage(village);
+            }
+        }
     }
 
     public void handleOwnedFarmsBuildingsLoop(List<? extends FarmOwningBuilding> buildingList){
@@ -256,22 +311,10 @@ class Game{
         }
         
         newVillage.setFarms((LinkedList)(independentFarmsWithinVillageDomain));
-        
-        boolean nearTown = false;
-        for(Town town: towns){
-            if(calculateDistance(town.getPoint(), newVillage.getPoint()) < villageJoinTownDistance){
-                nearTown=true;
-                newVillage.setTown(town);
-                town.addVillage(newVillage);
-                newVillage.markCenter();
-            }
-        }
-        if(!nearTown){
-            checkForTownFormation(newVillage);
-        }
     }
     
     public void checkForTownFormation(Village newVillage) {
+        // TODO remove this outdated method?
         // check if there's sufficient villages to create town
         List<Village> nearbyIndependentVillages = villages.stream()
                 .filter(v -> v != newVillage)
@@ -293,13 +336,50 @@ class Game{
             //surroundingVillags.add(candidate);
 
             if (surroundingVillags.size() >= farmsForTownCreation) {
-                createTown(candidate, surroundingVillags);
+                createTownWithSurroundingVillages(candidate, surroundingVillags);
                 return;
             }
         }
     }
 
-    public void createTown(Village villageCenter, List<Village> surroundingVillages){
+    public void createTown(Village village){
+        Point midPoint = village.getPoint();
+        List<Point> townPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
+
+        villages.remove(village);
+        Town town = new Town(midPoint);
+        gm.getMap().replaceBuilding(midPoint, town);
+        towns.add(town);
+        town.setControlledLand(village.getControlledLand());
+
+        for (Point point: village.getControlledLand()){
+            if (townPoints.contains(point)){
+                if (point.getBuilding() instanceof Farm farm){
+                    farm.setFarmOwningBuilding(null);
+                    farms.remove(farm);
+                }
+                else if (point.getBuilding() != null && point.getBuilding() != town){
+                    throw new RuntimeException("townArea had building that wasnt farm, fix this code");
+                }
+
+                TownArea townArea = new TownArea(point, town);
+                gm.getMap().setBuildingOnPoint(point, townArea);
+                town.addTownArea(townArea);
+                point.createNewLandForPoint(LandType.TOWN);
+            }
+            if(point.getBuilding() instanceof Farm farm){
+                farm.setFarmOwningBuilding(town);
+                town.addFarm(farm);
+            }
+            else if (point.isEmpty()){
+                town.addEmptyPoint(point);
+            }
+            point.setOwnerBuilding(town);
+        }
+    }
+
+    public void createTownWithSurroundingVillages(Village villageCenter, List<Village> surroundingVillages){
+        // TODO remove this outdated function?
         Point midPoint = villageCenter.getPoint();
         List<Point> townPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
         
@@ -485,6 +565,12 @@ class Game{
         System.out.println("Farm created at " + farm.toString());
         gm.getGridPanel().updateUI();
         return farm;
+    }
+
+    public void create20FarmAtRandomPoint(){
+        for (int x=0; x<20; x++){
+            createFarmAtRandomPoint();
+        }
     }
     
 }

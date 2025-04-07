@@ -54,7 +54,14 @@ public class Engine {
 
     public void tick() {
         //System.out.println("Engine Tick: " + tickCounter++);
-        gameManager.getGame().tick();
+        tickCounter++;
+        gameManager.getGame().tickWorld();
+        if (tickCounter % 5 == 0){
+            gameManager.getGame().checkForBuildingUpgrades();
+        }
+        if (tickCounter % 15 == 0){
+            gameManager.getGame().tickBuildingControl();
+        }
     }
 
     public boolean isRunning() {

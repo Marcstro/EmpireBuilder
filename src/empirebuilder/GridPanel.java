@@ -1,5 +1,7 @@
 package empirebuilder;
 
+import buildings.Village;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -41,6 +43,14 @@ public class GridPanel extends JPanel {
                 g.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
             }
         }
+        /*
+        g.setColor(Color.black);
+        for(Village village: gameManager.getGame().villages){
+            if (village.hasTown()){
+                g.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
+                        village.getTown().getPoint().getX()* pixelSize, village.getTown().getPoint().getY()* pixelSize);
+            }
+        }*/
         if (selectedPoint != null){
                     g.setColor(Color.RED);
                     g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);

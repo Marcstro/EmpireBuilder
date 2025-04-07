@@ -24,7 +24,7 @@ public class ButtonPanel extends JPanel {
         JButton button1 = new JButton("Start");
         JButton button2 = new JButton("Stop");
         JButton button3 = new JButton("Create random farm");
-        JButton button4 = new JButton("create farm next to farm 0");
+        JButton button4 = new JButton("create 20 random farms");
         JButton button5 = new JButton("experiment 2");
         JButton button6 = new JButton("experiment 3");
         JButton button7 = new JButton("test1");
@@ -85,7 +85,7 @@ public class ButtonPanel extends JPanel {
         button1.addActionListener(e -> gameManager.getEngine().start());
         button2.addActionListener(e -> gameManager.getEngine().stop());
         button3.addActionListener(e -> gameManager.getGame().createFarmAtRandomPoint());
-        button4.addActionListener(e -> gameManager.getGame().experiment());
+        button4.addActionListener(e -> gameManager.getGame().create20FarmAtRandomPoint());
         button5.addActionListener(e -> gameManager.getGame().experiment2());
         button6.addActionListener(e -> gameManager.getGame().experiment3());
         button7.addActionListener(e -> gameManager.getGame().experiment4());
