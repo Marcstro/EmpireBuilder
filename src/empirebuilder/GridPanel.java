@@ -24,7 +24,7 @@ public class GridPanel extends JPanel {
         this.pixelSize = pixelSize;
         this.height = height;
         this.width = width;
-        setPreferredSize(new Dimension((width-buttonPanelWidth), height));
+        setPreferredSize(new Dimension((width * pixelSize), (height * pixelSize)));
         
         addMouseListener(new MouseAdapter() {
             @Override
