@@ -1,5 +1,6 @@
 package empirebuilder;
 
+import buildings.Town;
 import buildings.Village;
 
 import javax.swing.*;
@@ -15,6 +16,7 @@ public class GridPanel extends JPanel {
     int height;
     int width;
     private Point selectedPoint = null;
+    private boolean showLines = true;
 
     GridPanel(GameManager gameManager, Map map, int width, int height, int pixelSize, int buttonPanelWidth) {
         this.map = map;
@@ -35,9 +37,7 @@ public class GridPanel extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setStroke(new BasicStroke(2.0F));
-        // Draw the grid
+
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 g.setColor(map.getPoint(x, y).getColor());
@@ -45,16 +45,29 @@ public class GridPanel extends JPanel {
             }
         }
 
-        g.setColor(new Color( 237, 180, 102 ));
-        for(Village village: gameManager.getGame().villages){
-            if (village.hasTown()){
-                g2d.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
-                        village.getTown().getPoint().getX()* pixelSize, village.getTown().getPoint().getY()* pixelSize);
+
+        if (showLines){
+            Graphics2D g2d = (Graphics2D) g;
+            g2d.setStroke(new BasicStroke(2.0F));
+            g.setColor(new Color( 237, 180, 102 ));
+            for(Village village: gameManager.getGame().villages){
+                if (village.hasTown()){
+                    g2d.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
+                            village.getTown().getPoint().getX()* pixelSize, village.getTown().getPoint().getY()* pixelSize);
+                }
             }
-        }
-        if (selectedPoint != null){
-                    g.setColor(Color.RED);
-                    g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);
+
+            g.setColor(Color.black);
+            for (Town town: gameManager.getGame().towns){
+                if (town.hasCity()){
+                    g2d.drawLine(town.getPoint().getX()* pixelSize, town.getPoint().getY()* pixelSize,
+                            town.getCity().getPoint().getX()* pixelSize, town.getCity().getPoint().getY()* pixelSize);
+                }
+            }
+            if (selectedPoint != null){
+                g.setColor(Color.RED);
+                g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);
+            }
         }
     }
     
@@ -62,11 +75,9 @@ public class GridPanel extends JPanel {
         int mouseX = e.getX();
         int mouseY = e.getY();
 
-        // Convert pixel coordinates to grid coordinates
         int gridX = mouseX / pixelSize;
         int gridY = mouseY / pixelSize;
 
-        // Ensure we don't go out of bounds
         if (gridX >= 0 && gridX < width && gridY >= 0 && gridY < height) {
             Point clickedPoint = map.getPoint(gridX, gridY);
             if (clickedPoint == selectedPoint){

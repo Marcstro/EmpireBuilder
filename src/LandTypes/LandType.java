@@ -8,7 +8,8 @@ public enum LandType {
     DIRT,
     RUINED,
     VILLAGE,
-    TOWN;
+    TOWN,
+    CITY;
     
     public static Color getBaseColor(LandType type) {
         return switch (type) {
@@ -18,6 +19,7 @@ public enum LandType {
             case RUINED -> new Color(65, 36, 12);
             case VILLAGE -> Color.blue;
             case TOWN -> Color.RED;
+            case CITY -> new Color( 188, 86, 220 );
         };
     }
 }

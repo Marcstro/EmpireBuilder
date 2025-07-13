@@ -13,7 +13,7 @@ public abstract class Building{
     
     public Building(Point point, Color color){
         this.id = idCounter++;
-        this.point=point;
+        this.point = point;
         this.color = color;
     }
     

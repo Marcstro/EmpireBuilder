@@ -6,6 +6,8 @@ public class CircleSearch {
     private final Map<Integer, List<int[]>> precomputedOffsets = new HashMap<>();
     private final Map<Integer, List<int[]>> precomputedCircles = new HashMap<>();
     private final List<int[]> townShapePointList = new ArrayList<>();
+    private final List<int[]> cityShapePointList = new ArrayList<>();
+
 
     private final int maxRadius;
     int gridHeight;
@@ -17,6 +19,7 @@ public class CircleSearch {
         this.gridWidth = gridWidth;
         precomputeOffsets();
         precomputeTownShape();
+        precomputeCityShape();
     }
 
     // Precompute relative positions for each radius
@@ -117,6 +120,23 @@ public class CircleSearch {
             }
         }
     }
+
+    public void precomputeCityShape() {
+
+        cityShapePointList.add(new int[]{0, -5});
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -2; dy < -4; dy++) {
+                cityShapePointList.add(new int[]{dx, dy});
+            }
+        }
+
+        for (int dx = -3; dx <= 3; dx++) {
+            for (int dy = -1; dy < 3; dy++) {
+                cityShapePointList.add(new int[]{dx, dy});
+            }
+        }
+    }
     
     //probably remove
     public List<int[]> getTownShapePoints(int centerX, int centerY, int gridWidth, int gridHeight) {
@@ -138,7 +158,9 @@ public class CircleSearch {
         return townShapePointList;
     }
     
-    
+    public List<int[]> getCityShapePointList(){
+        return cityShapePointList;
+    }
 
     
     public List<int[]> getValidAdjacentPoints(int x, int y) {

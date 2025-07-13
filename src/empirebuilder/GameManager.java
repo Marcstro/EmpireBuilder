@@ -21,10 +21,10 @@ class GameManager{
         
         engine = new Engine(this);
         map = new Map(this, (WIDTH/TILE_SIZE), (HEIGHT/TILE_SIZE));
+        game = new Game(this);
         gridPanel = new GridPanel(this, map, WIDTH/TILE_SIZE, HEIGHT/TILE_SIZE, TILE_SIZE, BUTTON_PANEL_WIDTH);
         buttonPanel = new ButtonPanel(this);
         mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
-        game = new Game(this);
         pathfinder = new AStarPathfinder(map);
         
         gridPanel.updateUI();

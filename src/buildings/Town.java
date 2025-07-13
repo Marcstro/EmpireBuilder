@@ -14,6 +14,7 @@ public class Town extends FarmOwningBuilding{
 
     LinkedList<Village> villages;
     Set<TownArea> townAreaPoints;
+    City city = null;
     
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
     
@@ -23,6 +24,18 @@ public class Town extends FarmOwningBuilding{
         farms = new LinkedList();
         food = 0;
         townAreaPoints = new HashSet();
+    }
+
+    public void setCity(City city){
+        this.city = city;
+    }
+
+    public City getCity(){
+        return city;
+    }
+
+    public boolean hasCity(){
+        return city != null;
     }
     
     public void addTownArea(TownArea townArea){
@@ -42,6 +55,7 @@ public class Town extends FarmOwningBuilding{
         return "Town: " + getId() +
                 ", point="+getPoint().getPositionString() +
                 ", villages=" + getVillages().size()
+                + (this.hasCity() ? "City: " + getCity().getPoint().getPositionString() : "Has city: false")
                 + ".";
     }
     

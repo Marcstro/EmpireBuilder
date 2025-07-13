@@ -53,14 +53,16 @@ public class Engine {
     }
 
     public void tick() {
-        //System.out.println("Engine Tick: " + tickCounter++);
         tickCounter++;
         gameManager.getGame().tickWorld();
         if (tickCounter % 5 == 0){
             gameManager.getGame().checkForBuildingUpgrades();
         }
         if (tickCounter % 15 == 0){
-            gameManager.getGame().tickBuildingControl();
+            gameManager.getGame().tickOwningBuildingsGainControlOverIndepedants();
+        }
+        if (tickCounter % 150 == 0){
+            gameManager.getGame().tickUpdateBuildingOwnershipByDistance();
         }
     }
 
@@ -82,6 +84,10 @@ public class Engine {
 
     public double getTickRate() {
         return REFRESH_RATE;
+    }
+
+    public int getTickCounter() {
+        return tickCounter;
     }
     
     

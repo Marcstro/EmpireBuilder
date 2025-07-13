@@ -11,14 +11,14 @@ import java.util.Random;
 import java.util.stream.Collectors;
 
 class Game{
-    
-    
+
     GameManager gm;
     Random random;
     int tickCounter;
     List<Farm> farms;
     List<Village> villages;
     List<Town> towns;
+    List<City> cities;
 
     List<Farm> farmsToAdd;
     List<Farm> farmsToRemove;
@@ -35,8 +35,11 @@ class Game{
     final int TownCheckDistance = 25;
     final int townFormDistance = 15;
     final int farmsForTownCreation = 5;
+    final int townsForCityCreation = 4;
     final int townDomainRange = 20;
+    final int cityDomainRange = 60;
     final int townToTownMinimumDistance = 15;
+    final int cityToCityMinimumDistance = 35;
     
     final boolean LOGGING = false;
     
@@ -46,6 +49,8 @@ class Game{
         farms = new LinkedList();
         villages = new LinkedList();
         towns = new LinkedList();
+        cities = new LinkedList();
+
         tickCounter=0;
 
         farmsToAdd = new LinkedList();
@@ -144,8 +149,51 @@ class Game{
 
     public void checkForBuildingUpgrades(){
 
+        // TODO this shall be replaced
+        // when roads are implemented
+        // when an independent town connects through roads to 5 other independent towns, it turns into a City
+        // but this will do for the moment
+        List<Town> townsToTurnIntoCities = new LinkedList<>();
+
+        for(Town town: towns){
+            if (town.hasCity()){
+                continue;
+            }
+            List<Town> nearbyIndependentTowns = towns.stream()
+                    .filter(t -> t != town)
+                    .filter(t -> !t.hasCity())
+                    .filter(t -> calculateDistance(town.getPoint(), t.getPoint()) <= cityDomainRange)
+                    .toList();
+            if (nearbyIndependentTowns.size() >= townsForCityCreation){
+                townsToTurnIntoCities.add(town);
+            }
+        }
+
+        for (Town town: townsToTurnIntoCities){
+            boolean hasNearbyCity = false;
+            for (City city: cities){
+                if (calculateDistance(town.getPoint(), city.getPoint()) < cityToCityMinimumDistance){
+                    hasNearbyCity = true;
+                    continue;
+                }
+            }
+            // verify there are still enough nearby towns for city creation
+            List<Town> nearbyIndependentTowns = towns.stream()
+                    .filter(t -> t != town)
+                    .filter(t -> !t.hasCity())
+                    .filter(t -> calculateDistance(town.getPoint(), t.getPoint()) <= cityDomainRange)
+                    .toList();
+            if (nearbyIndependentTowns.size() < townsForCityCreation) {
+                continue;
+            }
+            if (!hasNearbyCity){
+                System.out.println("City was attempted to be created, point: " + town.getPoint().getPositionString());
+                createCity(town);
+            }
+        }
+
         List<Village> villagesToTurnToTowns = new LinkedList<>();
-        //check for possible village->town formation
+        //check for possible village -> town formation
         for(Village village: villages){
             if (village.hasTown()){
                 continue;
@@ -160,15 +208,11 @@ class Game{
             }
         }
 
-        // TODO check for possible town -> city formation
-
-        // convert village to town
         for (Village village: villagesToTurnToTowns){
             boolean hasNearbyTown = false;
             for (Town town: towns){
                 if (calculateDistance(village.getPoint(), town.getPoint()) < townToTownMinimumDistance){
                     hasNearbyTown = true;
-                    break;
                 }
             }
             if (!hasNearbyTown){
@@ -177,7 +221,18 @@ class Game{
         }
     }
 
-    public void tickBuildingControl(){
+    public void tickOwningBuildingsGainControlOverIndepedants(){
+
+        for (City city: cities){
+            List<Town> nearbyIndependentTowns = towns.stream()
+                    .filter(t -> !t.hasCity())
+                    .filter(t -> calculateDistance(city.getPoint(), t.getPoint()) <= cityDomainRange)
+                    .toList();
+            for (Town town: nearbyIndependentTowns){
+                town.setCity(city);
+                city.addTown(town);
+            }
+        }
 
         // update nearby villages to come into towns domain
         for (Town town: towns){
@@ -191,6 +246,27 @@ class Game{
                 town.addVillage(village);
             }
         }
+    }
+
+    public void tickUpdateBuildingOwnershipByDistance(){
+        //update towns to come into the correct city's control
+        for (Town town: towns){
+            if (town.hasCity()){
+                double currentDistanceToCity = calculateDistance(town.getPoint(), town.getCity().getPoint());
+                for (City city: cities){
+                    if (city == town.getCity()){
+                        continue;
+                    }
+                    if (calculateDistance(town.getPoint(), city.getPoint()) < currentDistanceToCity){
+                        town.getCity().releaseTown(town);
+                        town.setCity(city);
+                        city.addTown(town);
+                        break;
+                    }
+                }
+            }
+        }
+
     }
 
     public void handleOwnedFarmsBuildingsLoop(List<? extends FarmOwningBuilding> buildingList){
@@ -375,6 +451,48 @@ class Game{
                 town.addEmptyPoint(point);
             }
             point.setOwnerBuilding(town);
+        }
+    }
+
+    public void createCity(Town town){
+        Point midPoint = town.getPoint();
+        List<Point> cityPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY());
+
+        towns.remove(town);
+        City city = new City(midPoint);
+        gm.getMap().replaceBuilding(midPoint, city);
+        cities.add(city);
+        city.setControlledLand(town.getControlledLand());
+
+        for(TownArea townArea: town.getTownAreaPoints()){
+            Point point = townArea.getPoint();
+            gm.getMap().removeBuildingFromPoint(point);
+            point.createNewLandForPoint(LandType.GRASSLAND);
+        }
+
+        for (Point point: town.getControlledLand()){
+            if (cityPoints.contains(point)){
+                if (point.getBuilding() instanceof Farm farm){
+                    farm.setFarmOwningBuilding(null);
+                    farms.remove(farm);
+                }
+                else if (point.getBuilding() != null && point.getBuilding() != town){
+                    throw new RuntimeException("cityArea had building that wasnt farm, fix this code");
+                }
+
+                CityArea cityArea = new CityArea(point, city);
+                gm.getMap().setBuildingOnPoint(point, cityArea);
+                city.addCityArea(cityArea);
+                point.createNewLandForPoint(LandType.CITY);
+            }
+            if(point.getBuilding() instanceof Farm farm){
+                farm.setFarmOwningBuilding(city);
+                city.addFarm(farm);
+            }
+            else if (point.isEmpty()){
+                city.addEmptyPoint(point);
+            }
+            point.setOwnerBuilding(city);
         }
     }
 

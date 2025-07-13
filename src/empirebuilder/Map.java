@@ -72,6 +72,7 @@ public class Map {
     }
     
     public Point getRandomEmptyPoint() {
+        // TODO don't pick an entirely random point, only pick among points not owned by buildings
         if (emptyPointList.isEmpty()) return null;
 
         int index = new Random().nextInt(emptyPointList.size());
@@ -165,8 +166,23 @@ public class Map {
         }
 
         return result;
-    }    
-    
+    }
+
+    public List<Point> getCityShapePointList(int centerX, int centerY) {
+        List<Point> result = new ArrayList<>();
+
+        for (int[] offset : circleSearch.getCityShapePointList()) {
+            int newX = centerX + offset[0];
+            int newY = centerY + offset[1];
+
+            if (isValid(newX, newY)) {
+                result.add(grid[newX][newY]);
+            }
+        }
+
+        return result;
+    }
+
     public LinkedList<Point> getAllEmptyPointsInCircleAroundTarget(Point originalPoint, int radius){
         return getAllPointsInCircleAroundTarget(originalPoint, radius).stream()
             .filter(Point::isEmpty)

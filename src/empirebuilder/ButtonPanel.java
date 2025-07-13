@@ -9,6 +9,8 @@ public class ButtonPanel extends JPanel {
     
     GameManager gameManager;
     private TextField tickRateLabel;
+    private TextField tickCounterLabel;
+    private Timer tickCounterTimer;
     final int WIDTH = 200;
     final int HEIGHT = 800;
     final int BUTTONHEIGHT = 30;
@@ -68,8 +70,14 @@ public class ButtonPanel extends JPanel {
         JLabel tickRateTitle = new JLabel("Tick rate:", SwingConstants.CENTER);
         tickRateLabel = new TextField(String.format("%.3f ", gameManager.getEngine().getTickRate(), SwingConstants.CENTER));
         tickRateLabel.setFocusable(false);
-        
-        
+
+        JLabel tickCounterTitle = new JLabel("Tick counter:", SwingConstants.CENTER);
+        tickCounterLabel = new TextField(String.valueOf(gameManager.getEngine().getTickCounter()));
+        tickCounterLabel.setFocusable(false);
+
+        tickCounterTimer = new Timer(250, e -> updateTickCounterDisplay());
+        tickCounterTimer.start();
+
         JPanel speedControlPanel = new JPanel(new FlowLayout());
         JButton increaseSpeedButton = new JButton("+");
         JButton decreaseSpeedButton = new JButton("−");
@@ -79,6 +87,8 @@ public class ButtonPanel extends JPanel {
 
         tickRatePanel.add(tickRateTitle);
         tickRatePanel.add(tickRateLabel);
+        tickRatePanel.add(tickCounterTitle);
+        tickRatePanel.add(tickCounterLabel);
         tickRatePanel.add(speedControlPanel);
 
         add(buttonArea, BorderLayout.CENTER);
@@ -113,5 +123,9 @@ public class ButtonPanel extends JPanel {
     
     private void updateTickRateDisplay() {
         tickRateLabel.setText(String.format("%.3f s", gameManager.getEngine().getTickRate()));
+    }
+
+    public void updateTickCounterDisplay() {
+        tickCounterLabel.setText(String.valueOf(gameManager.getEngine().getTickCounter()));
     }
 }
