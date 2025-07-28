@@ -8,6 +8,7 @@ public class VillageLand extends Land {
     
     LandType landType = LandType.VILLAGE;
     boolean isWalkable = false;
+    int walkingCost = 0;
 
     public VillageLand() {
         super(LandType.VILLAGE);
@@ -25,7 +26,7 @@ public class VillageLand extends Land {
 
     @Override
     public double getTerrainWalkingCost() {
-        return defaultWalkingCost;
+        return walkingCost;
     }
 
     @Override

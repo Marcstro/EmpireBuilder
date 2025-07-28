@@ -1,9 +1,6 @@
 package empirebuilder;
 
-import LandTypes.Dirt;
-import LandTypes.LandType;
-import LandTypes.Grassland;
-import LandTypes.Land;
+import LandTypes.*;
 import buildings.Building;
 import buildings.Farm;
 import java.util.List;
@@ -15,6 +12,11 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import buildingsTools.PerlinNoise;
+import buildingsTools.SimplePerlinNoise;
+import buildingsTools.TerrainGenerator;
+import buildingsTools.TerrainGeneratorType;
 import math.CircleSearch;
 
 public class Map {
@@ -29,6 +31,9 @@ public class Map {
     Random random;
     CircleSearch circleSearch;
     final int FARM_EXTEND_DISTANCE = 10;
+    private TerrainGenerator terrainGenerator;
+    private TerrainGeneratorType generatorType = TerrainGeneratorType.PERLIN_BASED_V1_LARGE_TERRAIN;
+    private final boolean createTerrain = true;
 
     public Map(GameManager gameManager, int pixelWidth, int pixelHeight) {
         
@@ -42,16 +47,40 @@ public class Map {
 
         emptyPoints = new HashSet();
         emptyPointList = new LinkedList();
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                grid[x][y] = new Point(x, y, LandType.DIRT);
-                emptyPoints.add(grid[x][y]);
-                emptyPointList.add(grid[x][y]);
+
+        if(createTerrain){
+            //adjustMapMarcusVersion1();
+            terrainGenerator = new TerrainGenerator(this, generatorType);
+            terrainGenerator.generateTerrain();
+        }
+        else {
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    grid[x][y] = new Point(x, y, LandType.DIRT);
+                    emptyPoints.add(grid[x][y]);
+                    emptyPointList.add(grid[x][y]);
+                }
             }
         }
+
         Collections.shuffle(emptyPointList);
     }
-    
+
+    public List<Point> getAllValidNeighbors(Point point) {
+        List<Point> neighbors = new ArrayList<>();
+        int[] dx = {-1, 0, 1, -1, 1, -1, 0, 1};
+        int[] dy = {-1, -1, -1, 0, 0, 1, 1, 1};
+
+        for (int i = 0; i < 8; i++) {
+            int nx = point.getX() + dx[i];
+            int ny = point.getY() + dy[i];
+            if (isValid(nx, ny)) {
+                neighbors.add(grid[nx][ny]);
+            }
+        }
+        return neighbors;
+    }
+
     public void setPoint(Point point){
         grid[point.getX()][point.getY()]=point;
     }
@@ -160,7 +189,7 @@ public class Map {
             int newX = centerX + offset[0];
             int newY = centerY + offset[1];
 
-            if (isValid(newX, newY)) {
+            if (isValid(newX, newY) && grid[newX][newY].isTerrainWalkable()) {
                 result.add(grid[newX][newY]);
             }
         }
@@ -175,7 +204,7 @@ public class Map {
             int newX = centerX + offset[0];
             int newY = centerY + offset[1];
 
-            if (isValid(newX, newY)) {
+            if (isValid(newX, newY) && grid[newX][newY].isTerrainWalkable()) {
                 result.add(grid[newX][newY]);
             }
         }
@@ -195,10 +224,11 @@ public class Map {
         .map(pos -> grid[pos[0]][pos[1]])
         .collect(Collectors.toList());           
     }
-    
-    public Point getRandomEmptyPointAdjecantToTarget(Point originalPoint){
+
+    public Point getRandomEmptyWalkablePointAdjecantToTarget(Point originalPoint){
         LinkedList<int[]> emptyPoints = circleSearch.getValidAdjacentPoints(originalPoint.getX(), originalPoint.getY()).stream()
             .filter(p -> grid[p[0]][p[1]].isEmpty())
+            .filter(p -> grid[p[0]][p[1]].isTerrainWalkable())
             .collect(Collectors.toCollection(LinkedList::new));
 
         if (emptyPoints.isEmpty()) return null;
@@ -239,20 +269,19 @@ public class Map {
     }
     
     public Point getClosestEmptyPoint(int x, int y){
-        
+
+        // TODO not sure if needed since this function isnt used
         // TODO here, create a list, or array, of the squares around the position. Then shuffle the order. then check one after the other
         
         int[] dx = {-1, -1, -1,  0,  0,  1,  1,  1};
         int[] dy = {-1,  0,  1, -1,  1, -1,  0,  1};
 
         for (int i = 0; i < 8; i++) {
-            int nx = x + dx[i]; // New x position
-            int ny = y + dy[i]; // New y position
+            int nx = x + dx[i];
+            int ny = y + dy[i];
 
-            // Check if the position is within bounds
             if (isValid(nx, ny)) {
                 Point neighbor = grid[nx][ny];
-                // Do something with the neighbor (e.g., check if it's empty)
                 if (neighbor.isEmpty()) {
                     return neighbor;
                 }
@@ -274,30 +303,29 @@ public class Map {
                     int newX = px + dx;
                     int newY = py + dy;
 
-                    // Only check if within the given radius (true circle check)
                     if (isValid(newX, newY) && !grid[newX][newY].equals(grid[px][py])) {
                         double dist = Math.sqrt(dx * dx + dy * dy);
                         if (dist <= distance && grid[newX][newY].isEmpty()) {
-                            return grid[newX][newY]; // Found closest empty point
+                            return grid[newX][newY];
                         }
                         queue.add(new int[]{newX, newY});
                     }
                 }
             }
         }
-        return null; // No empty space found within distance
+        return null;
     }
     
     public boolean isValidAndEmpty(int x, int y){
         return grid[x][y].isEmpty() && (x >= 0 && x < width && y >= 0 && y < height);
     }
     
-    private boolean isValid(int x, int y) {
+    public boolean isValid(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
     }
 
     private boolean isValidAndWalkable(int x, int y){
-        return isValid(x, y) && grid[x][y].isWalkable();
+        return isValid(x, y) && grid[x][y].isTerrainWalkable();
     }
 
     public List<Point> getAllWalkableValidNeighbours(Point point){
@@ -317,5 +345,13 @@ public class Map {
             }
         }
         return validNeighbours;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public int getHeight() {
+        return height;
     }
 }

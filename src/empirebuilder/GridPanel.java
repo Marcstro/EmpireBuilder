@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 
 public class GridPanel extends JPanel {
     
@@ -50,7 +51,7 @@ public class GridPanel extends JPanel {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setStroke(new BasicStroke(2.0F));
             g.setColor(new Color( 237, 180, 102 ));
-            for(Village village: gameManager.getGame().villages){
+            for(Village village: new ArrayList<>(gameManager.getGame().villages)){
                 if (village.hasTown()){
                     g2d.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
                             village.getTown().getPoint().getX()* pixelSize, village.getTown().getPoint().getY()* pixelSize);
@@ -58,16 +59,16 @@ public class GridPanel extends JPanel {
             }
 
             g.setColor(Color.black);
-            for (Town town: gameManager.getGame().towns){
+            for (Town town: new ArrayList<>(gameManager.getGame().towns)){
                 if (town.hasCity()){
                     g2d.drawLine(town.getPoint().getX()* pixelSize, town.getPoint().getY()* pixelSize,
                             town.getCity().getPoint().getX()* pixelSize, town.getCity().getPoint().getY()* pixelSize);
                 }
             }
-            if (selectedPoint != null){
-                g.setColor(Color.RED);
-                g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);
-            }
+        }
+        if (selectedPoint != null){
+            g.setColor(Color.RED);
+            g.drawRect(selectedPoint.getX() * pixelSize, selectedPoint.getY() * pixelSize, pixelSize-1, pixelSize-1);
         }
     }
     

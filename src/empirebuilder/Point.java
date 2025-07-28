@@ -4,6 +4,7 @@ import buildings.Building;
 import LandTypes.Land;
 import LandTypes.LandFactory;
 import LandTypes.LandType;
+import buildings.Farm;
 import buildings.FarmOwningBuilding;
 
 import java.awt.*;
@@ -13,6 +14,7 @@ public class Point {
     private Land land;
     private Building building;
     private FarmOwningBuilding ownedByBuilding;
+    private int elevation;  // 0–255, more is higher
 
     public Point(int x, int y, LandType landType) {
         this.x = x;
@@ -25,8 +27,12 @@ public class Point {
         return land.getTerrainWalkingCost();
     }
 
-    public boolean isWalkable(){
+    public boolean isTerrainWalkable(){
         return land.isWalkable();
+    }
+
+    public boolean isWalkable(){
+        return (isTerrainWalkable() && (building != null && building instanceof Farm));
     }
     
     public boolean isOwnedByBuilding(){
@@ -50,7 +56,7 @@ public class Point {
     }
     
     public boolean isEmpty(){
-        return building == null;
+        return building == null && isTerrainWalkable();
     }
 
     public boolean isEmptyAndUnowned(){
@@ -88,12 +94,21 @@ public class Point {
         return land;
     }
 
+    public int getElevation() {
+        return elevation;
+    }
+
+    public void setElevation(int elevation) {
+        this.elevation = elevation;
+    }
+
     @Override
     public String toString() {
         return "Point{" + "x=" + x 
                 + ", y=" + y 
                 + ", land=" + land 
-                + ", building=" + ((getBuilding() != null) ? getBuilding().getInfo() : "") + '}';
+                + ", building=" + ((getBuilding() != null) ? getBuilding().getInfo() : "")
+                + ", elevation: " + elevation  + '}';
     }
     
     public String getInfo(){

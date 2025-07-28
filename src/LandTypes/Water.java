@@ -8,6 +8,7 @@ public class Water extends Land {
     
     LandType landType = LandType.WATER;
     boolean isWalkable = false;
+    int walkingCost = 0;
 
     public Water() {
         super(LandType.WATER);
@@ -25,7 +26,7 @@ public class Water extends Land {
 
     @Override
     public double getTerrainWalkingCost() {
-        return defaultWalkingCost;
+        return walkingCost;
     }
 
     @Override

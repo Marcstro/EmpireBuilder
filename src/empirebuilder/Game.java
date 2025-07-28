@@ -89,7 +89,7 @@ class Game{
                         }
                     }
                     else {
-                        newFarmPoint = gm.getMap().getRandomEmptyPointAdjecantToTarget(farm.getPoint());
+                        newFarmPoint = gm.getMap().getRandomEmptyWalkablePointAdjecantToTarget(farm.getPoint());
                         if (newFarmPoint == null) {
                             continue;
                         }
@@ -114,8 +114,8 @@ class Game{
                         newFarm.setFarmOwningBuilding(newFarmPoint.getPointOwner());
                         newFarmPoint.getPointOwner().addFarm(newFarm);
                     }
-                    int independantFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
-                    if (independantFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
+                    int independentFarmsNearby = gm.getMap().getIndependentFarmsNearby(newFarmPoint, DISTANCE_BETWEEN_FARMS_FOR_VILLAGE_CREATION).size();
+                    if (independentFarmsNearby >= FARMS_TO_CREATE_VILLAGE) {
                         farmToConvertToVillage.add(newFarm);
                     }
                 }
@@ -124,12 +124,14 @@ class Game{
 
         handleOwnedFarmsBuildingsLoop(villages);
         handleOwnedFarmsBuildingsLoop(towns);
+        handleOwnedFarmsBuildingsLoop(cities);
         
         //TODO create destroy village
         //TODO create destroy building
         villages.removeAll(villagesToDestroy);
 
         farms.addAll(farmsToAdd);
+
         for (Farm toRemoveFarm : farmsToRemove) {
             if (toRemoveFarm.belongsToFarmOwningBuilding()) {
                 toRemoveFarm.getFarmOwningBuilding().addEmptyPoint(toRemoveFarm.getPoint());
@@ -297,12 +299,15 @@ class Game{
                     System.out.println("OBS OBS SHOULD NOT HAPPEN");
                     throw new RuntimeException("village failed to create farm");
                 }
-                newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
+
                 if (newFarmPoint.getBuilding() instanceof Town || newFarmPoint.getBuilding() instanceof TownArea) {
+                    // TODO maybe add city above? What does this part actually do?
                     continue;
                 }
+
                 Farm newFarm = new Farm(newFarmPoint);
                 checkIfNewFarmIsPartOfVillageCenter(newFarm);
+                newFarmPoint.createNewLandForPoint(LandType.GRASSLAND);
                 gm.getMap().setBuildingOnPoint(newFarmPoint, newFarm);
                 if (wasCreatedWithinDomain){
                     newFarm.setFarmOwningBuilding(building);
@@ -321,6 +326,7 @@ class Game{
         for (Point point: gm.getMap().getAllValidAdjecantPointsToTarget(farm.getPoint())){
             if (point.getBuilding() instanceof Village){
                 farm.setIsPartOfVillageCenter(true);
+                return;
             }
         }
     }
@@ -367,6 +373,7 @@ class Game{
             .getAllPointsInCircleAroundTarget(farmCenter, VILLAGE_DOMAIN_LIMIT)
             .stream()
             .filter(p -> !p.isOwnedByBuilding())
+            .filter(Point::isTerrainWalkable)
             .toList());
         
         Collections.shuffle(pointsBelongingToVillage);
@@ -467,7 +474,7 @@ class Game{
         for(TownArea townArea: town.getTownAreaPoints()){
             Point point = townArea.getPoint();
             gm.getMap().removeBuildingFromPoint(point);
-            point.createNewLandForPoint(LandType.GRASSLAND);
+            point.createNewLandForPoint(LandType.CITY);
         }
 
         for (Point point: town.getControlledLand()){

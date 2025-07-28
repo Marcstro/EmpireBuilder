@@ -8,6 +8,7 @@ public class Ruined extends Land {
     
     LandType landType = LandType.RUINED;
     boolean isWalkable = true;
+    int walkingCost = 3;
 
     public Ruined() {
         super(LandType.RUINED);
@@ -25,7 +26,7 @@ public class Ruined extends Land {
 
     @Override
     public double getTerrainWalkingCost() {
-        return defaultWalkingCost;
+        return walkingCost;
     }
 
     @Override

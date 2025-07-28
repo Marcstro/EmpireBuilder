@@ -11,7 +11,7 @@ public class City extends FarmOwningBuilding{
 
     Set<CityArea> cityAreaPoints;
     LinkedList<Town> towns;
-    LinkedList<Village> villages;
+    LinkedList<Village> villages; // TODO not properly setup. currently citys never hold villages
 
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
 

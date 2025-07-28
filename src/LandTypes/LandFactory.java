@@ -13,6 +13,8 @@ public class LandFactory {
             case VILLAGE -> new VillageLand();
             case TOWN -> new TownLand();
             case CITY -> new CityLand();
+            case MOUNTAIN -> new MountainLand();
+            case HILL -> new HillLand();
         };
     }
 }

@@ -60,7 +60,7 @@ public class Farm extends Building {
         if (getFood() >= FOOD_COST_TO_MULTIPLY && people <= (FARM_CAPACITY+getFertilityLevel())){
             increasePeople();
             setFood(0);
-            if (belongsToFarmOwningBuilding() && getFertilityLevel() == 2){
+            if (getFertilityLevel() == 2){
                 improveFertility();
             }
         }
