@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import buildingsTools.TerrainGeneratorType;
 
 public class ButtonPanel extends JPanel {
     
@@ -23,6 +24,18 @@ public class ButtonPanel extends JPanel {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
         setLayout(new BorderLayout());
 
+        //different components
+
+        JCheckBox generateTerrainCheck = new JCheckBox("Generate terrain",
+                gameManager.getWorldSettings().isGenerateTerrain());
+        JComboBox<TerrainGeneratorType> terrainTypeDropdown =
+                new JComboBox<>(TerrainGeneratorType.values());
+        terrainTypeDropdown.setSelectedItem(gameManager.getWorldSettings().getGeneratorType());
+        terrainTypeDropdown.setEnabled(generateTerrainCheck.isSelected());
+
+        JCheckBox displayOwnershipLines = new JCheckBox("Display lines",
+                gameManager.getGridPanel().isShowLines());
+
         JButton button1 = new JButton("Start");
         JButton button2 = new JButton("Stop");
         JButton button3 = new JButton("Create random farm");
@@ -38,12 +51,22 @@ public class ButtonPanel extends JPanel {
         JButton button13 = new JButton("Create path of water");
         JButton button14 = new JButton("Recreate the map");
         
-        
+        //set sizes and dimensions
         ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
                 button7, button8, button9, button10, button11, button12, button13, button14));
         buttons.forEach(button -> {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
+            button.setAlignmentX(Component.LEFT_ALIGNMENT);
         });
+
+        generateTerrainCheck.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
+        displayOwnershipLines.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
+
+        terrainTypeDropdown.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
+        terrainTypeDropdown.setMaximumSize(new Dimension(180, BUTTONHEIGHT));
+        terrainTypeDropdown.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        //add things
         
         JPanel buttonArea = new JPanel();
         buttonArea.setLayout(new BoxLayout(buttonArea, BoxLayout.Y_AXIS));
@@ -65,6 +88,9 @@ public class ButtonPanel extends JPanel {
         buttonArea.add(button12);
         buttonArea.add(button13);
         buttonArea.add(button14);
+        buttonArea.add(displayOwnershipLines);
+        buttonArea.add(generateTerrainCheck);
+        buttonArea.add(terrainTypeDropdown);
         
         JPanel tickRatePanel = new JPanel();
         tickRatePanel.setLayout(new GridLayout(3,1));
@@ -95,7 +121,9 @@ public class ButtonPanel extends JPanel {
 
         add(buttonArea, BorderLayout.CENTER);
         add(tickRatePanel, BorderLayout.SOUTH);
-        
+
+        // listeners
+
         button1.addActionListener(e -> gameManager.getEngine().start());
         button2.addActionListener(e -> gameManager.getEngine().stop());
         button3.addActionListener(e -> gameManager.getGame().createFarmAtRandomPoint());
@@ -111,7 +139,23 @@ public class ButtonPanel extends JPanel {
         button11.addActionListener(e -> gameManager.getGame().printMapInfo());
         button12.addActionListener(e -> gameManager.getGame().checkVillageDomain());
         button13.addActionListener(e -> gameManager.getGame().createWaterPath());
-        button14.addActionListener(e -> gameManager.recreateMap());
+        button14.addActionListener(e -> gameManager.recreateWorld());
+
+        displayOwnershipLines.addActionListener(e -> {
+            gameManager.getGridPanel().changeShowLines();
+            gameManager.getGridPanel().updateUI();
+        });
+
+        generateTerrainCheck.addActionListener(e -> {
+            boolean enabled = generateTerrainCheck.isSelected();
+            gameManager.getWorldSettings().setGenerateTerrain(enabled);
+            terrainTypeDropdown.setEnabled(enabled);
+        });
+
+        terrainTypeDropdown.addActionListener(e -> {
+            TerrainGeneratorType selected = (TerrainGeneratorType) terrainTypeDropdown.getSelectedItem();
+            gameManager.getWorldSettings().setGeneratorType(selected);
+        });
 
         increaseSpeedButton.addActionListener(e -> {
             gameManager.getEngine().increaseSpeed();

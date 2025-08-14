@@ -1,7 +1,7 @@
 package empirebuilder;
 
 public class Engine {
-    private volatile boolean running = false; // Ensures thread safety
+    private volatile boolean running = false;
     private Thread gameThread;
     GameManager gameManager;
     private int tickCounter;

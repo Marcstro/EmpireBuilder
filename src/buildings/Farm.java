@@ -143,11 +143,6 @@ public class Farm extends Building {
         return false;
     }
     
-    // TODO maybe a farm should be limited to grasslands and not have any type of land
-    public void increaseFood(){
-        food+=getFertilityLevel();
-    }
-    
     public void increasePeople(){
         people++;
         if (getFertilityLevel() ==1 && people >= 3){

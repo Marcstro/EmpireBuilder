@@ -32,8 +32,6 @@ public class Map {
     CircleSearch circleSearch;
     final int FARM_EXTEND_DISTANCE = 10;
     private TerrainGenerator terrainGenerator;
-    private TerrainGeneratorType generatorType = TerrainGeneratorType.PERLIN_BASED_V1_LARGE_TERRAIN;
-    private final boolean createTerrain = true;
 
     public Map(GameManager gameManager, int pixelWidth, int pixelHeight) {
         
@@ -48,9 +46,8 @@ public class Map {
         emptyPoints = new HashSet();
         emptyPointList = new LinkedList();
 
-        if(createTerrain){
-            //adjustMapMarcusVersion1();
-            terrainGenerator = new TerrainGenerator(this, generatorType);
+        if(gameManager.getWorldSettings().isGenerateTerrain()){
+            terrainGenerator = new TerrainGenerator(this, gameManager.getWorldSettings().getGeneratorType());
             terrainGenerator.generateTerrain();
         }
         else {

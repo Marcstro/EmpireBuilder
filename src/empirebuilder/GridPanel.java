@@ -17,7 +17,7 @@ public class GridPanel extends JPanel {
     int height;
     int width;
     private Point selectedPoint = null;
-    private boolean showLines = true;
+    private boolean showLines = false;
 
     GridPanel(GameManager gameManager, Map map, int width, int height, int pixelSize, int buttonPanelWidth) {
         this.map = map;
@@ -91,6 +91,20 @@ public class GridPanel extends JPanel {
             }
         }
         updateUI();
+    }
+
+    public void updateMap(Map map){
+        this.map = map;
+        selectedPoint = null;
+        showLines = false;
+    }
+
+    public void changeShowLines() {
+        showLines = !showLines;
+    }
+
+    public boolean isShowLines(){
+        return showLines;
     }
 
     public empirebuilder.Point getSelectedPoint() {

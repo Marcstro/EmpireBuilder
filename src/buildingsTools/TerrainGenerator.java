@@ -23,6 +23,9 @@ public class TerrainGenerator {
         if (terrainGeneratorType.equals(TerrainGeneratorType.PERLIN_BASED_V1_LARGE_TERRAIN)) {
             generate_PERLIN_BASED_V1(0.01);
         }
+        else if (terrainGeneratorType.equals(TerrainGeneratorType.PERLIN_BASED_V1_MEDIUM_TERRAIN)) {
+            generate_PERLIN_BASED_V1(0.02);
+        }
         else if (terrainGeneratorType.equals(TerrainGeneratorType.PERLIN_BASED_V1_SMALL_TERRAIN)){
             generate_PERLIN_BASED_V1(0.05);
         }

@@ -12,8 +12,10 @@ class GameManager{
     MainWindow mainWindow;
     Map map;
     Game game;
+    WorldSettings worldSettings;
     AStarPathfinder pathfinder;
-    
+
+    // TODO move all of these into world settings.
     static final int WIDTH = 1400;
     static final int HEIGHT = 800;
     static final int BUTTON_PANEL_WIDTH = 200;
@@ -25,6 +27,7 @@ class GameManager{
     public GameManager(){
         
         engine = new Engine(this);
+        worldSettings = new WorldSettings();
         map = new Map(this, POINTS_WIDTH, POINTS_HEIGHT);
         game = new Game(this);
         gridPanel = new GridPanel(this, map, POINTS_WIDTH, POINTS_HEIGHT, TILE_SIZE, BUTTON_PANEL_WIDTH);
@@ -56,21 +59,22 @@ class GameManager{
         return map;
     }
 
+    public WorldSettings getWorldSettings() {
+        return worldSettings;
+    }
+
     public Game getGame() {
         return game;
     }
 
-    public void recreateMap(){
-        engine = new Engine(this);
+    public void recreateWorld(){
+        engine.stop();
         map = new Map(this, POINTS_WIDTH, POINTS_HEIGHT);
+        gridPanel.updateMap(map);
         game = new Game(this);
-        gridPanel = new GridPanel(this, map, POINTS_WIDTH, POINTS_HEIGHT, TILE_SIZE, BUTTON_PANEL_WIDTH);
-        JScrollPane scrollPane = new JScrollPane(gridPanel);
-        buttonPanel = new ButtonPanel(this);
-        mainWindow.recreateWindow(scrollPane, buttonPanel);
         pathfinder = new AStarPathfinder(map);
 
-        gridPanel.updateUI();
+        gridPanel.repaint();
     }
     
 }
