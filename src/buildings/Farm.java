@@ -33,6 +33,10 @@ public class Farm extends Building {
         this(1, point);
     }
 
+    public void payTaxes(){
+
+    }
+
     public boolean isPartOfVillageCenter(){
         return partOfVillageCenter;
     }
@@ -84,7 +88,7 @@ public class Farm extends Building {
             improveFertility();
         }
         else if (getFertilityLevel() == 4 && belongsToFarmOwningBuilding() &&
-                (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasTown()))){
+                (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasOwner()))){
             improveFertility();
         }
     }
@@ -97,7 +101,7 @@ public class Farm extends Building {
         else if (getFertilityLevel() == 2 && belongsToFarmOwningBuilding()) {
             improveFertility();
         }
-        else if (getFertilityLevel() == 3 && (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasTown()))){
+        else if (getFertilityLevel() == 3 && (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasOwner()))){
             improveFertility();
         }
     }

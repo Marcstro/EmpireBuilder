@@ -10,9 +10,8 @@ import java.util.LinkedList;
 import java.util.Set;
 
 
-public class Town extends FarmOwningBuilding{
+public class Town extends VillageOwningBuilding {
 
-    LinkedList<Village> villages;
     Set<TownArea> townAreaPoints;
     City city = null;
     
@@ -20,7 +19,6 @@ public class Town extends FarmOwningBuilding{
     
     public Town(Point point) {
         super(point, INITIAL_FOOD_NEEDED_TO_GROW, LandType.getBaseColor(LandType.TOWN));
-        villages = new LinkedList<>();
         farms = new LinkedList();
         food = 0;
         townAreaPoints = new HashSet();
@@ -54,20 +52,9 @@ public class Town extends FarmOwningBuilding{
     public String getInfo() {
         return "Town: " + getId() +
                 ", point="+getPoint().getPositionString() +
+                ", food = " + getFood() +
                 ", villages=" + getVillages().size()
                 + (this.hasCity() ? "City: " + getCity().getPoint().getPositionString() : "Has city: false")
                 + ".";
-    }
-    
-    public void addVillage(Village village){
-        villages.add(village);
-    }
-
-    public LinkedList<Village> getVillages() {
-        return villages;
-    }
-
-    public void setVillages(LinkedList<Village> villages) {
-        this.villages = villages;
     }
 }

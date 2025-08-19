@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 class Game{
 
@@ -36,7 +37,7 @@ class Game{
     final int townFormDistance = 15;
     final int farmsForTownCreation = 5;
     final int townsForCityCreation = 4;
-    final int townDomainRange = 20;
+    final int villageOwningRange = 20;
     final int cityDomainRange = 60;
     final int townToTownMinimumDistance = 15;
     final int cityToCityMinimumDistance = 35;
@@ -197,13 +198,13 @@ class Game{
         List<Village> villagesToTurnToTowns = new LinkedList<>();
         //check for possible village -> town formation
         for(Village village: villages){
-            if (village.hasTown()){
+            if (village.hasOwner()){
                 continue;
             }
             List<Village> nearbyIndependentVillages = villages.stream()
                     .filter(v -> v != village)
-                    .filter(v -> !v.hasTown())
-                    .filter(v -> calculateDistance(village.getPoint(), v.getPoint()) <= townDomainRange)
+                    .filter(v -> !v.hasOwner())
+                    .filter(v -> calculateDistance(village.getPoint(), v.getPoint()) <= villageOwningRange)
                     .toList();
             if (nearbyIndependentVillages.size() >= farmsForTownCreation){
                 villagesToTurnToTowns.add(village);
@@ -236,16 +237,22 @@ class Game{
             }
         }
 
-        // update nearby villages to come into towns domain
-        for (Town town: towns){
+        // update nearby villages to come into village owning buildings domain
+
+        List<VillageOwningBuilding> villageOwners = Stream.concat(
+                towns.stream(),
+                cities.stream()
+        ).toList();
+
+        for (VillageOwningBuilding villageOwningBuilding : villageOwners){
             List<Village> nearbyIndependentVillages = villages.stream()
-                    .filter(v -> !v.hasTown())
-                    .filter(v -> calculateDistance(town.getPoint(), v.getPoint()) <= townDomainRange)
+                    .filter(v -> !v.hasOwner())
+                    .filter(v -> calculateDistance(villageOwningBuilding.getPoint(), v.getPoint()) <= villageOwningRange)
                     .toList();
             for (Village village: nearbyIndependentVillages){
-                village.setTown(town);
+                village.setOwner(villageOwningBuilding);
                 village.markCenter();
-                town.addVillage(village);
+                villageOwningBuilding.addVillage(village);
             }
         }
     }
@@ -401,7 +408,7 @@ class Game{
         // check if there's sufficient villages to create town
         List<Village> nearbyIndependentVillages = villages.stream()
                 .filter(v -> v != newVillage)
-                .filter(v -> !v.hasTown())
+                .filter(v -> !v.hasOwner())
                 .filter(v -> calculateDistance(newVillage.getPoint(), v.getPoint()) <= TownCheckDistance)
                 .collect(Collectors.toList());
 
@@ -538,7 +545,7 @@ class Game{
             point.setOwnerBuilding(town);
         }
         for(Village village: surroundingVillages){
-            village.setTown(town);
+            village.setOwner(town);
             village.markCenter();
         }
         town.setVillages((LinkedList<Village>) surroundingVillages);

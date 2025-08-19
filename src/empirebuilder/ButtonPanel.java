@@ -52,6 +52,7 @@ public class ButtonPanel extends JPanel {
         JButton button14 = new JButton("Recreate the map");
         
         //set sizes and dimensions
+
         ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
                 button7, button8, button9, button10, button11, button12, button13, button14));
         buttons.forEach(button -> {
@@ -91,7 +92,9 @@ public class ButtonPanel extends JPanel {
         buttonArea.add(displayOwnershipLines);
         buttonArea.add(generateTerrainCheck);
         buttonArea.add(terrainTypeDropdown);
-        
+
+        // TODO move these to appropriete parts
+
         JPanel tickRatePanel = new JPanel();
         tickRatePanel.setLayout(new GridLayout(3,1));
         

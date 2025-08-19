@@ -7,18 +7,16 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
-public class City extends FarmOwningBuilding{
+public class City extends VillageOwningBuilding{
 
     Set<CityArea> cityAreaPoints;
     LinkedList<Town> towns;
-    LinkedList<Village> villages; // TODO not properly setup. currently citys never hold villages
 
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
 
     public City(Point point) {
         super(point, INITIAL_FOOD_NEEDED_TO_GROW, LandType.getBaseColor(LandType.CITY));
         towns = new LinkedList<>();
-        villages = new LinkedList<>();
         cityAreaPoints = new HashSet();
     }
 
@@ -47,18 +45,6 @@ public class City extends FarmOwningBuilding{
 
     public void setTowns(LinkedList<Town> towns) {
         this.towns = towns;
-    }
-
-    public void addVillage(Village village){
-        villages.add(village);
-    }
-
-    public LinkedList<Village> getVillages() {
-        return villages;
-    }
-
-    public void setVillages(LinkedList<Village> villages) {
-        this.villages = villages;
     }
 
     public void releaseVillage(Village village){

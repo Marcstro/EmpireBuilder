@@ -52,9 +52,9 @@ public class GridPanel extends JPanel {
             g2d.setStroke(new BasicStroke(2.0F));
             g.setColor(new Color( 237, 180, 102 ));
             for(Village village: new ArrayList<>(gameManager.getGame().villages)){
-                if (village.hasTown()){
+                if (village.hasOwner()){
                     g2d.drawLine(village.getPoint().getX()* pixelSize, village.getPoint().getY()* pixelSize,
-                            village.getTown().getPoint().getX()* pixelSize, village.getTown().getPoint().getY()* pixelSize);
+                            village.getOwner().getPoint().getX()* pixelSize, village.getOwner().getPoint().getY()* pixelSize);
                 }
             }
 

@@ -8,7 +8,7 @@ import java.awt.*;
 public class Village extends FarmOwningBuilding{
     
     Point villageCenter;
-    Town town;
+    VillageOwningBuilding owner;
     
     final static int INITIAL_FOOD_NEEDED_TO_CREATE_FARM = 30;
 
@@ -32,17 +32,17 @@ public class Village extends FarmOwningBuilding{
         villageCenter.createNewLandForPoint(LandType.TOWN);
         setColor(LandType.getBaseColor(LandType.TOWN));
     }
-    
-    public boolean hasTown(){
-        return town != null;
+
+    public boolean hasOwner(){
+        return owner != null;
     }
 
-    public Town getTown() {
-        return town;
+    public VillageOwningBuilding getOwner() {
+        return owner;
     }
 
-    public void setTown(Town town) {
-        this.town = town;
+    public void setOwner(VillageOwningBuilding owner) {
+        this.owner = owner;
     }
 
     public Point getVillageCenter() {
@@ -62,7 +62,7 @@ public class Village extends FarmOwningBuilding{
                 ", emptyLand remaining: " + emptyLand.size() +
                 //", villageCenter=" + villageCenter.getX() + "," + villageCenter.getY() +
 
-                ", town=" + (hasTown() ? (town.getPoint().getPositionString()) : "NONE") +
+                ", owner=" + (hasOwner() ? (owner.getPoint().getPositionString() + ", class: " + owner.getClass()) : "NONE") +
                 ", food=" + food +
                 ", foodNeededToCreateNewFarm=" + foodNeededToCreateNewFarm + "}";
 
