@@ -87,6 +87,7 @@ public class Farm extends Building {
         else if (getFertilityLevel() == 3 && belongsToFarmOwningBuilding()){
             improveFertility();
         }
+        // TODO fix this weird logic
         else if (getFertilityLevel() == 4 && belongsToFarmOwningBuilding() &&
                 (getFarmOwningBuilding() instanceof Town || (getFarmOwningBuilding() instanceof Village village && village.hasOwner()))){
             improveFertility();

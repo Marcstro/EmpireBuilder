@@ -26,10 +26,12 @@ public class City extends VillageOwningBuilding{
 
     @Override
     public String getInfo() {
-        return "City: " + getId() +
+        return "{City: " + getId() +
                 ", point="+getPoint().getPositionString() +
-                ", towns=" + getTowns().size()
-                + ".";    }
+                ", food="+getFood() +
+                ", towns=" + getTowns().size() +
+                ", villages=" + getVillages().size()
+                + ".} ";    }
 
     public void addTown(Town town){
         towns.add(town);

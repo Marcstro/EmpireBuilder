@@ -282,25 +282,20 @@ class Game{
         for (FarmOwningBuilding building: buildingList){
 
             //TODO implement slow village decline
-            if (building.hasFoodToCreateNewFarm()){
+            // TODO update how we handle food in general
+            if ((building.hasFoodToCreateNewFarm() && !building.getEmptyLand().isEmpty())
+            || building.hasFoodToCreateNewDistantFarm()){
                 Point newFarmPoint;
-                building.deductNewFarmCost();
                 boolean wasCreatedWithinDomain = true;
                 if (!building.getEmptyLand().isEmpty()){
                     newFarmPoint = building.getRandomEmptySpotWithinDomain();
                 }
                 else {
-                    boolean createdAtRandomPlace = random.nextInt(10) == 0;
-                    if (createdAtRandomPlace){
                         wasCreatedWithinDomain = false;
                         newFarmPoint = gm.getMap().getRandomEmptyPoint();
                         if (newFarmPoint == null || newFarmPoint.isOwnedByBuilding()){
                             continue;
                         }
-                    }
-                    else {
-                        continue;
-                    }
                 }
                 if (newFarmPoint == null){
                     System.out.println("OBS OBS SHOULD NOT HAPPEN");
@@ -325,6 +320,12 @@ class Game{
                     newFarmPoint.getPointOwner().addFarm(newFarm);
                 }
                 farmsToAdd.add(newFarm);
+                if(wasCreatedWithinDomain){
+                    building.deductNewFarmCost();
+                } else {
+                    building.dedustNewDistantFarmCost();
+                }
+
             }
         }
     }
@@ -443,6 +444,9 @@ class Game{
         town.setControlledLand(village.getControlledLand());
 
         for (Point point: village.getControlledLand()){
+            if (point.equals(midPoint)){
+                continue;
+            }
             if (townPoints.contains(point)){
                 if (point.getBuilding() instanceof Farm farm){
                     farm.setFarmOwningBuilding(null);
@@ -480,11 +484,17 @@ class Game{
 
         for(TownArea townArea: town.getTownAreaPoints()){
             Point point = townArea.getPoint();
+            if (point.equals(midPoint)){
+                continue;
+            }
             gm.getMap().removeBuildingFromPoint(point);
             point.createNewLandForPoint(LandType.CITY);
         }
 
         for (Point point: town.getControlledLand()){
+            if (point.equals(midPoint)){
+                continue;
+            }
             if (cityPoints.contains(point)){
                 if (point.getBuilding() instanceof Farm farm){
                     farm.setFarmOwningBuilding(null);

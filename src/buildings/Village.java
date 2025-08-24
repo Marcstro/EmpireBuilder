@@ -60,10 +60,8 @@ public class Village extends FarmOwningBuilding{
                 ", point=" + getPoint().getPositionString() +
                 ", amount of farms controlled: " + getFarms().size() +
                 ", emptyLand remaining: " + emptyLand.size() +
-                //", villageCenter=" + villageCenter.getX() + "," + villageCenter.getY() +
-
                 ", owner=" + (hasOwner() ? (owner.getPoint().getPositionString() + ", class: " + owner.getClass()) : "NONE") +
-                ", food=" + food +
+                ", food=" + getFood() +
                 ", foodNeededToCreateNewFarm=" + foodNeededToCreateNewFarm + "}";
 
     }

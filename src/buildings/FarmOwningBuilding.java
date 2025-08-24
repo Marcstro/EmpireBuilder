@@ -52,14 +52,25 @@ public abstract class FarmOwningBuilding extends Building{
     }
     
     public void deductNewFarmCost(){
-        food = 0;
+        addFood((-foodNeededToCreateNewFarm));
         if (!getEmptyLand().isEmpty()){
-            foodNeededToCreateNewFarm += 5;
+            foodNeededToCreateNewFarm += 15;
+        }
+    }
+
+    public void dedustNewDistantFarmCost(){
+        addFood((-foodNeededToCreateNewFarm*10));
+        if (!getEmptyLand().isEmpty()){
+            foodNeededToCreateNewFarm += 100;
         }
     }
     
     public boolean hasFoodToCreateNewFarm(){
         return getFood() > foodNeededToCreateNewFarm;
+    }
+
+    public boolean hasFoodToCreateNewDistantFarm(){
+        return getFood() > foodNeededToCreateNewFarm*10;
     }
 
     public LinkedList<Farm> getFarms() {

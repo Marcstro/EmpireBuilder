@@ -50,11 +50,11 @@ public class Town extends VillageOwningBuilding {
 
     @Override
     public String getInfo() {
-        return "Town: " + getId() +
+        return "{Town: " + getId() +
                 ", point="+getPoint().getPositionString() +
                 ", food = " + getFood() +
                 ", villages=" + getVillages().size()
                 + (this.hasCity() ? "City: " + getCity().getPoint().getPositionString() : "Has city: false")
-                + ".";
+                + ".} ";
     }
 }

@@ -61,7 +61,7 @@ public class Engine {
         if (tickCounter % 15 == 0){
             gameManager.getGame().tickOwningBuildingsGainControlOverIndepedants();
         }
-        if (tickCounter % 150 == 0){
+        if (tickCounter % 100 == 0){
             gameManager.getGame().tickUpdateBuildingOwnershipByDistance();
         }
     }
