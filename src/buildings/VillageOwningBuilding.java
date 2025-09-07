@@ -14,6 +14,10 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
         villages = new LinkedList<>();
     }
 
+    public VillageOwningBuilding(){
+        super();
+    }
+
     public void addVillage(Village village){
         villages.add(village);
     }

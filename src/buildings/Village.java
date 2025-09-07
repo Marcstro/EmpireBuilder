@@ -17,6 +17,16 @@ public class Village extends FarmOwningBuilding{
         this.villageCenter = villageCenter;
         food = 0;
     }
+
+    public Village(){
+        super();
+    }
+
+
+    @Override
+    public String getImagePath() {
+        return "/resources/images/VillageImage.png";
+    }
     
     public void tick(){
         food -=1;

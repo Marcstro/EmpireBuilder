@@ -11,6 +11,7 @@ public class ButtonPanel extends JPanel {
     GameManager gameManager;
     private TextField tickRateLabel;
     private TextField tickCounterLabel;
+    private JLabel zoomValueLabel;
     private Timer tickCounterTimer;
     final int WIDTH = 200;
     final int HEIGHT = 800;
@@ -26,6 +27,8 @@ public class ButtonPanel extends JPanel {
 
         //different components
 
+        JCheckBox displayBuildingImagesCheck = new JCheckBox("Building images",
+                gameManager.getGridPanel().isDisplayBuildingImages());
         JCheckBox generateTerrainCheck = new JCheckBox("Generate terrain",
                 gameManager.getWorldSettings().isGenerateTerrain());
         JComboBox<TerrainGeneratorType> terrainTypeDropdown =
@@ -35,6 +38,40 @@ public class ButtonPanel extends JPanel {
 
         JCheckBox displayOwnershipLines = new JCheckBox("Display lines",
                 gameManager.getGridPanel().isShowLines());
+
+        // Camera movements
+        JPanel cameraControlPanel = new JPanel();
+        cameraControlPanel.setBorder(BorderFactory.createTitledBorder("Camera Controls")); // gives it a label
+        cameraControlPanel.setLayout(new GridLayout(2, 3, 5, 5)); // 2 rows, 3 cols, with gaps
+
+        JButton zoomInBtn = new JButton("+");
+        JButton upBtn = new JButton("↑");
+        JButton zoomOutBtn = new JButton("−");
+
+        JButton leftBtn = new JButton("←");
+        JButton downBtn = new JButton("↓");
+        JButton rightBtn = new JButton("→");
+
+        cameraControlPanel.add(zoomInBtn);
+        cameraControlPanel.add(upBtn);
+        cameraControlPanel.add(zoomOutBtn);
+
+        cameraControlPanel.add(leftBtn);
+        cameraControlPanel.add(downBtn);
+        cameraControlPanel.add(rightBtn);
+
+        zoomValueLabel = new JLabel(String.valueOf(gameManager.gridPanel.getPixelSize()), SwingConstants.CENTER);
+        zoomValueLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+
+        JPanel zoomDisplayPanel = new JPanel();
+        zoomDisplayPanel.setLayout(new BorderLayout());
+        zoomDisplayPanel.setBorder(BorderFactory.createTitledBorder("Zoom"));
+        zoomDisplayPanel.add(zoomValueLabel, BorderLayout.CENTER);
+
+        JPanel cameraWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        cameraWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
+        cameraWrapper.add(cameraControlPanel);
+        cameraWrapper.add(zoomDisplayPanel);
 
         JButton button1 = new JButton("Start");
         JButton button2 = new JButton("Stop");
@@ -50,7 +87,7 @@ public class ButtonPanel extends JPanel {
         JButton button12 = new JButton("check village domains");
         JButton button13 = new JButton("Create path of water");
         JButton button14 = new JButton("Recreate the map");
-        
+
         //set sizes and dimensions
 
         ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
@@ -59,6 +96,8 @@ public class ButtonPanel extends JPanel {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
             button.setAlignmentX(Component.LEFT_ALIGNMENT);
         });
+
+        displayBuildingImagesCheck.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
 
         generateTerrainCheck.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
         displayOwnershipLines.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
@@ -90,8 +129,10 @@ public class ButtonPanel extends JPanel {
         buttonArea.add(button13);
         buttonArea.add(button14);
         buttonArea.add(displayOwnershipLines);
+        buttonArea.add(displayBuildingImagesCheck);
         buttonArea.add(generateTerrainCheck);
         buttonArea.add(terrainTypeDropdown);
+        buttonArea.add(cameraWrapper);
 
         // TODO move these to appropriete parts
 
@@ -144,9 +185,30 @@ public class ButtonPanel extends JPanel {
         button13.addActionListener(e -> gameManager.getGame().createWaterPath());
         button14.addActionListener(e -> gameManager.recreateWorld());
 
+        zoomInBtn.addActionListener(e -> {
+            gameManager.getGridPanel().zoomIn();
+            updateZoomDisplay();
+        });
+
+        zoomOutBtn.addActionListener(e -> {
+            gameManager.getGridPanel().zoomOut();
+            updateZoomDisplay();
+        });
+
+        upBtn.addActionListener(e -> gameManager.getGridPanel().moveCameraUp());
+        downBtn.addActionListener(e -> gameManager.getGridPanel().moveCameraDown());
+        leftBtn.addActionListener(e -> gameManager.getGridPanel().moveCameraLeft());
+        rightBtn.addActionListener(e -> gameManager.getGridPanel().moveCameraRight());
+
+
         displayOwnershipLines.addActionListener(e -> {
             gameManager.getGridPanel().changeShowLines();
             gameManager.getGridPanel().updateUI();
+        });
+
+        displayBuildingImagesCheck.addActionListener(e -> {
+            boolean enabled = displayBuildingImagesCheck.isSelected();
+            gameManager.getGridPanel().setDisplayBuildingImages(enabled);
         });
 
         generateTerrainCheck.addActionListener(e -> {
@@ -178,4 +240,7 @@ public class ButtonPanel extends JPanel {
     public void updateTickCounterDisplay() {
         tickCounterLabel.setText(String.valueOf(gameManager.getEngine().getTickCounter()));
     }
+
+    public void updateZoomDisplay() {
+        zoomValueLabel.setText(String.format(String.valueOf(gameManager.getGridPanel().getPixelSize())));    }
 }

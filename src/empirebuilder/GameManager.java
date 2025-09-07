@@ -1,8 +1,7 @@
 package empirebuilder;
 
+import graphics.ImageManager;
 import pathfinding.AStarPathfinder;
-
-import javax.swing.*;
 
 class GameManager{
     
@@ -25,15 +24,18 @@ class GameManager{
     static final int POINTS_HEIGHT = (HEIGHT)/TILE_SIZE; //200; //alternative set size
     
     public GameManager(){
-        
+
+        //static classes that can be preloaded before any others
+        ImageManager.preloadAllBaseImages();
+
+        //rest
         engine = new Engine(this);
         worldSettings = new WorldSettings();
         map = new Map(this, POINTS_WIDTH, POINTS_HEIGHT);
         game = new Game(this);
         gridPanel = new GridPanel(this, map, POINTS_WIDTH, POINTS_HEIGHT, TILE_SIZE, BUTTON_PANEL_WIDTH);
-        JScrollPane scrollPane = new JScrollPane(gridPanel);
         buttonPanel = new ButtonPanel(this);
-        mainWindow = new MainWindow(this, scrollPane, buttonPanel, WIDTH, HEIGHT);
+        mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
         pathfinder = new AStarPathfinder(map);
         
         gridPanel.updateUI();

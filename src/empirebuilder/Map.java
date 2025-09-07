@@ -13,10 +13,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import buildingsTools.PerlinNoise;
-import buildingsTools.SimplePerlinNoise;
 import buildingsTools.TerrainGenerator;
-import buildingsTools.TerrainGeneratorType;
 import math.CircleSearch;
 
 public class Map {

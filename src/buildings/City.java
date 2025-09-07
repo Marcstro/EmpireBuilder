@@ -20,8 +20,17 @@ public class City extends VillageOwningBuilding{
         cityAreaPoints = new HashSet();
     }
 
+    public City(){
+        super();
+    }
+
     public void addCityArea(CityArea cityArea){
         cityAreaPoints.add(cityArea);
+    }
+
+    @Override
+    public String getImagePath() {
+        return "/resources/images/CityImage4.png";
     }
 
     @Override
@@ -47,12 +56,5 @@ public class City extends VillageOwningBuilding{
 
     public void setTowns(LinkedList<Town> towns) {
         this.towns = towns;
-    }
-
-    public void releaseVillage(Village village){
-        if (villages.contains(village)){
-            // TODO add village.removeOwningBuilding()
-            villages.remove(village);
-        }
     }
 }

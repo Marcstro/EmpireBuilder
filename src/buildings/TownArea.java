@@ -14,6 +14,15 @@ public class TownArea extends Building{
         this.townCenter = townCenter;
     }
 
+    public TownArea(){
+        super();
+    }
+
+    @Override
+    public String getImagePath() {
+        return "/resources/images/TownImage.png";
+    }
+
     //Override
     //public Color getColor() {
     //    return LandType.getBaseColor(LandType.TOWN);

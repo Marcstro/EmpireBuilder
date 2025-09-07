@@ -12,6 +12,15 @@ public class CityArea extends Building{
         this.cityCenter = cityCenter;
     }
 
+    public CityArea() {
+        super();
+    }
+
+    @Override
+    public String getImagePath() {
+        return "/resources/images/CityImage4.png";
+    }
+
     @Override
     public String getInfo() {
         return "pos: " + getPoint().getPositionString()

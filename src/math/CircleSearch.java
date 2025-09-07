@@ -122,20 +122,15 @@ public class CircleSearch {
     }
 
     public void precomputeCityShape() {
-
-        cityShapePointList.add(new int[]{0, -5});
-
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -2; dy < -4; dy++) {
-                cityShapePointList.add(new int[]{dx, dy});
-            }
-        }
-
         for (int dx = -3; dx <= 3; dx++) {
-            for (int dy = -1; dy < 3; dy++) {
+            for (int dy = -2; dy <= 2; dy++) {
                 cityShapePointList.add(new int[]{dx, dy});
             }
         }
+
+        cityShapePointList.add(new int[]{-2, -3});
+        cityShapePointList.add(new int[]{0, -3});
+        cityShapePointList.add(new int[]{2, -3});
     }
     
     //probably remove

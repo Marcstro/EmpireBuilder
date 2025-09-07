@@ -177,7 +177,7 @@ class Game{
             for (City city: cities){
                 if (calculateDistance(town.getPoint(), city.getPoint()) < cityToCityMinimumDistance){
                     hasNearbyCity = true;
-                    continue;
+                    break;
                 }
             }
             // verify there are still enough nearby towns for city creation
@@ -474,6 +474,59 @@ class Game{
 
     public void createCity(Town town){
         Point midPoint = town.getPoint();
+        City newCity = new City(midPoint);
+        gm.getMap().replaceBuilding(midPoint, newCity);
+
+        // first change the points making up cityArea/townArea
+        for (TownArea TA: town.getTownAreaPoints()){
+            Point point = TA.getPoint();
+            if (point == midPoint){
+                continue;
+            }
+            point.setBuilding(null);
+            point.createNewLandForPoint(LandType.DIRT);
+        }
+
+        List<Point> cityAreaPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY());
+        for (Point cityAreaPoint: cityAreaPoints){
+            cityAreaPoint.createNewLandForPoint(LandType.CITY);
+            if (cityAreaPoint == midPoint){
+                continue;
+            }
+            if (cityAreaPoint.getBuilding() instanceof Farm farm){
+                farm.setFarmOwningBuilding(null);
+                farms.remove(farm);
+            }
+            CityArea ca = new CityArea(cityAreaPoint, newCity);
+            newCity.addCityArea(ca);
+            gm.getMap().setBuildingOnPoint(cityAreaPoint, ca);
+        }
+
+        // change ownership/control of directly controlled land
+        newCity.setControlledLand(town.getControlledLand());
+        for(Point point: newCity.getControlledLand()){
+            point.setOwnerBuilding(newCity);
+            if (point.getBuilding() instanceof Farm farm){
+                farm.setFarmOwningBuilding(newCity);
+                newCity.addFarm(farm);
+            }
+            if (point.getBuilding() == null){
+                newCity.addEmptyPoint(point);
+            }
+        }
+
+        // change ownership of surrounding villages
+        newCity.setVillages(town.getVillages());
+        for (Village village: town.getVillages()){
+            village.setOwner(newCity);
+        }
+
+        cities.add(newCity);
+        towns.remove(town);
+    }
+
+    public void createCity22(Town town){
+        Point midPoint = town.getPoint();
         List<Point> cityPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY());
 
         towns.remove(town);
@@ -501,7 +554,7 @@ class Game{
                     farms.remove(farm);
                 }
                 else if (point.getBuilding() != null && point.getBuilding() != town){
-                    throw new RuntimeException("cityArea had building that wasnt farm, fix this code");
+                    throw new RuntimeException("cityArea had building that wasnt farm or town, fix this code");
                 }
 
                 CityArea cityArea = new CityArea(point, city);
@@ -509,7 +562,7 @@ class Game{
                 city.addCityArea(cityArea);
                 point.createNewLandForPoint(LandType.CITY);
             }
-            if(point.getBuilding() instanceof Farm farm){
+            if (point.getBuilding() instanceof Farm farm){
                 farm.setFarmOwningBuilding(city);
                 city.addFarm(farm);
             }
@@ -568,7 +621,6 @@ class Game{
     }
     
     public void destroyFarm(Farm farm){
-        farm.getPoint().createNewLandForPoint(LandType.DIRT);
         gm.getMap().removeBuildingFromPoint(farm.getPoint());
     }
     

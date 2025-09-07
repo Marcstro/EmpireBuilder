@@ -4,8 +4,6 @@ import LandTypes.LandType;
 import buildingsTools.FarmFertilityColors;
 import empirebuilder.Point;
 
-import java.awt.*;
-
 public class Farm extends Building {
     
     int people;
@@ -20,7 +18,6 @@ public class Farm extends Building {
     final static int STARTING_FERTILITY_LEVEL = 1;
     boolean partOfVillageCenter = false;
 
-        
     public Farm(int people, Point point) {
         super(point, FarmFertilityColors.getColor(STARTING_FERTILITY_LEVEL));
         this.people = people;
@@ -31,6 +28,17 @@ public class Farm extends Building {
 
     public Farm(Point point) {
         this(1, point);
+    }
+
+    public Farm(){
+        super();
+    }
+
+    @Override
+    public String getImagePath() {
+        return "/resources/images/FarmImageLowResolution.png";
+        // alternative, prettier but not suitable for low resolution
+        // "/resources/images/farmImage.png";
     }
 
     public void payTaxes(){

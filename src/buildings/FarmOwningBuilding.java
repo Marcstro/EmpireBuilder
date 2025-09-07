@@ -24,6 +24,10 @@ public abstract class FarmOwningBuilding extends Building{
         food = 0;
         this.foodNeededToCreateNewFarm = foodNeededToCreateNewFarm;
     }
+
+    public FarmOwningBuilding(){
+        super();
+    }
     
     public Farm getRandomFarm(){
         return farms.peekLast();

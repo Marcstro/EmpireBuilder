@@ -24,6 +24,15 @@ public class Town extends VillageOwningBuilding {
         townAreaPoints = new HashSet();
     }
 
+    public Town(){
+        super();
+    }
+
+    @Override
+    public String getImagePath() {
+        return "/resources/images/TownImage.png";
+    }
+
     public void setCity(City city){
         this.city = city;
     }
