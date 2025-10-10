@@ -7,11 +7,11 @@ import java.awt.Color;
 public class Dirt extends Land {
     
     LandType landType = LandType.DIRT;
-    double terrainWalkingCost = 1;
     boolean isWalkable = true;
+    static final double dirtFertilityLevel = 0.7;
 
     public Dirt() {
-        super(LandType.DIRT);
+        super(LandType.DIRT, dirtFertilityLevel);
     }
 
     @Override

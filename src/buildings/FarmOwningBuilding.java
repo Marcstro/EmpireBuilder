@@ -13,21 +13,54 @@ public abstract class FarmOwningBuilding extends Building{
     LinkedList<Farm> farms;
     List<Point> controlledLand;
     LinkedList<Point> emptyLand;
-    int food;
+    double food;
     int foodNeededToCreateNewFarm;
+    private int people;
+
 
     public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color) {
         super(point, color);
         farms = new LinkedList();
         controlledLand = new ArrayList();
         emptyLand = new LinkedList();
-        food = 0;
         this.foodNeededToCreateNewFarm = foodNeededToCreateNewFarm;
     }
 
     public FarmOwningBuilding(){
         super();
     }
+
+    public void tick(){
+
+        resetCurrentFoodTaxIncome();
+        int foodCost = people;
+        if (foodCost > food){
+            int deaths = (int)((food-foodCost)/FOOD_NEEDED_FOR_NEW_PERSON); //this will be a negative number
+            people += deaths;
+            food = 0;
+        }
+        else {
+            food -= foodCost;
+            int births = (int)(food/FOOD_NEEDED_FOR_NEW_PERSON);
+            people += births;
+        }
+
+        // TODO implement destruction of Buildings when they lose all people
+        /*if (people <= 0) {
+            people = 0;
+        }*/
+
+        int goldIncome = people;
+
+        if (goldIncome > getWealth()) {
+            increaseWealth();
+        } else if (goldIncome < getWealth()) {
+            decrease();
+        }
+        gold += goldIncome;
+    }
+
+    abstract void processTaxation(double foodIncome);
     
     public Farm getRandomFarm(){
         return farms.peekLast();
@@ -36,45 +69,24 @@ public abstract class FarmOwningBuilding extends Building{
     public void destroyFarm(Farm farm){
         farms.remove(farm);
         emptyLand.add(farm.getPoint());
+        Collections.shuffle(emptyLand);
     }
     
     public void addFood(int foodAdd){
         food+=foodAdd;
     }
     
-    public int getFood(){
+    public double getFood(){
         return food;
     }
     
-    public void setFood(int food){
+    public void setFood(double food){
         this.food = food;
     }
     
     public void addEmptyPoint(Point point){
         emptyLand.add(point);
         Collections.shuffle(emptyLand);
-    }
-    
-    public void deductNewFarmCost(){
-        addFood((-foodNeededToCreateNewFarm));
-        if (!getEmptyLand().isEmpty()){
-            foodNeededToCreateNewFarm += 15;
-        }
-    }
-
-    public void dedustNewDistantFarmCost(){
-        addFood((-foodNeededToCreateNewFarm*10));
-        if (!getEmptyLand().isEmpty()){
-            foodNeededToCreateNewFarm += 100;
-        }
-    }
-    
-    public boolean hasFoodToCreateNewFarm(){
-        return getFood() > foodNeededToCreateNewFarm;
-    }
-
-    public boolean hasFoodToCreateNewDistantFarm(){
-        return getFood() > foodNeededToCreateNewFarm*10;
     }
 
     public LinkedList<Farm> getFarms() {
@@ -90,12 +102,30 @@ public abstract class FarmOwningBuilding extends Building{
         emptyLand.remove(farm.getPoint());
     }
 
+    public int getPeople() {
+        return people;
+    }
+
+    public void setPeople(int people) {
+        this.people = people;
+    }
+
+    public void increasePeopleByOne(){
+        people++;
+    }
+
+    abstract Building getTopOwner();
+
     public List<Point> getControlledLand() {
         return controlledLand;
     }
 
     public void setControlledLand(List<Point> controlledLand) {
         this.controlledLand = controlledLand;
+    }
+
+    public void removeFromControlledLand(Point point){
+        controlledLand.remove(point);
     }
 
     public LinkedList<Point> getEmptyLand() {

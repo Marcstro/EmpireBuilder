@@ -18,22 +18,21 @@ class GameManager{
     static final int WIDTH = 1400;
     static final int HEIGHT = 800;
     static final int BUTTON_PANEL_WIDTH = 200;
+    static final int MAP_WIDTH = 300; //300 == smooth // 900 = slight lagg
+    static final int MAP_HEIGHT = 200; // 200 == smooth // 600 == slight laggy
     static final int TILE_SIZE = 4;
-    // TODO decide upon suitable map size
-    static final int POINTS_WIDTH = (WIDTH-BUTTON_PANEL_WIDTH)/TILE_SIZE; //400;// alternative set size
-    static final int POINTS_HEIGHT = (HEIGHT)/TILE_SIZE; //200; //alternative set size
+    static final int GRID_PANEL_WIDTH = (WIDTH-BUTTON_PANEL_WIDTH)/TILE_SIZE;
+    static final int GRID_PANEL_HEIGHT = (HEIGHT)/TILE_SIZE;
     
     public GameManager(){
 
-        //static classes that can be preloaded before any others
         ImageManager.preloadAllBaseImages();
 
-        //rest
         engine = new Engine(this);
         worldSettings = new WorldSettings();
-        map = new Map(this, POINTS_WIDTH, POINTS_HEIGHT);
+        map = new Map(this, MAP_WIDTH, MAP_HEIGHT);
         game = new Game(this);
-        gridPanel = new GridPanel(this, map, POINTS_WIDTH, POINTS_HEIGHT, TILE_SIZE, BUTTON_PANEL_WIDTH);
+        gridPanel = new GridPanel(this, map, GRID_PANEL_WIDTH, GRID_PANEL_HEIGHT, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, BUTTON_PANEL_WIDTH);
         buttonPanel = new ButtonPanel(this);
         mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
         pathfinder = new AStarPathfinder(map);
@@ -71,7 +70,8 @@ class GameManager{
 
     public void recreateWorld(){
         engine.stop();
-        map = new Map(this, POINTS_WIDTH, POINTS_HEIGHT);
+        engine.resetTickCounter();
+        map = new Map(this, MAP_WIDTH, MAP_HEIGHT);
         gridPanel.updateMap(map);
         game = new Game(this);
         pathfinder = new AStarPathfinder(map);

@@ -1,0 +1,82 @@
+- Empty list of points on map
+The following feature would add a way of keeping track of ALL empty points on the map (non unwalkable terrain and walkable terrain withOUT buildings on them)
+The processing/ram required is small. Adding around ~25 ms per tick on a map of size 900*600 when there are 300.000 farms.
+In order to implement it back in:
+In map:
+    private final ArrayList<Point> emptyPointsList;
+    private final HashMap<Point, Integer> pointToIndexMap;
+
+in constructor:
+        this.emptyPointsList = new ArrayList<>(width * height);
+        this.pointToIndexMap = new HashMap<>(width * height);
+in constructor in loop to create all points:
+        else {
+            for (int x = 0; x < width; x++) {
+                for (int y = 0; y < height; y++) {
+                    grid[x][y] = new Point(x, y, LandType.GRASSLAND);
+                    emptyPointsList.add(grid[x][y]);
+                }
+            }
+        }
+
+Followed by this to shuffle the list:
+        Collections.shuffle(emptyPointsList);
+        for(int i = 0; i < emptyPointsList.size(); i++){
+            Point p = emptyPointsList.get(i);
+            pointToIndexMap.put(p, i);
+        }
+
+
+And in map, these methods are necessary to use the feature
+    public List<Point> getEmptyPointList() {
+        return emptyPointsList;
+    }
+
+    public HashMap<Point, Integer> getEmptyPointHashMap(){
+        return pointToIndexMap;
+    }
+
+    public Point getRandomEmptyPoint(){
+        if (emptyPointsList.isEmpty()){
+            return null;
+        }
+        return emptyPointsList.get(ThreadLocalRandom.current().nextInt(emptyPointsList.size()));
+    }
+
+    public void addPointToEmptyList(Point point) {
+        int newIndex = emptyPointsList.size();
+        emptyPointsList.add(point);
+        pointToIndexMap.put(point, newIndex);
+    }
+
+    public void removePointFromEmptyList(Point point) {
+        int index = pointToIndexMap.get(point);
+        int lastIndex = emptyPointsList.size() - 1;
+        Point lastPoint = emptyPointsList.get(lastIndex);
+
+        Collections.swap(emptyPointsList, index, lastIndex);
+
+        emptyPointsList.remove(lastIndex);
+
+        pointToIndexMap.remove(point);
+        if (index != lastIndex) {
+            pointToIndexMap.put(lastPoint, index);
+        }
+    }
+
+
+Then in Map.class
+At all places where we place buildings/anything that would make a point NON empty
+        removePointFromEmptyList(point);
+
+And reverse, if we make a point empty:
+        addPointToEmptyList(point);
+
+
+In game.java:
+ If there are any methods that will produce things randomly on the map, make use of the above methods
+
+In TerrainGenerator.java
+	whenever a point is filled with unwalkable terrain, call
+map.addPointToEmptyList(map.getGrid()[x][y]);
+

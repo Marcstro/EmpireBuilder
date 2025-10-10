@@ -3,14 +3,9 @@ package empirebuilder;
 import LandTypes.*;
 import buildings.Building;
 import buildings.Farm;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Random;
-import java.util.Set;
+
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import buildingsTools.TerrainGenerator;
@@ -23,8 +18,6 @@ public class Map {
     int width;
     int height;
     private final Point[][] grid;
-    private Set<Point> emptyPoints;
-    private List<Point> emptyPointList;
     Random random;
     CircleSearch circleSearch;
     final int FARM_EXTEND_DISTANCE = 10;
@@ -37,11 +30,9 @@ public class Map {
         height = pixelHeight;
         
         grid = new Point[width][height];
+
         random = new Random();
         this.circleSearch = new CircleSearch(FARM_EXTEND_DISTANCE, width, height);
-
-        emptyPoints = new HashSet();
-        emptyPointList = new LinkedList();
 
         if(gameManager.getWorldSettings().isGenerateTerrain()){
             terrainGenerator = new TerrainGenerator(this, gameManager.getWorldSettings().getGeneratorType());
@@ -50,14 +41,10 @@ public class Map {
         else {
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    grid[x][y] = new Point(x, y, LandType.DIRT);
-                    emptyPoints.add(grid[x][y]);
-                    emptyPointList.add(grid[x][y]);
+                    grid[x][y] = new Point(x, y, LandType.GRASSLAND);
                 }
             }
         }
-
-        Collections.shuffle(emptyPointList);
     }
 
     public List<Point> getAllValidNeighbors(Point point) {
@@ -86,22 +73,6 @@ public class Map {
         return null;
     }
 
-    public Set<Point> getEmptyPoints() {
-        return emptyPoints;
-    }
-
-    public List<Point> getEmptyPointList() {
-        return emptyPointList;
-    }
-    
-    public Point getRandomEmptyPoint() {
-        // TODO don't pick an entirely random point, only pick among points not owned by buildings
-        if (emptyPointList.isEmpty()) return null;
-
-        int index = new Random().nextInt(emptyPointList.size());
-        return emptyPointList.get(index);
-    }
-
     public void replaceBuilding(Point point, Building building){
         removeBuildingFromPoint(point);
         setBuildingOnPoint(point, building);
@@ -118,10 +89,6 @@ public class Map {
             removeBuildingFromPoint(point);
         }
         point.setBuilding(building);
-        if (emptyPoints.contains(point)){
-            emptyPoints.remove(point);
-            emptyPointList.remove(point);
-        }
     }
 
     public void removeBuildingFromPoint(Point point){
@@ -129,8 +96,6 @@ public class Map {
             throw new RuntimeException("Tried to remove building at " + point.getPositionString() + " but no building there!");
         }
         point.setBuilding(null);
-        emptyPoints.add(point);
-        emptyPointList.add(point);
     }
     
     public Point findNeighboringSpotForFarm(int x, int y) {
@@ -177,7 +142,7 @@ public class Map {
     }
     
     public List<Point> getTownShapePointList(int centerX, int centerY) {
-        List<Point> result = new ArrayList<>();
+        List<Point> result = new LinkedList<>();
 
         for (int[] offset : circleSearch.getTownShapePointList()) {
             int newX = centerX + offset[0];
@@ -192,7 +157,7 @@ public class Map {
     }
 
     public List<Point> getCityShapePointList(int centerX, int centerY) {
-        List<Point> result = new ArrayList<>();
+        List<Point> result = new LinkedList<>();
 
         for (int[] offset : circleSearch.getCityShapePointList()) {
             int newX = centerX + offset[0];
@@ -206,10 +171,19 @@ public class Map {
         return result;
     }
 
-    public LinkedList<Point> getAllEmptyPointsInCircleAroundTarget(Point originalPoint, int radius){
+    public LinkedList<Point> getAllEmptyAndWalkablePointsInCircleAroundTarget(Point originalPoint, int radius){
         return getAllPointsInCircleAroundTarget(originalPoint, radius).stream()
             .filter(Point::isEmpty)
+            .filter(Point::isTerrainWalkable)
             .collect(Collectors.toCollection(LinkedList::new));
+    }
+
+    public Point getFirstEmptyAndWalkablePointInCircle(Point originalPoint, int radius) {
+        return getAllPointsInCircleAroundTarget(originalPoint, radius).stream()
+                .filter(Point::isEmpty)
+                .filter(Point::isTerrainWalkable)
+                .findAny()
+                .orElse(null);
     }
     
     public List<Point> getAllValidAdjecantPointsToTarget(Point originalPoint){
@@ -232,21 +206,19 @@ public class Map {
 
         return grid[chosen[0]][chosen[1]]; 
     }
-    
-    
-    
- public ArrayList<Point> getPointsInCircleAroundTarget(Point originalPoint, int radius) {
-    ArrayList<Point> result = new ArrayList<>();
 
-    ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
+     public ArrayList<Point> getPointsInCircleAroundTarget(Point originalPoint, int radius) {
+        ArrayList<Point> result = new ArrayList<>();
 
-    for (int[] pos : relativePositions) {
-        result.add(grid[pos[0]][pos[1]]);
+        ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
+
+         System.out.println("size: " + relativePositions.size());
+        for (int[] pos : relativePositions) {
+            result.add(grid[pos[0]][pos[1]]);
+        }
+
+        return result;
     }
-
-    return result;
-}
-
 
     public void setLandTypeAtPoint(int x, int y, LandType landType){
         grid[x][y].createNewLandForPoint(landType);

@@ -12,6 +12,7 @@ public class CircleSearch {
     private final int maxRadius;
     int gridHeight;
     int gridWidth;
+    private int howFarShouldCirclesStretch = 30;
 
     public CircleSearch(int maxRadius, int gridWidth, int gridHeight) {
         this.maxRadius = maxRadius;
@@ -25,7 +26,7 @@ public class CircleSearch {
     // Precompute relative positions for each radius
     private void precomputeOffsets() {
         //calculate cirles around target
-        for (int r = 1; r <= maxRadius; r++) {
+        for (int r = 1; r <= howFarShouldCirclesStretch; r++) {
             List<int[]> offsets = new ArrayList<>();
 
             for (int dx = -r; dx <= r; dx++) {
@@ -40,7 +41,7 @@ public class CircleSearch {
         }
         
         //calculate filled circles around target
-        for (int r = 1; r <= maxRadius; r++) {
+        for (int r = 1; r <= howFarShouldCirclesStretch; r++) {
             List<int[]> offsets = new ArrayList<>();
 
             for (int dx = -r; dx <= r; dx++) {
@@ -66,8 +67,7 @@ public class CircleSearch {
     // DOES check for border edges
     public List<int[]> getSingleLinePositionsAroundTargetInCircle(int x, int y, int radius) {
         List<int[]> results = new ArrayList<>();
-
-        if (radius < 1 || radius > maxRadius || !precomputedOffsets.containsKey(radius)) {
+        if (radius < 1 || radius > howFarShouldCirclesStretch || !precomputedOffsets.containsKey(radius)) {
             return results; // Return empty if radius is out of range
         }
 

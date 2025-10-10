@@ -24,7 +24,12 @@ public class Engine {
         running = true;
         gameThread = new Thread(() -> {
             while (running) {
+                //long startTime = System.currentTimeMillis();
                 tick();
+                //long endTime = System.currentTimeMillis();
+                //long duration = endTime - startTime;
+                //System.out.println("Tick: " + tickCounter + ", Duration: " + duration + "ms. Farms: " + gameManager.getGame().farms.size());
+
                 try {
                     Thread.sleep((int)(REFRESH_RATE * 1000)); //milliseconds
                 } catch (InterruptedException e) {
@@ -49,7 +54,7 @@ public class Engine {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        System.out.println("Engine stopped.");
+        System.out.println("Engine stopped at tick: " + tickCounter);
     }
 
     public void tick() {
@@ -59,7 +64,7 @@ public class Engine {
             gameManager.getGame().checkForBuildingUpgrades();
         }
         if (tickCounter % 15 == 0){
-            gameManager.getGame().tickOwningBuildingsGainControlOverIndepedants();
+            gameManager.getGame().tickOwningBuildingsGainControlOverIndependents();
         }
         if (tickCounter % 100 == 0){
             gameManager.getGame().tickUpdateBuildingOwnershipByDistance();
@@ -89,6 +94,8 @@ public class Engine {
     public int getTickCounter() {
         return tickCounter;
     }
-    
-    
+
+    public void resetTickCounter(){
+        tickCounter=0;
+    }
 }

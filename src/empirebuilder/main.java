@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
- */
+
 package empirebuilder;
 
 public class main {
@@ -9,5 +6,7 @@ public class main {
     public static void main(String[] args) {
         GameManager gameManager = new GameManager();
     }
-    
+
+    // Alternative GC: -XX:+UseZGC
+    // count lines: git ls-files | grep '\.java' | xargs wc -l
 }

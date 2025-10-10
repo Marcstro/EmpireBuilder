@@ -6,11 +6,11 @@ public class HillLand extends Land {
     LandType landType = LandType.HILL;
     boolean isWalkable = true;
     int walkingCost = 3;
+    static final double hillFertilityLevel = 0.6;
 
     public HillLand() {
-        super(LandType.HILL);
+        super(LandType.HILL, hillFertilityLevel);
     }
-
 
     @Override
     public void applyEffects() {

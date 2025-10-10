@@ -78,20 +78,22 @@ public class ButtonPanel extends JPanel {
         JButton button3 = new JButton("Create random farm");
         JButton button4 = new JButton("create 20 random farms");
         JButton button5 = new JButton("experiment 2");
-        JButton button6 = new JButton("experiment 3");
-        JButton button7 = new JButton("test1");
+        JButton button6 = new JButton("calculate amount of farms");
+        JButton button7 = new JButton("test function time");
         JButton button8 = new JButton("create 6 farms");
         JButton button9 = new JButton("Create farm at point");
         JButton button10 = new JButton("Create complete village at point");
+        JButton button15 = new JButton("add ALL farms");
         JButton button11 = new JButton("Print Map info");
         JButton button12 = new JButton("check village domains");
         JButton button13 = new JButton("Create path of water");
         JButton button14 = new JButton("Recreate the map");
+        JButton button16 = new JButton("Current test");
 
         //set sizes and dimensions
 
         ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
-                button7, button8, button9, button10, button11, button12, button13, button14));
+                button7, button8, button9, button10,button15, button11, button12, button13, button14, button16));
         buttons.forEach(button -> {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
             button.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -123,11 +125,13 @@ public class ButtonPanel extends JPanel {
         buttonArea.add(button7);
         buttonArea.add(button8);
         buttonArea.add(button9);  
-        buttonArea.add(button10);    
+        buttonArea.add(button10);
+        buttonArea.add(button15);
         buttonArea.add(button11);
         buttonArea.add(button12);
         buttonArea.add(button13);
         buttonArea.add(button14);
+        buttonArea.add(button16);
         buttonArea.add(displayOwnershipLines);
         buttonArea.add(displayBuildingImagesCheck);
         buttonArea.add(generateTerrainCheck);
@@ -180,10 +184,12 @@ public class ButtonPanel extends JPanel {
                 gameManager.getGridPanel().getSelectedPoint().getX(), gameManager.getGridPanel().getSelectedPoint().getY()));
         button10.addActionListener(e -> gameManager.getGame().createCompleteVillageAt(
             gameManager.getGridPanel().getSelectedPoint().getX(), gameManager.getGridPanel().getSelectedPoint().getY()));
+        button15.addActionListener(e -> gameManager.getGame().experiment15());
         button11.addActionListener(e -> gameManager.getGame().printMapInfo());
         button12.addActionListener(e -> gameManager.getGame().checkVillageDomain());
         button13.addActionListener(e -> gameManager.getGame().createWaterPath());
         button14.addActionListener(e -> gameManager.recreateWorld());
+        button16.addActionListener(e -> gameManager.getGame().currentExperiment());
 
         zoomInBtn.addActionListener(e -> {
             gameManager.getGridPanel().zoomIn();

@@ -79,8 +79,9 @@ public class Point {
         this.land = LandFactory.createLand(landType);
     }
     
-    public void setLand(Land land){
+    public Land setLand(Land land){
         this.land = land;
+        return land;
     }
 
     public Color getColor() {
@@ -106,21 +107,23 @@ public class Point {
     public String toString() {
         return "Point{" + "x=" + x 
                 + ", y=" + y 
-                + ", land=" + land 
+                + ", land=" + this.getClass().getSimpleName()
+                + "fertility=" + this.getLand().getFertilityLevel()
                 + ", building=" + ((getBuilding() != null) ? getBuilding().getInfo() : "")
                 + ", elevation: " + elevation  + '}';
     }
     
     public String getInfo(){
-        String buildingInfo = " no buildinginfo";
+        String buildingInfo = "Building=Null";
         if (getBuilding() != null){
             buildingInfo = getBuilding().getInfo();
         }
-               return "Point{" + "x=" + x 
-                + ", y=" + y 
-                + ", land=" + land
-                + ", " + buildingInfo
-                + ", belongs to building: "+ (isOwnedByBuilding() ? getPointOwner().getInfo() : " ");
+
+        return "Point{" + x
+        + "," + y
+        + ", land=" + land.getLandType()
+        + ", " + buildingInfo
+        + ", point belongs to building: " + (isOwnedByBuilding() ? getPointOwner().getInfo() : "NONE");
     }
     
     public String getPositionString(){

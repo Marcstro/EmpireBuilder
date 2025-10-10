@@ -15,7 +15,7 @@ public enum LandType {
     
     public static Color getBaseColor(LandType type) {
         return switch (type) {
-            case GRASSLAND -> new Color(34, 139, 34);//(162, 228, 162);
+            case GRASSLAND -> new Color(34, 139, 34);//used to be this color34, 139, 34
             case WATER -> new Color(30, 144, 255);//(102, 221, 236);
             case DIRT -> new Color(129, 64, 10);
             case RUINED -> new Color(65, 36, 12);

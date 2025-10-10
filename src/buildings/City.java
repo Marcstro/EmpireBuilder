@@ -24,6 +24,11 @@ public class City extends VillageOwningBuilding{
         super();
     }
 
+    @Override
+    Building getTopOwner() {
+        return this;
+    }
+
     public void addCityArea(CityArea cityArea){
         cityAreaPoints.add(cityArea);
     }
@@ -34,13 +39,10 @@ public class City extends VillageOwningBuilding{
     }
 
     @Override
-    public String getInfo() {
-        return "{City: " + getId() +
-                ", point="+getPoint().getPositionString() +
-                ", food="+getFood() +
-                ", towns=" + getTowns().size() +
-                ", villages=" + getVillages().size()
-                + ".} ";    }
+    void processTaxation(double foodIncome) {
+        addToCurrentFoodTaxIncome(foodIncome);
+        food += foodIncome;
+    }
 
     public void addTown(Town town){
         towns.add(town);
@@ -56,5 +58,18 @@ public class City extends VillageOwningBuilding{
 
     public void setTowns(LinkedList<Town> towns) {
         this.towns = towns;
+    }
+
+    @Override
+    public String getInfo() {
+        return "{City: " + getId() +
+                ", food=" + String.format("%.2f", getFood()) +
+                ", people=" + getPeople() +
+                ", gold=" + String.format("%.2f", getGold()) +
+                ", wealth=" + String.format("%.2f", getWealth()) +
+                ", towns=" + getTowns().size() +
+                ", villages=" + getVillages().size() +
+                ", currentTaxIncome=" + String.format("%.2f", getLastIterationFoodTaxIncome()) +
+                ".} ";
     }
 }

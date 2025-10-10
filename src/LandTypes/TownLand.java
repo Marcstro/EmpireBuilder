@@ -9,11 +9,12 @@ import java.awt.Color;
 class TownLand extends Land{
 
     LandType landType = LandType.TOWN;
-    boolean isWalkable = false;
+    boolean isWalkable = true;
     int walkingCost = 0;
+    static final double townLandFertilitylevel = 1.0;
 
     public TownLand() {
-        super(LandType.VILLAGE);
+        super(LandType.VILLAGE, townLandFertilitylevel);
     }
 
     @Override

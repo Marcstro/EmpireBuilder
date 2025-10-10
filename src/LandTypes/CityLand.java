@@ -5,9 +5,10 @@ import java.awt.*;
 public class CityLand extends Land{
 
     LandType landType = LandType.CITY;
+    static final double cityFertilityLevel = 1.0;
 
     public CityLand() {
-        super(LandType.CITY);
+        super(LandType.CITY, cityFertilityLevel);
     }
 
     @Override
@@ -22,7 +23,7 @@ public class CityLand extends Land{
 
     @Override
     public boolean isWalkable() {
-        return false;
+        return true;
     }
 
     @Override

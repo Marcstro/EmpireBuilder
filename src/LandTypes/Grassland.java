@@ -10,12 +10,13 @@ public class Grassland extends Land {
     ArrayList<Color> fertilityLevelColor;
     Color color;
     boolean isWalkable = true;
+    static final double grassFertilityLevel = 1;
     
     public Grassland() {
-        super(LandType.GRASSLAND);
+        super(LandType.GRASSLAND, grassFertilityLevel);
         this.fertilityLevelColor = new ArrayList<>(Arrays.asList(
             new Color(162, 228, 162), 
-            new Color(143, 228, 143),//Color.pink,//new Color(143, 228, 143), 
+            new Color(143, 228, 143),
             new Color(116, 230, 116), 
             new Color(79, 226, 79), 
             new Color(8, 177, 8)

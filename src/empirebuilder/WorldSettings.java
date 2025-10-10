@@ -8,7 +8,7 @@ public class WorldSettings {
     private TerrainGeneratorType generatorType;
 
     public WorldSettings(){
-        generateTerrain = true;
+        generateTerrain = false;
         generatorType = TerrainGeneratorType.PERLIN_BASED_V1_LARGE_TERRAIN;
     }
 

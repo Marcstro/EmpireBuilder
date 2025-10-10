@@ -10,10 +10,16 @@ public abstract class Land {
     int idCounter=1;
     final int id;
     double defaultWalkingCost = 1;
+    double fertilityLevel;
 
-    public Land(LandType landType) {
+    public Land(LandType landType, double fertilityLevel) {
         this.id = idCounter++;
         this.landType = landType;
+        this.fertilityLevel = fertilityLevel;
+    }
+
+    public Land(LandType landType) {
+        this(landType, 0);
     }
     
     public int getId(){
@@ -35,5 +41,9 @@ public abstract class Land {
     public abstract boolean isWalkable();
 
     public abstract Color getColor();
+
+    public double getFertilityLevel(){
+        return fertilityLevel;
+    };
 
 }

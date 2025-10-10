@@ -10,8 +10,10 @@ import java.awt.event.MouseEvent;
 
 public class GridPanel extends JPanel {
 
-    private final int width;
-    private final int height;
+    private final int mapHeight;
+    private final int mapWidth;
+
+
     private final int basePixelSize;
     private double zoom = 1.0;
     private int cameraX = 0;
@@ -29,12 +31,12 @@ public class GridPanel extends JPanel {
 
     GameManager gameManager;
 
-    GridPanel(GameManager gameManager, Map map, int width, int height, int pixelSize, int buttonPanelWidth) {
+    GridPanel(GameManager gameManager, Map map, int windowWidth, int windowHeight, int mapWidth, int mapHeight, int pixelSize, int buttonPanelWidth) {
         this.map = map;
         this.gameManager = gameManager;
-        this.height = height;
-        this.width = width;
-        setPreferredSize(new Dimension((width * pixelSize), (height * pixelSize)));
+        this.mapWidth = mapWidth;
+        this.mapHeight = mapHeight;
+        setPreferredSize(new Dimension((windowWidth * pixelSize), (windowHeight * pixelSize)));
         basePixelSize = pixelSize;
 
         ImageManager.setZoomFactor(getZoomFactor());
@@ -86,7 +88,7 @@ public class GridPanel extends JPanel {
                 int worldX = cameraX + x;
                 int worldY = cameraY + y;
 
-                if (worldX < 0 || worldY < 0 || worldX >= width || worldY >= height) {
+                if (worldX < 0 || worldY < 0 || worldX >= mapWidth || worldY >= mapHeight) {
                     continue;
                 }
 
@@ -96,23 +98,26 @@ public class GridPanel extends JPanel {
                 int screenX = x * pixelSize;
                 int screenY = y * pixelSize;
 
-                // TODO pixelpainted farms should only cover 75% of the area, should show land beneath
-                /*if (building instanceof Farm) {
-                    g.setColor(point.getColor());
-                    g.fillRect(screenX, screenY, pixelSize, pixelSize);
 
-                    int innerSize = pixelSize / 2;
+                // TODO come up with a pretty way to display fertilityLevel, and/or terrain beneath farms
+                // displaying farm images works at any zoom level but at zoom beneath 10, farms are hard to spot on the map
+                /* if (building instanceof Farm farm && !farm.isPartOfVillageCenter()) {
+                    g.setColor(point.getLand().getColor());
+                    g.fillRect(screenX, screenY, pixelSize, pixelSize);
+                    int innerSize = (int) (Math.sqrt(0.65) * pixelSize);
                     int offset = (pixelSize - innerSize) / 2;
                     g.setColor(building.getColor());
                     g.fillRect(screenX + offset, screenY + offset, innerSize, innerSize);
-                }  */
-                if (building != null) {
+                }
+                else if (building != null) {
                     g.setColor(building.getColor());
                     g.fillRect(screenX, screenY, pixelSize, pixelSize);
                 } else {
                     g.setColor(point.getColor());
                     g.fillRect(screenX, screenY, pixelSize, pixelSize);
-                }
+                }*/
+                g.setColor(point.getColor());
+                g.fillRect(screenX, screenY, pixelSize, pixelSize);
             }
         }
     }
@@ -127,7 +132,7 @@ public class GridPanel extends JPanel {
                 int worldX = cameraX + x;
                 int worldY = cameraY + y;
 
-                if (worldX < 0 || worldY < 0 || worldX >= width || worldY >= height) {
+                if (worldX < 0 || worldY < 0 || worldX >= mapWidth || worldY >= mapHeight) {
                     continue;
                 }
 
@@ -202,25 +207,25 @@ public class GridPanel extends JPanel {
 
     public void moveCameraUp() {
         cameraY -= getTilesDown() / 3;
-        if (cameraY < 0) cameraY = 0;
+        clampCameraToWorld();
         repaint();
     }
 
     public void moveCameraDown() {
         cameraY += getTilesDown() / 3;
-        if (cameraY > height - getTilesDown()) cameraY = height - getTilesDown();
+        clampCameraToWorld();
         repaint();
     }
 
     public void moveCameraLeft() {
         cameraX -= getTilesAcross() / 3;
-        if (cameraX < 0) cameraX = 0;
+        clampCameraToWorld();
         repaint();
     }
 
     public void moveCameraRight() {
         cameraX += getTilesAcross() / 3;
-        if (cameraX > width - getTilesAcross()) cameraX = width - getTilesAcross();
+        clampCameraToWorld();
         repaint();
     }
 
@@ -239,8 +244,16 @@ public class GridPanel extends JPanel {
 
         int oldPx = getPixelSize();
 
-        double centerWorldX = cameraX + (getWidth()  / 2.0) / oldPx;
-        double centerWorldY = cameraY + (getHeight() / 2.0) / oldPx;
+        double centerWorldX;
+        double centerWorldY;
+
+        if (selectedPoint != null) {
+            centerWorldX = selectedPoint.getX();
+            centerWorldY = selectedPoint.getY();
+        } else {
+            centerWorldX = cameraX + (getWidth() / 2.0) / oldPx;
+            centerWorldY = cameraY + (getHeight() / 2.0) / oldPx;
+        }
 
         zoom *= factor;
         if (zoom < getZoomLimit()) zoom = getZoomLimit();
@@ -267,8 +280,8 @@ public class GridPanel extends JPanel {
         int tilesAcross = Math.max(1, getWidth()  / getPixelSize());
         int tilesDown   = Math.max(1, getHeight() / getPixelSize());
 
-        cameraX = Math.max(0, Math.min(cameraX, width  - tilesAcross));
-        cameraY = Math.max(0, Math.min(cameraY, height - tilesDown));
+        cameraX = Math.max(0, Math.min(cameraX, mapWidth  - tilesAcross));
+        cameraY = Math.max(0, Math.min(cameraY, mapHeight - tilesDown));
     }
 
     public int getPixelSize() {
@@ -282,14 +295,13 @@ public class GridPanel extends JPanel {
         int gridX = cameraX + (mouseX / getPixelSize());
         int gridY = cameraY + (mouseY / getPixelSize());
 
-        if (gridX >= 0 && gridX < width && gridY >= 0 && gridY < height) {
+        if (gridX >= 0 && gridX < mapWidth && gridY >= 0 && gridY < mapHeight) {
             Point clickedPoint = map.getPoint(gridX, gridY);
             if (clickedPoint == selectedPoint){
                 selectedPoint = null;
             }
             else {
                 selectedPoint = clickedPoint;
-                System.out.println("Clicked on: (" + gridX + ", " + gridY + ")");
                 System.out.println("Point Info: " + clickedPoint.getInfo());  
             }
         }

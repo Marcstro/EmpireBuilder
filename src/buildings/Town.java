@@ -1,10 +1,8 @@
 package buildings;
 
 import LandTypes.LandType;
-import buildingsTools.FarmFertilityColors;
 import empirebuilder.Point;
 
-import java.awt.*;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
@@ -16,6 +14,7 @@ public class Town extends VillageOwningBuilding {
     City city = null;
     
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
+    final double TOWN_TAXATION_RATE = 0.6;
     
     public Town(Point point) {
         super(point, INITIAL_FOOD_NEEDED_TO_GROW, LandType.getBaseColor(LandType.TOWN));
@@ -31,6 +30,27 @@ public class Town extends VillageOwningBuilding {
     @Override
     public String getImagePath() {
         return "/resources/images/TownImage.png";
+    }
+
+    @Override
+    void processTaxation(double foodIncome) {
+        if (city != null){
+            city.processTaxation(((foodIncome*TOWN_TAXATION_RATE)));
+            addToCurrentFoodTaxIncome((foodIncome*(1-TOWN_TAXATION_RATE)));
+            food += (foodIncome*(1-TOWN_TAXATION_RATE));
+        }
+        else {
+            addToCurrentFoodTaxIncome(foodIncome);
+            food += foodIncome;
+        }
+    }
+
+    @Override
+    Building getTopOwner() {
+        if (hasCity()){
+            return city.getTopOwner();
+        }
+        else return this;
     }
 
     public void setCity(City city){
@@ -60,10 +80,15 @@ public class Town extends VillageOwningBuilding {
     @Override
     public String getInfo() {
         return "{Town: " + getId() +
-                ", point="+getPoint().getPositionString() +
-                ", food = " + getFood() +
-                ", villages=" + getVillages().size()
-                + (this.hasCity() ? "City: " + getCity().getPoint().getPositionString() : "Has city: false")
+                ", point=" + getPoint().getPositionString() +
+                ", food = " + String.format("%.2f", getFood()) +
+                ", people=" + getPeople() +
+                ", gold=" + String.format("%.2f", getGold()) +
+                ", wealth=" + String.format("%.2f", getWealth()) +
+                ", villages=" + getVillages().size() +
+                ", currentTaxIncome=" + String.format("%.2f", getLastIterationFoodTaxIncome()) +
+                (getCity()!=null ? " (" + String.format("%.2f",(TOWN_TAXATION_RATE*getLastIterationFoodTaxIncome())) + " taxed)" : "") +
+                (this.hasCity() ? ", City: " + getCity().getPoint().getPositionString() : ", Has city: None")
                 + ".} ";
     }
 }

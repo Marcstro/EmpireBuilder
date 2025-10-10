@@ -75,12 +75,8 @@ public class TerrainGenerator {
                     map.getGrid()[x][y].setLand(LandFactory.createLand(LandType.WATER));
                 } else if (elevation < hillLevel) {
                     map.getGrid()[x][y].setLand(LandFactory.createLand(LandType.GRASSLAND));
-                    map.getEmptyPoints().add(map.getGrid()[x][y]);
-                    map.getEmptyPointList().add(map.getGrid()[x][y]);
                 } else if (elevation < mountainHeight) {
                     map.getGrid()[x][y].setLand(LandFactory.createLand(LandType.HILL));
-                    map.getEmptyPoints().add(map.getGrid()[x][y]);
-                    map.getEmptyPointList().add(map.getGrid()[x][y]);
                 } else {
                     map.getGrid()[x][y].setLand(LandFactory.createLand(LandType.MOUNTAIN));
                 }

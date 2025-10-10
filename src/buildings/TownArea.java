@@ -30,9 +30,8 @@ public class TownArea extends Building{
 
     @Override
     public String getInfo() {
-        return "pos: " + getPoint().getPositionString() 
-                + "TownCenter: " + townCenter.getPoint().getPositionString()
-                + ".";
+        return "TownArea{ TownCenter=" + townCenter.getPoint().getPositionString()
+                + "}";
     }
 
     public Town getTownCenter() {
