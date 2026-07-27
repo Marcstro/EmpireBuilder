@@ -5,9 +5,9 @@ import buildings.Building;
 import buildings.Farm;
 
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
+import buildings.Village;
 import buildingsTools.TerrainGenerator;
 import math.CircleSearch;
 
@@ -24,7 +24,7 @@ public class Map {
     private TerrainGenerator terrainGenerator;
 
     public Map(GameManager gameManager, int pixelWidth, int pixelHeight) {
-        
+        System.out.println("pixelwidth: " + pixelWidth +  ", " + "pixelheight: "+ pixelHeight);
         this.gameManager = gameManager;
         width = pixelWidth;
         height = pixelHeight;
@@ -62,6 +62,12 @@ public class Map {
         return neighbors;
     }
 
+    public Point getPointInMiddleOfMap(){
+        int x = width /2;
+        int y = height / 2;
+        return grid[x][y];
+    }
+
     public void setPoint(Point point){
         grid[point.getX()][point.getY()]=point;
     }
@@ -79,11 +85,10 @@ public class Map {
     }
     
     public void setBuildingOnPoint(Point point, Building building){
-
         if (point.getBuilding() != null){
             if (point.getBuilding() instanceof Farm farm){
                 if (farm.belongsToFarmOwningBuilding()) {
-                    farm.getFarmOwningBuilding().destroyFarm(farm);
+                    farm.getFarmOwningBuilding().removeFromFarmList(farm);
                 }
             }
             removeBuildingFromPoint(point);
@@ -93,6 +98,7 @@ public class Map {
 
     public void removeBuildingFromPoint(Point point){
         if (point.getBuilding() == null){
+            System.out.println("Tried to remove building at " + point.getPositionString() + " but no building there!");
             throw new RuntimeException("Tried to remove building at " + point.getPositionString() + " but no building there!");
         }
         point.setBuilding(null);
@@ -174,7 +180,6 @@ public class Map {
     public LinkedList<Point> getAllEmptyAndWalkablePointsInCircleAroundTarget(Point originalPoint, int radius){
         return getAllPointsInCircleAroundTarget(originalPoint, radius).stream()
             .filter(Point::isEmpty)
-            .filter(Point::isTerrainWalkable)
             .collect(Collectors.toCollection(LinkedList::new));
     }
 
@@ -207,6 +212,22 @@ public class Map {
         return grid[chosen[0]][chosen[1]]; 
     }
 
+    public Point getOwnedAdjecantFarm(Point originalPoint){
+        List<int[]> adjecantPoints = circleSearch.getValidAdjacentPoints(originalPoint.getX(), originalPoint.getY());
+
+        Collections.shuffle(adjecantPoints);
+        for (int[] coord : adjecantPoints) {
+            Point p = grid[coord[0]][coord[1]];
+
+            if (p.getBuilding() instanceof Farm farm &&
+                    farm.getFarmOwningBuilding() instanceof Village) {
+                return p;
+            }
+        }
+
+        return null;
+    }
+
      public ArrayList<Point> getPointsInCircleAroundTarget(Point originalPoint, int radius) {
         ArrayList<Point> result = new ArrayList<>();
 
@@ -228,6 +249,18 @@ public class Map {
         int randomX = random.nextInt(width);
         int randomY = random.nextInt(height);
         return grid[randomX][randomY];
+    }
+
+    public Point getrandomValidPoint(){
+        Point point = null;
+        while (point == null){
+            int randomX = random.nextInt(width);
+            int randomY = random.nextInt(height);
+            if (isValidAndWalkable(randomX, randomY)){
+                point = getPoint(randomX, randomY);
+            }
+        }
+        return point;
     }
 
     public Point[][] getGrid() {
@@ -283,15 +316,19 @@ public class Map {
     }
     
     public boolean isValidAndEmpty(int x, int y){
-        return grid[x][y].isEmpty() && (x >= 0 && x < width && y >= 0 && y < height);
+        return grid[x][y].isEmpty() && ( x < width && y < height);
     }
     
     public boolean isValid(int x, int y) {
         return x >= 0 && x < width && y >= 0 && y < height;
     }
 
-    private boolean isValidAndWalkable(int x, int y){
+    public boolean isValidAndWalkable(int x, int y){
         return isValid(x, y) && grid[x][y].isTerrainWalkable();
+    }
+
+    public boolean isValidAndWalkable(double x, double y){
+        return (x >= 0.0001 && x < (width-1) && y >= 0.0001 && y < (height-1) && grid[(int)x][(int)y].isTerrainWalkable());
     }
 
     public List<Point> getAllWalkableValidNeighbours(Point point){
@@ -304,13 +341,38 @@ public class Map {
                 if (dx == 0 && dy == 0){
                     continue;
                 }
-                if (isValidAndWalkable(x, y)){
+                if (isValidAndWalkable(x+dx, y+dy)){
                     validNeighbours.add(getPoint((x+dx), (y+dy)));
                 }
 
             }
         }
         return validNeighbours;
+    }
+
+
+    /**
+     * Bresenham line-of-sight check between two world-space positions.
+     * Steps along every integer grid cell on the line; returns false as soon as
+     * an unwalkable cell is encountered.
+     */
+    public boolean hasLineOfSight(double x1, double y1, double x2, double y2) {
+        int ax = (int) x1, ay = (int) y1;
+        int bx = (int) x2, by = (int) y2;
+
+        int dx  =  Math.abs(bx - ax);
+        int dy  = -Math.abs(by - ay);
+        int sx  = ax < bx ? 1 : -1;
+        int sy  = ay < by ? 1 : -1;
+        int err = dx + dy;
+
+        while (true) {
+            if (!isValidAndWalkable(ax, ay)) return false;
+            if (ax == bx && ay == by)        return true;
+            int e2 = 2 * err;
+            if (e2 >= dy) { err += dy; ax += sx; }
+            if (e2 <= dx) { err += dx; ay += sy; }
+        }
     }
 
     public int getWidth() {

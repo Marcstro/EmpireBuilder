@@ -2,26 +2,47 @@ package empirebuilder;
 
 import LandTypes.LandType;
 import buildings.*;
+import entities.Entity;
+import entities.effects.Arrow;
+import entities.effects.BloodSpark;
+import entities.effects.Effect;
+import entities.units.*;
+import pathfinding.PathfindingSystem;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-class Game{
+public class Game{
 
     GameManager gm;
-    Random random;
+    TheDarkSide darkside;
     int tickCounter;
+    static final int MAP_CELL_SIZE = 5;
+
+    private MapCell[][] mapCellGrid;
+
+    final List<Unit> units;
+    List<Unit> unitsToBeAdded;
+
+    final List<Effect> effects;
+    List<Effect> effectsToBeAdded;
 
     List<Farm> farms;
     List<Village> villages;
     List<Town> towns;
     List<City> cities;
+    List<AttackCapableBuilding> attackCapableBuildings;
 
     List<Farm> farmsToAdd;
-    List<Farm> farmsToRemove;
     List<Farm> farmToConvertToVillage;
+
+    Set<Farm> farmsToRemove;
+    Set<Village> villagesToRemove;
+    Set<Town> townsToRemove;
+    Set<City> citiesToRemove;
+
 
     LinkedList<Farm> inactiveFarms;
     
@@ -41,45 +62,149 @@ class Game{
     final int cityToCityMinimumDistance = 35;
     final int villageSpreadingFarmsDistance = 12;
     final int adjacentFarmStartingPeopleAmount = 2;
+
+    final double UNIT_BASE_SIZE = 0.2;
     
     final boolean LOGGING = true;
     
     Game(GameManager gameManager){
         this.gm = gameManager;
-        random = new Random();
-        farms = new LinkedList();
-        villages = new LinkedList();
-        towns = new LinkedList();
-        cities = new LinkedList();
+        darkside = new TheDarkSide(this);
+        farms = new LinkedList<>();
+        villages = new LinkedList<Village>();
+        towns = new LinkedList<Town>();
+        cities = new LinkedList<City>();
+        attackCapableBuildings = new ArrayList<>();
+
+        effects = new ArrayList<>();
+        units = new ArrayList<>();
+        unitsToBeAdded = new ArrayList<>();
+        effectsToBeAdded = new ArrayList<>();
 
         inactiveFarms = new LinkedList<>();
-        int sizeOfPointsOnMap = gm.getMap().height * gm.getMap().getWidth();
+        int mapHeight = gm.getMap().getHeight();
+        int mapWidth = gm.getMap().getWidth();
+        int sizeOfPointsOnMap = mapHeight * mapWidth;
         for (int i=0; i<sizeOfPointsOnMap; i++){
             Farm newFarm = new Farm(gm.getMap().getPoint(0,0));
             inactiveFarms.add(newFarm);
         }
 
+        mapCellGrid = new MapCell[mapWidth/MAP_CELL_SIZE][mapHeight/MAP_CELL_SIZE];
+        for (int x = 0; x < mapWidth/MAP_CELL_SIZE; x++) {
+            for (int y = 0; y < mapHeight/MAP_CELL_SIZE; y++) {
+                this.mapCellGrid[x][y] = new MapCell(x, y);
+            }
+        }
+
         tickCounter=0;
 
         farmsToAdd = new LinkedList();
-        farmsToRemove = new LinkedList();
+        farmsToRemove = new HashSet<>();
         farmToConvertToVillage = new LinkedList();
+
+        villagesToRemove = new HashSet();
+        townsToRemove = new HashSet();
+        citiesToRemove = new HashSet();
     }
 
-    public void tickUnits(){
+    public void tickUnits() {
+        gm.getPathfindingSystem().beginTick();
+        synchronized (units) {
+            Iterator<Unit> it = units.iterator();
 
+            while (it.hasNext()) {
+                Unit unit = it.next();
+
+                if (!unit.isAlive()) {
+                    handleUnitDeath(unit);
+                    it.remove();
+                    continue;
+                }
+
+                unit.tick(this);
+                Coordinates newPos = attemptToMoveUnit(unit);
+
+                if (newPos != null) {
+                    moveUnit(unit, newPos);
+                }
+            }
+        }
+
+        synchronized (units) {
+            for (Unit unit : unitsToBeAdded) {
+                addNewUnit(unit, (int) unit.getX(), (int) unit.getY());
+            }
+            unitsToBeAdded.clear();
+        }
     }
 
     public void tickEffects(){
+        synchronized (effects) {
+            Iterator<Effect> it = effects.iterator();
 
+            while (it.hasNext()) {
+                Effect effect = it.next();
+
+                effect.tick(this);
+                if (effect.getRemainingDuration() <= 0) {
+                    // TODO remove effect from its MapCell ?
+                    // TODO investigate this with both effects and units, see that they are not lingering in MapCell objects as variables
+                    it.remove();
+                }
+            }
+            if (!effectsToBeAdded.isEmpty()) {
+                effects.addAll(effectsToBeAdded);
+                effectsToBeAdded.clear();
+            }
+        }
     }
 
-    public void tickWorld(){
+    public void eventsTick(){
+        darkside.tick();
+    }
+
+    public void attackingBuildingsTick(){
+        for(AttackCapableBuilding attackCapableBuilding: attackCapableBuildings){
+            attackCapableBuilding.tickAttack(this);
+        }
+    }
+
+    public void tickBuildings(){
+
+        List<Farm> farmsSnapshot = new ArrayList<>(farmsToRemove);
+        for (Farm farmToRemove: farmsSnapshot) {
+            destroyBuilding(farmToRemove);
+            farmToRemove.resetState();
+            farmsToRemove.remove(farmToRemove);
+        }
+
+        List<Village> villagesSnapshot = new ArrayList<>(villagesToRemove);
+        for(Village village: villagesSnapshot){
+            destroyBuilding(village);
+            villagesToRemove.remove(village);
+        }
+
+        List<Town> townsSnapshot = new ArrayList<>(townsToRemove);
+        for(Town town: townsSnapshot){
+            destroyBuilding(town);
+            townsToRemove.remove(town);
+        }
+
+        List<City> citiesSnapshot = new ArrayList<>(citiesToRemove);
+        for(City city: citiesSnapshot){
+            destroyBuilding(city);
+            citiesToRemove.remove(city);
+        }
 
         if (LOGGING && gm.getGridPanel().getSelectedPoint() != null){
             System.out.println(gm.getGridPanel().getSelectedPoint().getInfo());
         }
         for (Farm farm: farms) {
+            if (!farm.isAlive()){
+                farmsToRemove.add(farm);
+                continue;
+            }
             farm.tick();
             if (farm.checkIfLastPersonOnFarmDies()){
                 farmsToRemove.add(farm);
@@ -88,6 +213,18 @@ class Game{
             if (farm.getFarmOwningBuilding() == null && farm.isTimeToCreateNewFarm()) {
                 Point newFarmPoint = gm.getMap().getRandomEmptyWalkablePointAdjecantToTarget(farm.getPoint());
                 if (newFarmPoint == null){
+                    if (farm.timeToSearchForNewOwner()){
+                        Point newNeighbourPoint = gm.getMap().getOwnedAdjecantFarm(farm.getPoint());
+                        farm.resetSearchForNewOwnerCoolDown();
+                        if (newNeighbourPoint == null){
+                            continue;
+                        }
+                        FarmOwningBuilding newOwner = newNeighbourPoint.getPointOwner();
+                        farm.setFarmOwningBuilding(newOwner);
+                        newOwner.addFarm(farm);
+                        newOwner.addToControlledLand(farm.getPoint());
+                        farm.getPoint().setOwnerBuilding(newOwner);
+                    }
                     continue;
                 }
 
@@ -113,6 +250,10 @@ class Game{
         }
 
         for(Village village: villages){
+            if(!village.isAlive()){
+                villagesToRemove.add(village);
+                continue;
+            }
             village.tick();
             if (village.hasCommunalFoodToCreateNewFarm()){
                 if (!village.timeToRedoNearbySearch()){ //TODO move village.timeToRedoNearbySearch() up 1 line to prevent villages with no empty space nearby from
@@ -158,34 +299,26 @@ class Game{
                 farmsToAdd.add(newFarm);
             }
         }
+        farms.addAll(farmsToAdd);
 
-         farms.addAll(farmsToAdd);
-
-        for (Farm farmToRemove : farmsToRemove) {
-            destroyFarm(farmToRemove);
-            if (farmToRemove.belongsToFarmOwningBuilding()) {
-                farmToRemove.getFarmOwningBuilding().destroyFarm(farmToRemove);
-                farmToRemove.resetState();
-                // TODO add how specific buildings handle losing farms
+        for (Town town: towns){ // TODO move this to a better suitable place. all buildings should check this at once
+            if (!town.isAlive()){
+                townsToRemove.add(town);
+                continue;
             }
-            farmToRemove.resetState();
-        }
-        inactiveFarms.addAll(farmsToRemove);
-        farms.removeAll(farmsToRemove);
-
-        for (Town town: towns){
             town.tick();
         }
         for (City city: cities){
+            if (!city.isAlive()){
+                citiesToRemove.add(city);
+                continue;
+            }
             city.tick();
         }
 
         farmToConvertToVillage.forEach(farmToConvert -> convertFarmToVillageCenter(farmToConvert));
 
-        gm.getGridPanel().updateUI();
-
         farmsToAdd.clear();
-        farmsToRemove.clear();;
         farmToConvertToVillage.clear();
     }
 
@@ -195,7 +328,7 @@ class Game{
         }
         else {
             System.out.println("farm pool has run out of farms. INCREASE SIZE OF FARM POOL!");
-            return new Farm();
+            return new Farm(gm.getMap().getPoint(0,0));
         }
     }
 
@@ -251,17 +384,21 @@ class Game{
 
         List<Village> villagesToTurnToTowns = new LinkedList<>();
         //check for possible village -> town formation
+
+        // currently a village must have sufficient amount of people and owned farms to upgrade
         for(Village village: villages){
             if (village.hasOwner()){
                 continue;
             }
-            List<Village> nearbyIndependentVillages = villages.stream()
-                    .filter(v -> v != village)
-                    .filter(v -> !v.hasOwner())
-                    .filter(v -> calculateDistance(village.getPoint(), v.getPoint()) <= villageOwningRange)
-                    .toList();
-            if (nearbyIndependentVillages.size() >= villagesForTownCreation){
-                villagesToTurnToTowns.add(village);
+            if (!village.hasOwner() && village.getPeople() > 50 && village.getFarms().size() > 65){
+                List<Village> nearbyIndependentVillages = villages.stream()
+                        .filter(v -> v != village)
+                        .filter(v -> !v.hasOwner())
+                        .filter(v -> calculateDistance(village.getPoint(), v.getPoint()) <= villageOwningRange)
+                        .toList();
+                if (nearbyIndependentVillages.size() >= villagesForTownCreation){
+                    villagesToTurnToTowns.add(village);
+                }
             }
         }
 
@@ -285,14 +422,24 @@ class Game{
                 createTown(village, nearbyIndependentVillages);
             }
         }
+        // currently we adjust a farms tech level when something with it changes
+        // this is an alternative, check all farms on occasion
         /*
         for (Farm farm: farms){
             farm.uncommonFarmTick();
         }*/
     }
 
-    public void tickOwningBuildingsGainControlOverIndependents(){
+    public void seldomTick(){
 
+        // reset all occasional cooldowns
+        for(int x=0; x<mapCellGrid.length; x++){
+            for(int y=0; y<mapCellGrid[x].length; y++){
+                getMapCellInMapCellGrid(x,y).resetCooldowns();
+            }
+        }
+
+        // buildings gain control over independent lesser buildings
         for (City city: cities){
             List<Town> nearbyIndependentTowns = towns.stream()
                     .filter(t -> !t.hasCity())
@@ -305,11 +452,12 @@ class Game{
         }
 
         // update nearby villages to come into village owning buildings domain
-
         List<VillageOwningBuilding> villageOwners = Stream.concat(
-                towns.stream(),
-                cities.stream()
-        ).toList();
+                        towns.stream(),
+                        cities.stream()
+                )
+                .map(building -> (VillageOwningBuilding) building)
+                .toList();
 
         for (VillageOwningBuilding villageOwningBuilding : villageOwners){
             List<Village> nearbyIndependentVillages = villages.stream()
@@ -324,11 +472,12 @@ class Game{
         }
 
         // change farms success level change level
-        for (Farm farm: farms){
+        // current not in use
+        /*for (Farm farm: farms){
             double roll1 = ThreadLocalRandom.current().nextDouble(0.03);
             double roll2 = ThreadLocalRandom.current().nextDouble(0.03);
             farm.setSuccessLevelChange((roll1+roll2)-0.03);
-        }
+        }*/
     }
 
     public void tickUpdateBuildingOwnershipByDistance(){
@@ -360,6 +509,84 @@ class Game{
             }
         }
     }
+
+    public void addNewUnit(Unit unit, int x, int y) {
+        unit.setX(x);
+        unit.setY(y);
+
+        int cellX = getCellCoord(x);
+        int cellY = getCellCoord(y);
+
+        MapCell targetCell = mapCellGrid[cellX][cellY];
+
+        unit.setMapCellX(cellX);
+        unit.setMapCellY(cellY);
+
+        // Stagger the position-based stuck-check timer so all units spawned in the same
+        // batch do NOT fire their stuck check at the same tick.  Without this, every unit
+        // born at the same time reaches stuckSampleTick=0 simultaneously, triggering a
+        // burst of full-map A* calls that causes 40-80 ms frame spikes.
+        unit.setStuckSampleTick(ThreadLocalRandom.current().nextInt(PathfindingSystem.STUCK_SAMPLE_INTERVAL));
+
+        this.units.add(unit);
+        targetCell.addUnit(unit);
+    }
+
+    public void removeUnit(Unit unit) {
+        int cellX = unit.getMapCellX();
+        int cellY = unit.getMapCellY();
+        mapCellGrid[cellX][cellY].removeUnit(unit);
+        this.units.remove(unit);
+    }
+
+    public void addNewEffect(Effect effect, int x, int y) {
+        effect.setX(x);
+        effect.setY(y);
+
+        int mapCellX = getCellCoord(x);
+        int mapCellY = getCellCoord(y);
+
+        MapCell targetMapCell = mapCellGrid[mapCellX][mapCellY];
+
+        effect.setMapCellX(mapCellX);
+        effect.setMapCellY(mapCellY);
+
+        this.effectsToBeAdded.add(effect);
+        targetMapCell.addEffect(effect);
+    }
+
+    public void removeEffect(Effect effect) {
+        int mapCellX = effect.getMapCellX();
+        int mapCellY = effect.getMapCellY();
+        mapCellGrid[mapCellX][mapCellY].removeEffect(effect);
+        this.effects.remove(effect);
+    }
+
+    public MapCell getMapCellByPoint(Point point){
+        return mapCellGrid[point.getX()/MAP_CELL_SIZE][point.getY()/MAP_CELL_SIZE];
+    }
+
+    public MapCell getMapCellByPointCoordinates(int x, int y){
+        return mapCellGrid[x/MAP_CELL_SIZE][y/MAP_CELL_SIZE];
+    }
+
+    public MapCell getMapCellInMapCellGrid(int x, int y){
+        return mapCellGrid[x][y];
+    }
+
+    /**
+     * Direct access to the raw cell grid — use only for read-only iteration
+     * (e.g. ORCA neighbour gathering) where avoiding lambda dispatch matters.
+     */
+    public MapCell[][] getMapCellGrid() { return mapCellGrid; }
+
+    private int getCellCoord(int mapCoord) {
+        return mapCoord / MAP_CELL_SIZE;
+    }
+
+    public Point getPoint(double x, double y){
+        return (gm.getMap().getPoint((int)x, (int)y));
+    }
     
     public double calculateDistance(Point p1, Point p2) {
         int dx = p1.getX() - p2.getX();
@@ -373,7 +600,7 @@ class Game{
         
         //prevent too close village creation
         for (Village village: villages){
-            if (calculateDistance(farmCenter, village.getPoint()) < ((VILLAGE_DOMAIN_LIMIT*2)-1)){
+            if (calculateDistance(farmCenter, village.getPoint()) < ((VILLAGE_DOMAIN_LIMIT*2))){
                 return;
             }
         }          
@@ -401,21 +628,17 @@ class Game{
         newVillage.setPeople(farm.getPeople());
         newVillage.setFood(farm.getFood());
         villages.add(newVillage);
-        farms.remove(farm);
+        farms.remove(farm); //this here was temporarily removed, should it remain removed? Testing shows it should remain here
         farm.resetState();
         inactiveFarms.add(farm);
 
         gm.getMap().replaceBuilding(farmCenter, newVillage);
 
-        List<Point> pointsBelongingToVillage = new LinkedList<>(
-                gm.getMap()
-            .getAllPointsInCircleAroundTarget(farmCenter, VILLAGE_DOMAIN_LIMIT)
-            .stream()
-            .filter(p -> !p.isOwnedByBuilding())
-            .filter(Point::isTerrainWalkable)
-            .toList());
-        
-        Collections.shuffle(pointsBelongingToVillage);
+        Set<Point> pointsBelongingToVillage = gm.getMap()
+                .getAllPointsInCircleAroundTarget(farmCenter, VILLAGE_DOMAIN_LIMIT)
+                .stream()
+                .filter(p -> !p.isOwnedByBuilding())
+                .filter(p-> p.isTerrainWalkable()).collect(Collectors.toSet());
         
         for (Point point: pointsBelongingToVillage){
             point.setOwnerBuilding(newVillage);
@@ -436,8 +659,9 @@ class Game{
     }
 
     public void createTown(Village village, List<Village> nearbyVillages){
+
         Point midPoint = village.getPoint();
-        List<Point> townPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
+        List<Point> townAreaPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
 
         villages.remove(village);
         Town newTown = new Town(midPoint);
@@ -447,21 +671,19 @@ class Game{
         newTown.setGold(village.getGold());
         gm.getMap().replaceBuilding(midPoint, newTown);
         towns.add(newTown);
+        attackCapableBuildings.add(newTown);
+        getMapCellByPoint(newTown.getPoint()).addAttackCapableBuildings(newTown);
         newTown.setControlledLand(village.getControlledLand());
 
-        for (Point point: village.getControlledLand()){
+        for (Point point: newTown.getControlledLand()){
             if (point.equals(midPoint)){
                 continue;
             }
-            if (townPoints.contains(point)){
+            if (townAreaPoints.contains(point)){
                 if (point.getBuilding() instanceof Farm farm){
-                    farm.setFarmOwningBuilding(null);
-                    farms.remove(farm);
-                    gm.getMap().removeBuildingFromPoint(point);
-                    farm.resetState();
-                    inactiveFarms.add(farm);
-                    if (farm.getFarmOwningBuilding() instanceof FarmOwningBuilding farmOwner){
-                        farmOwner.destroyFarm(farm);
+                    destroyBuilding(farm);
+                    if (farmsToRemove.contains(farm)) {
+                        farmsToRemove.remove(farm);
                     }
                 }
                 else if (point.getBuilding() != null && point.getBuilding() != newTown){
@@ -471,10 +693,10 @@ class Game{
                 TownArea townArea = new TownArea(point, newTown);
                 gm.getMap().setBuildingOnPoint(point, townArea);
                 newTown.addTownArea(townArea);
-                point.createNewLandForPoint(LandType.TOWN);
             }
-            if(point.getBuilding() instanceof Farm farm){
-                farm.getFarmOwningBuilding().destroyFarm(farm);
+            if (point.getBuilding() instanceof Farm farm){
+                farm.getFarmOwningBuilding().removeFromFarmList(farm);
+                farm.getFarmOwningBuilding().removePointFromEmptyPointList(farm.getPoint());
                 farm.setFarmOwningBuilding(newTown);
                 newTown.addFarm(farm);
             }
@@ -490,10 +712,16 @@ class Game{
         }
     }
 
-    // TODO this method could be rewritten more cleanly. The order of things happening is important and might cause bugs if changed
+    // TODO this method could be rewritten more cleanly.
+    // the order of things happening is important and might cause bugs if changed
     public void createCity(Town town, List<Town> nearbyTowns){
+
+        attackCapableBuildings.remove(town);
+        getMapCellByPoint(town.getPoint()).removeAttackCapableBuilding(town);
         Point midPoint = town.getPoint();
         City newCity = new City(midPoint);
+        attackCapableBuildings.add(newCity);
+        getMapCellByPoint(newCity.getPoint()).addAttackCapableBuildings(newCity);
         newCity.setPeople(town.getPeople());
         newCity.setFood(town.getFood());
         newCity.setGold(town.getGold());
@@ -507,29 +735,29 @@ class Game{
                 continue;
             }
             gm.getMap().removeBuildingFromPoint(point);
-            point.createNewLandForPoint(LandType.DIRT);
         }
 
         List<Point> cityAreaPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY());
         for (Point cityAreaPoint: cityAreaPoints){
-            cityAreaPoint.getPointOwner().removeFromControlledLand(cityAreaPoint);
-            cityAreaPoint.getPointOwner().occupyPoint(cityAreaPoint);
-            cityAreaPoint.setOwnerBuilding(newCity);
-            cityAreaPoint.createNewLandForPoint(LandType.CITY);
+            cityAreaPoint.getPointOwner().removePointFromEmptyPointList(cityAreaPoint);
+            cityAreaPoint.setOwnerBuilding(town);
+            town.addToControlledLand(cityAreaPoint);
             if (cityAreaPoint == midPoint){
                 continue;
             }
             if (cityAreaPoint.getBuilding() instanceof Farm farm){
-                if(farm.getFarmOwningBuilding() instanceof FarmOwningBuilding FOB){
-                    FOB.destroyFarm(farm);
-                    FOB.removeFromControlledLand(cityAreaPoint);
-                    FOB.occupyPoint(cityAreaPoint);
-                }
-                farm.removeFarmingOwningBuilding();
-                gm.getMap().removeBuildingFromPoint(cityAreaPoint);
                 farms.remove(farm);
+                if (farm.getFarmOwningBuilding() instanceof FarmOwningBuilding FOB && FOB != town) {
+                    FOB.removeFromFarmList(farm);
+                    FOB.removePointFromEmptyPointList(farm.getPoint());
+                    FOB.removeFromControlledLand(cityAreaPoint);
+                }
+                gm.getMap().removeBuildingFromPoint(farm.getPoint());
                 farm.resetState();
                 inactiveFarms.add(farm);
+                if (farmsToRemove.contains(farm)) {
+                    farmsToRemove.remove(farm);
+                }
             }
 
             // TODO add else if farmBuilding isnt farm but something else, that building should be properly removed from all lists etc
@@ -569,11 +797,652 @@ class Game{
         }
     }
 
-    // TODO this should be redone and handled better. Deal with owner, remove from farmlist etc.
-    public void destroyFarm(Farm farm){
-        gm.getMap().removeBuildingFromPoint(farm.getPoint());
+    private Coordinates attemptToMoveUnit(Unit unit) {
+        return gm.getPathfindingSystem().computeNextPosition(unit);
     }
 
+    private void moveUnit(Unit unit, Coordinates newPos) {
+        int newMapCellX = getCellCoord((int) newPos.x());
+        int newMapCellY = getCellCoord((int) newPos.y());
+
+        if (newMapCellX != unit.getMapCellX() || newMapCellY != unit.getMapCellY()) {
+            if (newMapCellX >= 0 && newMapCellX < mapCellGrid.length &&
+                    newMapCellY >= 0 && newMapCellY < mapCellGrid[newMapCellX].length) {
+
+                MapCell oldCell = mapCellGrid[unit.getMapCellX()][unit.getMapCellY()];
+                MapCell newCell = mapCellGrid[newMapCellX][newMapCellY];
+                oldCell.removeUnit(unit);
+                newCell.addUnit(unit);
+
+                unit.setMapCellX(newMapCellX);
+                unit.setMapCellY(newMapCellY);
+
+
+                if (unit.getFactionId() == 2) {
+                    wakeAttackCapableBuildings(unit, 1);
+                }
+            }
+        }
+
+        unit.setX(newPos.x());
+        unit.setY(newPos.y());
+    }
+
+    public boolean searchOtherLocalUnits(int centerX, int centerY, int distanceOut, UnitAction action) {
+        int startX = getCellCoord(centerX) - distanceOut;
+        int endX = getCellCoord(centerX) + distanceOut;
+        int startY = getCellCoord(centerY) - distanceOut;
+        int endY = getCellCoord(centerY) + distanceOut;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y  < mapCellGrid[x].length ) {
+
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (Unit neighbor : cell.getUnits()) {
+                        // We cannot check if neighbor is the searcher here,
+                        // so all neighbors must be checked by the action.
+                        if (action.execute(neighbor)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean searchOtherLocalUnits(Unit unit, int distanceOut, UnitAction action) {
+        int startX = unit.getMapCellX() - distanceOut;
+        int endX = unit.getMapCellX() + distanceOut;
+        int startY = unit.getMapCellY() - distanceOut;
+        int endY = unit.getMapCellY() + distanceOut;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y  < mapCellGrid[x].length ) {
+
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (Unit neighbor : cell.getUnits()) {
+                        if (neighbor != unit) {
+
+                            if (action.execute(neighbor)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+
+    //call with
+    /**
+     *
+     attackTarget = game.getNearestUnit(this, 1, (neighbor) ->
+     neighbor.isAlive() && this.isHostileTo(neighbor)
+     );
+     */
+    public Unit getNearestUnit(double lookerX, double lookerY, Unit searcher, int distanceOut, UnitPredicate filter) {
+        Unit nearestUnit = null;
+        double minDistanceSq = Double.MAX_VALUE;
+
+        double sX = lookerX;
+        double sY = lookerY;
+
+        int startX = getCellCoord((int)lookerX) - distanceOut;
+        int endX = getCellCoord((int)lookerX) + distanceOut;
+        int startY = getCellCoord((int)lookerY) - distanceOut;
+        int endY = getCellCoord((int)lookerY) + distanceOut;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (Unit neighbor : cell.getUnits()) {
+                        if (neighbor != searcher && filter.test(neighbor)) {
+
+                            double nX = neighbor.getX();
+                            double nY = neighbor.getY();
+                            double dx = sX - nX;
+                            double dy = sY - nY;
+                            double distanceSq = (dx * dx) + (dy * dy);
+
+                            if (distanceSq < minDistanceSq) {
+                                minDistanceSq = distanceSq;
+                                nearestUnit = neighbor;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return nearestUnit;
+    }
+
+    // TODO implement unit/effect size?
+    // has future usages
+    private boolean checkSimpleCollision(double x1, double y1, Unit neighbor) {
+        double minSeparation = neighbor.getSize() + UNIT_BASE_SIZE;// instead of base size, check targeters size
+        double minSeparationSq = minSeparation * minSeparation;
+
+        double dx = x1 - neighbor.getX();
+        double dy = y1 - neighbor.getY();
+        double distanceSq = (dx * dx) + (dy * dy);
+
+        return distanceSq < minSeparationSq;
+    }
+
+    // checks if a missile, starting from p1, going to p2, hits unit c that has radius r
+    public boolean checkRaycastCollision(double p1x, double p1y, double p2x, double p2y, double cX, double cY, double r) {
+
+        double dx = p2x - p1x;
+        double dy = p2y - p1y;
+
+        // Vector from P1 to C
+        double pcX = cX - p1x;
+        double pcY = cY - p1y;
+
+        // Dot product of (P1->P2) and (P1->C)
+        double dot = dx * pcX + dy * pcY;
+
+        // Length squared of P1->P2 vector
+        double lenSq = dx * dx + dy * dy;
+
+        // Parameter t: projects C onto the line defined by P1 and P2
+        double t = (lenSq == 0) ? 0 : dot / lenSq;
+
+        // Clamp t to the segment [0, 1] to ensure we only check the line segment
+        if (t < 0) t = 0;
+        if (t > 1) t = 1;
+
+        // Find the closest point on the segment to C (Px, Py)
+        double closestX = p1x + t * dx;
+        double closestY = p1y + t * dy;
+
+        // Distance squared from C to the closest point (Px, Py)
+        double distSq = (cX - closestX) * (cX - closestX) + (cY - closestY) * (cY - closestY);
+
+        // Check if distance is less than radius squared
+        return distSq < r * r;
+    }
+
+    public Point getRandomValidPoint(){
+        return gm.getMap().getrandomValidPoint();
+    }
+
+    public Point getRandomTownPoint(){
+        if (towns.size()==0){
+            return null;
+        }
+        return towns.get((int)(Math.random()*(towns.size()))).getPoint();
+    }
+
+    public List<Effect> getEffects() {
+        return effects;
+    }
+
+    public List<Unit> getUnits() {
+        return units;
+    }
+
+    private void createEffect(Effect effect) {
+        int cellX = getCellCoord((int)effect.getX());
+        int cellY = getCellCoord((int)effect.getY());
+
+        effect.setMapCellX(cellX);
+        effect.setMapCellY(cellY);
+
+        mapCellGrid[cellX][cellY].addEffect(effect);
+        effectsToBeAdded.add(effect);
+    }
+
+    // TODO rewrite, add many more variables
+    // possibly implement some sort of "missile creation factory"
+    public void spawnArrow(AttackCapableBuilding shooter, Unit target, int senderFactionId) {
+        Arrow arrow = new Arrow(shooter.getX(), shooter.getY(), target.getX(), target.getY(), senderFactionId);
+        createEffect(arrow);
+    }
+
+    public void unitShootArrow(Unit shooter, Unit target, int senderFactionId) {
+        Arrow arrow = new Arrow(shooter.getX(), shooter.getY(), target.getX(), target.getY(), senderFactionId);
+        createEffect(arrow);
+    }
+
+    // TODO extend so arrows can hit buildings
+    public boolean checkArrowHit(Arrow arrow, double p1x, double p1y) {
+        boolean hit = searchOtherLocalUnits((int)p1x, (int)p1y, 1, (targetUnit) -> {
+
+            if (!targetUnit.isHostileTo(arrow.getFactionId())) {
+                return false;
+            }
+
+            // Target radius: Unit size + a small buffer for the arrow size itself
+            // TODO implement missile radius. different size arrows should create differently wide paths
+            double targetRadius = targetUnit.getSize() + 0.1;
+
+            if (checkRaycastCollision(
+                    p1x, p1y,
+                    arrow.getX(), arrow.getY(),
+                    targetUnit.getX(), targetUnit.getY(),
+                    targetRadius
+            )) {
+                targetUnit.causeHealthLoss(arrow.getDamage());
+                if (targetUnit instanceof Unit){
+                    BloodSpark bloodSpark = new BloodSpark(targetUnit.getX(), targetUnit.getY());
+                    // TODO place the arrow at units position and delay there, visualizing impact
+                    createEffect(bloodSpark);
+                }
+
+                return true;
+            }
+            return false;
+        });
+
+        return hit;
+    }
+
+    public void wakeAttackCapableBuildings(Unit unit, int distanceOut) {
+        if (unit.getFactionId() == 1) {
+            return;
+        }
+
+        int startX = unit.getMapCellX() - distanceOut;
+        int endX = unit.getMapCellX() + distanceOut;
+        int startY = unit.getMapCellY() - distanceOut;
+        int endY = unit.getMapCellY() + distanceOut;
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
+
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (AttackCapableBuilding building : cell.getAttackCapableBuildings()) {
+                        building.setAttackReady(true);
+                    }
+                }
+            }
+        }
+    }
+
+    // TODO expand, instead of hostileFactionId, use friendlyFactionId
+    public boolean isHostileUnitInRadius(int cellX, int cellY, int distanceOut, int hostileFactionId) {
+        return searchOtherLocalUnits(cellX, cellY, distanceOut, (neighbor) -> {
+            return (neighbor.isAlive() && neighbor.getFactionId() == hostileFactionId);
+        });
+    }
+
+    // TODO expand so all factions buildings can be attackCapable
+    public void attemptToPutAttackCapableBuildingsAsleep(int centerCellX, int centerCellY, int distanceOut) {
+
+        // We only care about cells that might have been under threat and contain buildings.
+        int buildingSearchDistance = 2; // Check 5x5 area for buildings that might be active
+
+        int startX = centerCellX - buildingSearchDistance;
+        int endX = centerCellX + buildingSearchDistance;
+        int startY = centerCellY - buildingSearchDistance;
+        int endY = centerCellY + buildingSearchDistance;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
+
+                    MapCell cell = mapCellGrid[x][y];
+
+                    if (cell.getAttackCapableBuildings().isEmpty()) {
+                        continue;
+                    }
+
+                    // TODO this method already does a double for loop to search outwards, unnecessary
+                    // that 2 methods both attempt to do the scan
+                    boolean threatPresent = isHostileUnitInRadius(x, y, 0, 2);
+
+                    if (!threatPresent) {
+                        for (AttackCapableBuilding building : cell.getAttackCapableBuildings()) {
+                            building.setAttackReady(false);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void handleUnitDeath(Unit unit) {
+
+        // TODO possible make nearby areas react on death unit?
+         MapCell mapCell = mapCellGrid[unit.getMapCellX()][unit.getMapCellY()];
+         mapCell.removeUnit(unit);
+    }
+
+    public AttackCapableBuilding getNearestAttackCapableBuilding(Unit searcher, int distanceOut) {
+        AttackCapableBuilding nearestBuilding = null;
+        double minDistanceSq = Double.MAX_VALUE;
+
+        int startX = searcher.getMapCellX() - distanceOut;
+        int endX = searcher.getMapCellX() + distanceOut;
+        int startY = searcher.getMapCellY() - distanceOut;
+        int endY = searcher.getMapCellY() + distanceOut;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
+
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (AttackCapableBuilding building : cell.getAttackCapableBuildings()) {
+                        if (searcher.isHostileTo(building.getFactionId())) {
+
+                            double bX = building.getX(); // Building's getX()
+                            double bY = building.getY(); // Building's getY()
+                            double dx = searcher.getX() - bX;
+                            double dy = searcher.getY() - bY;
+                            double distanceSq = (dx * dx) + (dy * dy);
+
+                            if (distanceSq < minDistanceSq) {
+                                minDistanceSq = distanceSq;
+                                nearestBuilding = building;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return nearestBuilding;
+    }
+
+    public FarmOwningBuilding getNearestLargeBuilding(Unit searcher, int distanceOut){
+        FarmOwningBuilding nearestLargeBuilding = null;
+        double minDistanceSq = Double.MAX_VALUE;
+
+        int startX = searcher.getMapCellX() - distanceOut;
+        int endX = searcher.getMapCellX() + distanceOut;
+        int startY = searcher.getMapCellY() - distanceOut;
+        int endY = searcher.getMapCellY() + distanceOut;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+                    if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (FarmOwningBuilding building : cell.getLargeBuildingsList(this)) {
+                        if (searcher.isHostileTo(building.getFactionId())) {
+
+                            double bX = building.getX(); // Building's getX()
+                            double bY = building.getY(); // Building's getY()
+                            double dx = searcher.getX() - bX;
+                            double dy = searcher.getY() - bY;
+                            double distanceSq = (dx * dx) + (dy * dy);
+
+                            if (distanceSq < minDistanceSq) {
+                                minDistanceSq = distanceSq;
+                                nearestLargeBuilding = building;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return nearestLargeBuilding;
+    }
+
+    public boolean performMeleeAttack(Unit attacker, Entity target) {
+
+        target.causeHealthLoss(attacker.getDamage());
+        BloodSpark bloodSpark = new BloodSpark(target.getX(), target.getY());
+        createEffect(bloodSpark);
+        //System.out.println(attacker.getClass().getSimpleName() + " attacked and did " + attacker.getDamage() + " damage on " + target + ", target has " + target.getHealth() + " health left.");
+        return true;
+    }
+
+    public List<FarmOwningBuilding> getAllFarmOwningBuildingsInMapCell(MapCell mapcell){
+        List<FarmOwningBuilding> list = new ArrayList<>();
+        for (int x=mapcell.getCellX()*MAP_CELL_SIZE; x<(mapcell.getCellX()+1)*MAP_CELL_SIZE; x++){
+            for (int y=mapcell.getCellY()*MAP_CELL_SIZE; y<(mapcell.getCellY()+1)*MAP_CELL_SIZE; y++){
+                if (gm.getMap().getPoint(x,y).getBuilding() instanceof FarmOwningBuilding building){
+                    list.add(building);
+                }
+            }
+        }
+        return list;
+    }
+
+    // TODO review for possible improvements
+    public void destroyBuilding(Building building){
+
+        if (building == null){
+            return;
+        }
+
+        switch (building) {
+            case City city -> {
+                cities.remove(city);
+                List<CityArea> snapshot = new ArrayList<>(city.getCityAreaPoints());
+                snapshot.forEach(cityArea -> destroyBuilding(cityArea));
+                getMapCellByPoint(city.getPoint()).removeBuilding(city);
+                gm.getMap().removeBuildingFromPoint(city.getPoint());
+                for(Town town: city.getTowns()){
+                    town.removeCity();
+                    for (Village village: town.getVillages()){
+                        villageReactToOwnerBeingDestroyed(village);
+                    }
+                }
+                city.setTowns(null);
+            }
+            case Town town -> {
+                towns.remove(town);
+                List<TownArea> snapshot = new ArrayList<>(town.getTownAreaPoints());
+                snapshot.forEach(townArea -> destroyBuilding(townArea));
+                getMapCellByPoint(town.getPoint()).removeBuilding(town);
+                gm.getMap().removeBuildingFromPoint(town.getPoint());
+                if (town.hasCity()){
+                    town.getCity().releaseTown(town);
+                    town.removeCity();
+                }
+            }
+            case Village village -> {
+                gm.getMap().removeBuildingFromPoint(village.getPoint());
+                village.unmarkCenter();
+                villages.remove(village);
+                if (village.hasOwner()){
+                    village.getOwner().removeVillage(village);
+                }
+                village.setOwner(null);
+            }
+            case Farm farm -> {
+                gm.getMap().removeBuildingFromPoint(farm.getPoint());
+                farms.remove(farm);
+                if(farm.belongsToFarmOwningBuilding()){
+                    farm.getFarmOwningBuilding().removeFromFarmList(farm);
+                }
+                farm.resetState();
+                inactiveFarms.add(farm);
+            }
+            case TownArea townArea -> {
+                gm.getMap().removeBuildingFromPoint(townArea.getPoint());
+                townArea.getTownCenter().removeTownArea(townArea);
+                townArea.setTownCenter(null);
+            }
+            case CityArea cityArea -> {
+                gm.getMap().removeBuildingFromPoint(cityArea.getPoint());
+                cityArea.getCityCenter().removeCityArea(cityArea);
+                cityArea.setCityCenter(null);
+            }
+            case null, default -> throw new RuntimeException("x196 what kind of building was destroyed???");
+        }
+
+        if (building instanceof VillageOwningBuilding villageOwningBuilding){
+            for (Village village: villageOwningBuilding.getVillages()){
+                village.setOwner(null);
+                village.unmarkCenter();
+                updateVillageControlledLand(village);
+                villageReactToOwnerBeingDestroyed(village);
+            }
+            villageOwningBuilding.setVillages(null);
+        }
+
+        if (building instanceof FarmOwningBuilding farmOwningBuilding){
+            for (Point point: farmOwningBuilding.getControlledLand()){
+                point.setOwnerBuilding(null);
+            }
+            farmOwningBuilding.setControlledLand(null);
+            List<Farm> snapshot = new ArrayList<>(farmOwningBuilding.getFarms());
+            snapshot.forEach(farm -> destroyBuilding(farm));
+        }
+
+        if (building instanceof AttackCapableBuilding attackCapableBuilding){
+            getMapCellByPointCoordinates((int)attackCapableBuilding.getX(), (int)attackCapableBuilding.getY()).removeAttackCapableBuilding(attackCapableBuilding);
+            attackCapableBuildings.remove(attackCapableBuilding);
+        }
+    }
+
+    public void updateVillageControlledLand(Village village){
+        List<Point> pointToBeGivenToVillage = new LinkedList<>(
+                gm.getMap()
+                        .getAllPointsInCircleAroundTarget(village.getPoint(), VILLAGE_DOMAIN_LIMIT)
+                        .stream()
+                        .filter(p -> !p.isOwnedByBuilding())
+                        .filter(Point::isTerrainWalkable)
+                        .toList());
+        for(Point point: pointToBeGivenToVillage){
+            if (point.getBuilding() instanceof Farm farm){
+                village.addFarm(farm);
+                farm.setFarmOwningBuilding(village);
+            }
+            else {
+                village.addEmptyPoint(point);
+            }
+            village.addToControlledLand(point);
+            point.setOwnerBuilding(village);
+        }
+    }
+
+    public void villageReactToOwnerBeingDestroyed(Village village){
+        List<Point> baseDomainArea = gm.getMap().getAllPointsInCircleAroundTarget(village.getPoint(), VILLAGE_DOMAIN_LIMIT);
+        List<Farm> farmsSnapshot = new ArrayList<>(village.getFarms());
+        for(Farm farm: farmsSnapshot){
+            //50% for each owned farm to be destroyed
+            if (!baseDomainArea.contains(farm.getPoint())){
+                farmsToRemove.add(farm);
+            }
+            else {
+                if (ThreadLocalRandom.current().nextDouble() > 0.5){
+                    farm.halvePeopleAmount();
+                }
+                else {
+                    farmsToRemove.add(farm);
+                }
+            }
+        }
+    }
+
+    public boolean isUnitInDestinedMapCell(Unit unit){
+        MapCell targetMapCell = getMapCellByPoint(unit.getPointTarget());
+        MapCell unitMapCell = getMapCellByPoint(getPoint((int)unit.getX(), (int)unit.getY()));
+        return targetMapCell == unitMapCell;
+    }
+
+    public boolean isUnitInDestinedPoint(Unit unit){
+        Point pt = unit.getPointTarget();
+        if (pt == null) return false;
+        double dx = unit.getX() - pt.getX();
+        double dy = unit.getY() - pt.getY();
+        return Math.sqrt(dx * dx + dy * dy) <= PathfindingSystem.POINT_TARGET_ARRIVAL_RADIUS;
+    }
+
+    public Point getRandomWalkablePoint(){
+        int x = -1;
+        int y = -1;
+        while (!gm.getMap().isValidAndWalkable(x,y)){
+            x = ThreadLocalRandom.current().nextInt(gm.getMap().getWidth());
+            y = ThreadLocalRandom.current().nextInt(gm.getMap().getHeight());
+        }
+        return getPoint(x,y);
+    }
+
+    public Point getNewPointTarget(){
+        return getRandomWalkablePoint();
+    }
+
+    /**
+     * Returns up to [count] valid spawn points near (centerX, centerY).
+     * Walkable points without other units on it
+     *
+     * The search expands outward ring-by-ring so the closest walkable tiles are
+     * always preferred.
+     */
+    private List<Point> findGroupSpawnPoints(int centerX, int centerY, int count) {
+        List<Point> result = new ArrayList<>(count);
+        Set<Long> claimed = new HashSet<>();
+
+        for (Unit queued : unitsToBeAdded) {
+            claimed.add(pointKey((int) queued.getX(), (int) queued.getY()));
+        }
+
+        for (int radius = 0; radius <= 50 && result.size() < count; radius++) {
+            for (int dx = -radius; dx <= radius && result.size() < count; dx++) {
+                for (int dy = -radius; dy <= radius && result.size() < count; dy++) {
+                    if (Math.abs(dx) != radius && Math.abs(dy) != radius) continue;
+
+                    int x = centerX + dx;
+                    int y = centerY + dy;
+
+                    if (!gm.getMap().isValidAndWalkable(x, y)) continue;
+
+                    long key = pointKey(x, y);
+                    if (claimed.contains(key)) continue;
+                    if (isPointOccupiedByUnit(x, y)) continue;
+
+                    claimed.add(key);
+                    result.add(gm.getMap().getPoint(x, y));
+                }
+            }
+        }
+
+        if (result.size() < count) {
+            System.out.println("[spawnGroup] Warning: only found " + result.size()
+                    + "/" + count + " spawn points near (" + centerX + "," + centerY + ")");
+        }
+        return result;
+    }
+
+    /** Packs two ints into a long for use as a set key. */
+    private static long pointKey(int x, int y) {
+        return ((long) x << 32) | (y & 0xFFFFFFFFL);
+    }
+
+    /**
+     * Returns true if any unit already placed on the map occupies the given
+     * integer-grid point (within 0.9 world-units — close enough to be "on" it).
+     */
+    private boolean isPointOccupiedByUnit(int x, int y) {
+        int cellX = x / MAP_CELL_SIZE;
+        int cellY = y / MAP_CELL_SIZE;
+        if (cellX < 0 || cellX >= mapCellGrid.length
+                || cellY < 0 || cellY >= mapCellGrid[cellX].length) return false;
+        for (Unit u : mapCellGrid[cellX][cellY].getUnits()) {
+            double ddx = u.getX() - x;
+            double ddy = u.getY() - y;
+            if (ddx * ddx + ddy * ddy < 0.81) return true; // 0.9² = 0.81
+        }
+        return false;
+    }
+
+    public int getMAP_CELL_SIZE(){
+        return MAP_CELL_SIZE;
+    }
+
+    // ------------------------------- TEST POINT -----------------
 
     /**
      * ALL METHODS BELOW
@@ -589,7 +1458,7 @@ class Game{
             createFarmAtPoint(point.getX(), point.getY());
         }
         experimentTicker++;
-        gm.getGridPanel().updateUI();
+        gm.getGridPanel().repaint();
     }
     
     public void experiment3(){
@@ -604,43 +1473,6 @@ class Game{
         }
         System.out.println("Farms according to list: " + farms.size() + ", Real amount of farms: " + farmAmount + ", difference: " + (farms.size()-farmAmount));
         System.out.println("Amount of villages: " + villages.size() + ", towns: " + towns.size() + ", cities: " + cities.size());
-    }
-    
-    public void experiment4(){
-        if (farms == null || farms.isEmpty()) {
-            System.out.println("The farms list is empty or not initialized. Cannot run test.");
-            return;
-        }
-
-        System.out.println("Starting performance test: calling getRandomEmptyWalkablePointAdjecantToTarget 1,000,000 times...");
-        System.out.println("Number of farms is: " + farms.size());
-
-        // Use nanoTime() for high-resolution timing.
-        long startTime = System.nanoTime();
-        int iterations = 1000;
-
-        // This is the optimized loop that avoids the slow LinkedList.get() operation
-        int count = 0;
-        for(int x=0; x<iterations; x++){
-            for (Farm farm : farms) {
-                gm.getMap().getRandomEmptyWalkablePointAdjecantToTarget(farm.getPoint());
-                count++;
-            }
-            if (x%(iterations/100) == 0){
-                System.out.println((x / (iterations/100))+"% done");
-            }
-        }
-
-
-        long endTime = System.nanoTime();
-        long durationInNanos = endTime - startTime;
-
-        // Convert the duration to milliseconds for readability.
-        double durationInSeconds = durationInNanos / 1_000_000_000.0;
-
-        System.out.printf("Test completed. The operation took %.4f seconds.%n", durationInSeconds);
-        System.out.println("Time");
-        System.out.println("Iterations: " + iterations*farms.size() + ". Time per farm: " + durationInSeconds/(iterations*farms.size()) + " ms");
     }
     
     public void experiment5(){
@@ -691,7 +1523,6 @@ class Game{
     
     public Farm createFarmAtPoint(int x, int y){
         Point point = gm.getMap().getPoint(x, y);
-        point.createNewLandForPoint(LandType.GRASSLAND);
         Farm farm = getFarmFromPool();
         farm.activate(point, 1);
         
@@ -703,9 +1534,14 @@ class Game{
 
     public void printMapInfo(){
         System.out.println("map info: ");
+        System.out.println("total amount of units: " + units.size());
+        System.out.println("Orcs: " + units.stream().filter(unit -> unit instanceof Orc).toList().size());
+        System.out.println("Knights: " + units.stream().filter(unit -> unit instanceof Knight).toList().size());
         System.out.println("Farms: " + farms.size());
+        System.out.println("Inactive farms: " + inactiveFarms.size());
         System.out.println("Villages: " + villages.size());
         System.out.println("Towns: " + towns.size());
+        System.out.println("Cities: " + cities.size());
         int total = gm.getMap().getGrid().length * gm.getMap().getGrid()[0].length;
         System.out.println("Whole map size: " + total);
         System.out.println("All buildings is total: " + (farms.size()+towns.size()+villages.size()));
@@ -716,7 +1552,6 @@ class Game{
         List<Point> surroundings = gm.getMap().getAllValidAdjecantPointsToTarget(point);
         surroundings.add(point);
         for(Point p: surroundings){
-            p.createNewLandForPoint(LandType.GRASSLAND);
             Farm farm = getFarmFromPool();
             farm.activate(p, 2);
             gm.getMap().setBuildingOnPoint(p, farm);
@@ -740,7 +1575,7 @@ class Game{
         for(Point p: road){
             p.createNewLandForPoint(LandType.WATER);
         }
-        System.out.println(road.size() + " = raodens langd");
+        System.out.println(road.size() + " = road langd");
         gm.getGridPanel().updateUI();
     }
     
@@ -749,13 +1584,12 @@ class Game{
         if (!randomPoint.isEmpty()){
             return null;
         }
-        randomPoint.createNewLandForPoint(LandType.GRASSLAND);
         Farm farm = getFarmFromPool();
         farm.activate(randomPoint, 1);
         
         gm.getMap().setBuildingOnPoint(randomPoint, farm);
         farms.add(farm);
-        System.out.println("Farm created at " + farm.toString());
+        System.out.println("Farm created at " + farm.getInfo());
         gm.getGridPanel().updateUI();
         return farm;
     }
@@ -784,13 +1618,59 @@ class Game{
     public void currentExperiment(){
 
         Point point = gm.getGridPanel().getSelectedPoint();
-        List<Point> availableSpots = gm.getMap().getAllEmptyAndWalkablePointsInCircleAroundTarget(
-                point, villageSpreadingFarmsDistance);
-        System.out.println(availableSpots);
-        if (!availableSpots.isEmpty()){
-            Point p = availableSpots.get(ThreadLocalRandom.current().nextInt(availableSpots.size()));
-            System.out.println(p.getInfo());
+        if (point.getBuilding() == null){
+            System.out.println("No building there to destroy!");
         }
+        else {
+            if (point.getBuilding() instanceof CityArea cityArea){
+                //destroyBuilding(cityArea.getCityCenter());
+                citiesToRemove.add(cityArea.getCityCenter());
+            }
+            else if (point.getBuilding() instanceof TownArea townArea){
+                //destroyBuilding(townArea.getTownCenter());
+                townsToRemove.add(townArea.getTownCenter());
+            }
+            else if (point.getBuilding() instanceof Farm farm && farm.getFarmOwningBuilding() instanceof Village village){
+                //destroyBuilding(village);
+                villagesToRemove.add(village);
+            }
+            else if (point.getBuilding() instanceof Town town){
+                townsToRemove.add(town);
+            }
+            else if (point.getBuilding() instanceof City city){
+                citiesToRemove.add(city);
+            }
+            else if (point.getBuilding() instanceof Village village){
+                villagesToRemove.add(village);
+            }
+            else if (point.getBuilding() instanceof Farm farm){
+                farmsToRemove.add(farm);
+            }
+
+        }
+    }
+
+    public void currentExperiment2(){
+        for(int x=0; x<gm.getMap().width; x++){
+            for(int y=0; y<gm.getMap().height; y++){
+                Point point = gm.getMap().getPoint(x,y);
+                if (point.getBuilding() != null && point.getBuilding() instanceof FarmOwningBuilding farmOwningBuilding){
+                    for (Point p: farmOwningBuilding.getControlledLand()){
+                        if (p.getPointOwner() != farmOwningBuilding){
+                            System.out.println("OBS OBS. One of buildings controlled points doesnt recognise owner");
+                            System.out.println(p.getInfo());
+                            System.out.println(farmOwningBuilding.getControlledLand());
+                        }
+                    }
+                }
+                if (point.getPointOwner() != null && !point.getPointOwner().getControlledLand().contains(point)){
+                    System.out.println("OOBS OBS a point that points to an owner doesnt recognise its point!");
+                    System.out.println(point.getInfo());
+                    System.out.println(point.getPointOwner().getControlledLand());
+                }
+            }
+        }
+        System.out.println("end of search");
     }
 
     public void experimentTimeMethod(){
@@ -798,7 +1678,10 @@ class Game{
         /**
          * In this method, create a for loop and call whatever feature you want thousands of times
          * to get an approximate time how long it takes to perform
+         *
+         * Below is an example
          */
+        /*
         long startTime = System.currentTimeMillis();
         Village village = villages.get(0);
         Point newFarmPoint;
@@ -820,6 +1703,114 @@ class Game{
         long duration = endTime - startTime;
 
         System.out.println(", Duration: " + duration + "ms");
+
+         */
+
+        /*
+        long startTime = System.currentTimeMillis();
+
+
+        double x1 = 153.2;
+        double y1 = 157.2;
+        double size1 = 0.2;
+        double x2 = 120.0;
+        double y2 = 120.0;
+        double size2 = 0.8;
+        boolean test = true;
+        for (int x=0; x<1000000; x++){
+            test = checkCollision(x1, y1, size1, x2, y2, size2);
+        }
+         */
+
+        /*
+        // test 1
+        populateTestArea(25);
+        performGetUnitListTest(2);
+        performCallAllUnitInMapCellsTest(2);
+        performGetUnitListTest(4);
+        performCallAllUnitInMapCellsTest(4);
+        populateTestArea(75);
+        performGetUnitListTest(2);
+        performCallAllUnitInMapCellsTest(2);
+        performGetUnitListTest(4);
+        performCallAllUnitInMapCellsTest(4);
+        populateTestArea(125);
+        performGetUnitListTest(0);
+        performCallAllUnitInMapCellsTest(0);
+        performGetUnitListTest(2);
+        performCallAllUnitInMapCellsTest(2);
+
+         */
+        /*long endTime = System.currentTimeMillis();
+        long duration = endTime - startTime;
+
+        System.out.println(", Duration: " + duration + "ms");
+
+         */
+    }
+
+    public void spawnOrcRandomlyTest(){
+        for (int x=0; x<4; x++){
+            if (gm.getMap().isValidAndWalkable(x,x)){
+                Orc orc = new Orc(x,x);
+                unitsToBeAdded.add(orc);
+            }
+        }
+        spawnKnightsRandomlyTest();
+    }
+
+    public void spawnKnightsRandomlyTest(){
+        for (int x=0; x<2; x++){
+            if (gm.getMap().isValidAndWalkable(x,x+100)){
+                Knight knight = new Knight(x,x+100);
+                unitsToBeAdded.add(knight);
+            }
+        }
+    }
+
+    public void spawnTwoOppositeFightingGroups() {
+        // Spawn 20 knights dispersed around (250, 150)
+        int troopAmount = ThreadLocalRandom.current().nextInt(5);
+        List<Point> knightPoints = findGroupSpawnPoints(250, 100, troopAmount);
+        int a =0;
+        for (Point p : knightPoints) {
+            a++;
+            if (a % 2 == 0){
+                unitsToBeAdded.add(new ElfArcher(p.getX(), p.getY()));
+            }
+            else{
+                unitsToBeAdded.add(new Knight(p.getX(), p.getY()));
+            }
+        }
+
+        List<Point> orcPoints = findGroupSpawnPoints(50, 100, troopAmount);
+        for (Point p : orcPoints) {
+            a++;
+            if (a % 2 == 0){
+                unitsToBeAdded.add(new Orc(p.getX(), p.getY()));
+            }
+            else{
+                unitsToBeAdded.add(new GoblinArcher(p.getX(), p.getY()));
+            }        }
+
+        /*
+        double random = ThreadLocalRandom.current().nextDouble();
+        if (random > 0.99){
+            orcPoints = findGroupSpawnPoints(50, 150, 1);
+            for (Point p : orcPoints) {
+                unitsToBeAdded.add(new Dragon(p.getX(), p.getY()));
+            }
+        }*/
+
+    }
+
+    public void spawnOneTroopForPathFinding(){
+        if (units.size() < 100){
+            Point p = getRandomWalkablePoint();
+            Knight knight = new Knight(p.getX(), p.getY());
+            unitsToBeAdded.add(knight);
+        }
+
     }
 
 }

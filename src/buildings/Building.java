@@ -1,10 +1,11 @@
 package buildings;
 
 import empirebuilder.Point;
+import entities.Entity;
 
 import java.awt.*;
 
-public abstract class Building{
+public abstract class Building extends Entity {
     
     private static int idCounter=1;
     private final int id;
@@ -15,13 +16,12 @@ public abstract class Building{
     private double currentFoodTaxIncome;
     private double lastIterationFoodTaxIncome;
     public final int FOOD_NEEDED_FOR_NEW_PERSON = 10;
+    public static final int SIZE_OF_BUILDINGS = 1;
+    public static final int FACTION_OF_BUILDINGS = 1;
+    public static final double DEFAULT_BUILDING_HEALTH = 100;
 
-    // TODO this is necessary to initialise buildings in order to get getImage(), maybe find another workaround
-    protected Building() {
-        this.id = idCounter++;
-    }
-
-    public Building(Point point, Color color){
+    public Building(Point point, Color color, double health){
+        super(point.getX(), point.getY(), health, SIZE_OF_BUILDINGS, FACTION_OF_BUILDINGS);
         this.id = idCounter++;
         this.point = point;
         this.color = color;
@@ -30,6 +30,8 @@ public abstract class Building{
         gold = 0;
         wealth = 0;
     }
+
+    public abstract String getImageName();
 
     // Default, TODO create default image to displaying missing images
     public String getImagePath() {
@@ -106,5 +108,10 @@ public abstract class Building{
     }
 
     public abstract String getInfo();
+
+    // TODO replace with isAlive() ?
+    public boolean isDestroyed(){
+        return getHealth() <= 0;
+    }
     
 }

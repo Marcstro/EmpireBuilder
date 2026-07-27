@@ -79,7 +79,7 @@ public class ButtonPanel extends JPanel {
         JButton button4 = new JButton("create 20 random farms");
         JButton button5 = new JButton("experiment 2");
         JButton button6 = new JButton("calculate amount of farms");
-        JButton button7 = new JButton("test function time");
+        JButton button7 = new JButton("test function time"); // currently has no usage
         JButton button8 = new JButton("create 6 farms");
         JButton button9 = new JButton("Create farm at point");
         JButton button10 = new JButton("Create complete village at point");
@@ -89,11 +89,15 @@ public class ButtonPanel extends JPanel {
         JButton button13 = new JButton("Create path of water");
         JButton button14 = new JButton("Recreate the map");
         JButton button16 = new JButton("Current test");
+        JButton button17 = new JButton("Timing test");
+        JButton button18 = new JButton("SpawnOrc");
+        JButton button19 = new JButton("current test2");
+
 
         //set sizes and dimensions
 
         ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
-                button7, button8, button9, button10,button15, button11, button12, button13, button14, button16));
+                button7, button8, button9, button10,button15, button11, button12, button13, button14, button16, button17, button18, button19));
         buttons.forEach(button -> {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
             button.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -132,6 +136,9 @@ public class ButtonPanel extends JPanel {
         buttonArea.add(button13);
         buttonArea.add(button14);
         buttonArea.add(button16);
+        buttonArea.add(button17);
+        buttonArea.add(button18);
+        buttonArea.add(button19);
         buttonArea.add(displayOwnershipLines);
         buttonArea.add(displayBuildingImagesCheck);
         buttonArea.add(generateTerrainCheck);
@@ -178,7 +185,7 @@ public class ButtonPanel extends JPanel {
         button4.addActionListener(e -> gameManager.getGame().create20FarmAtRandomPoint());
         button5.addActionListener(e -> gameManager.getGame().experiment2());
         button6.addActionListener(e -> gameManager.getGame().experiment3());
-        button7.addActionListener(e -> gameManager.getGame().experiment4());
+        button7.addActionListener(e -> gameManager.getGame().experiment3()); // can r
         button8.addActionListener(e -> gameManager.getGame().experiment5());
         button9.addActionListener(e -> gameManager.getGame().createFarmAtPoint(
                 gameManager.getGridPanel().getSelectedPoint().getX(), gameManager.getGridPanel().getSelectedPoint().getY()));
@@ -190,6 +197,9 @@ public class ButtonPanel extends JPanel {
         button13.addActionListener(e -> gameManager.getGame().createWaterPath());
         button14.addActionListener(e -> gameManager.recreateWorld());
         button16.addActionListener(e -> gameManager.getGame().currentExperiment());
+        button17.addActionListener(e -> gameManager.getGame().experimentTimeMethod());
+        button18.addActionListener(e -> gameManager.getGame().spawnOrcRandomlyTest());
+        button19.addActionListener(e -> gameManager.getGame().currentExperiment2());
 
         zoomInBtn.addActionListener(e -> {
             gameManager.getGridPanel().zoomIn();

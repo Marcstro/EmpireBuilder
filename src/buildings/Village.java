@@ -1,6 +1,7 @@
 package buildings;
 
 import LandTypes.LandType;
+import empirebuilder.Game;
 import empirebuilder.Point;
 
 public class Village extends FarmOwningBuilding{
@@ -16,17 +17,13 @@ public class Village extends FarmOwningBuilding{
     final double TAXATION_VILLAGE_RATE = 0.6;
 
     public Village(Point point) {
-        super(point, INITIAL_FOOD_NEEDED_TO_CREATE_FARM, LandType.getBaseColor(LandType.VILLAGE));
+        super(point, INITIAL_FOOD_NEEDED_TO_CREATE_FARM, LandType.getBaseColor(LandType.VILLAGE), DEFAULT_BUILDING_HEALTH);
         this.villageCenter = point;
         food = 0;
         ticksUntilNextSearch = 0;
         communalFoodForNewFarms = 0;
         currentCommunalFoodIncome = 0;
         lastIterationCommunalFoodIncome=0;
-    }
-
-    public Village(){
-        super();
     }
 
     @Override
@@ -90,6 +87,12 @@ public class Village extends FarmOwningBuilding{
         return getCommunalFoodForNewFarms() >= calculateFoodToCreateNewFarm();
     }
 
+    public void updateOwnedFarmsTechLevel(){
+        for(Farm farm: farms){
+            farm.checkAndUpdateTechLevel();
+        }
+    }
+
     public void removeCostOfNewFarm(){
         removeCommunalFood(calculateFoodToCreateNewFarm());
     }
@@ -129,6 +132,15 @@ public class Village extends FarmOwningBuilding{
     }
 
     @Override
+    public void tick(Game game) {
+
+    }
+
+    public String getImageName(){
+        return "village";
+    }
+
+    @Override
     void processTaxation(double foodIncome) {
         if (hasOwner()){
             getOwner().processTaxation(foodIncome*TAXATION_VILLAGE_RATE);
@@ -142,8 +154,11 @@ public class Village extends FarmOwningBuilding{
     }
     
     public void markCenter(){
-        villageCenter.createNewLandForPoint(LandType.TOWN);
         setColor(LandType.getBaseColor(LandType.TOWN));
+    }
+
+    public void unmarkCenter(){
+        setColor(LandType.getBaseColor(LandType.VILLAGE));
     }
 
     public boolean hasOwner(){
@@ -170,6 +185,8 @@ public class Village extends FarmOwningBuilding{
     public String getInfo(){
         return "Village{" +
                 "id=" + getId() +
+                ", health: " + getHealth() + "/" + DEFAULT_BUILDING_HEALTH +
+                ", isAlive=" + isAlive() +
                 ", people=" + getPeople() +
                 ", food=" + String.format("%.2f", getFood()) +
                 ", communalFood=" + String.format("%.2f", getCommunalFoodForNewFarms()) +

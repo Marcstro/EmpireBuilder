@@ -9,13 +9,9 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
 
     LinkedList<Village> villages;
 
-    public VillageOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color) {
-        super(point, foodNeededToCreateNewFarm, color);
+    public VillageOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
+        super(point, foodNeededToCreateNewFarm, color, health);
         villages = new LinkedList<>();
-    }
-
-    public VillageOwningBuilding(){
-        super();
     }
 
     public void addVillage(Village village){
@@ -24,6 +20,10 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
 
     public LinkedList<Village> getVillages() {
         return villages;
+    }
+
+    public void removeVillage(Village village){
+        villages.remove(village);
     }
 
     public void setVillages(LinkedList<Village> villages) {

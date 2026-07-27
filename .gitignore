@@ -25,3 +25,10 @@ Thumbs.db
 # Ignore logs and temp files
 *.log
 *.tmp
+
+# Local specific files
+# TODO move these into a specific local testing folder
+ConsistenceAlgorithm.java
+
+# Local and temporary test files
+.github/

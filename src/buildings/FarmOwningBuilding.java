@@ -3,31 +3,25 @@ package buildings;
 import empirebuilder.Point;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
 
 public abstract class FarmOwningBuilding extends Building{
     
     LinkedList<Farm> farms;
-    List<Point> controlledLand;
+    Set<Point> controlledLand;
     LinkedList<Point> emptyLand;
     double food;
     int foodNeededToCreateNewFarm;
     private int people;
 
 
-    public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color) {
-        super(point, color);
+    public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
+        super(point, color, health);
         farms = new LinkedList();
-        controlledLand = new ArrayList();
+        controlledLand = new HashSet<>();
         emptyLand = new LinkedList();
         this.foodNeededToCreateNewFarm = foodNeededToCreateNewFarm;
-    }
-
-    public FarmOwningBuilding(){
-        super();
     }
 
     public void tick(){
@@ -46,6 +40,7 @@ public abstract class FarmOwningBuilding extends Building{
         }
 
         // TODO implement destruction of Buildings when they lose all people
+        // current issue: how to deal with building having 0 people at the beginning of its lifespan
         /*if (people <= 0) {
             people = 0;
         }*/
@@ -66,7 +61,7 @@ public abstract class FarmOwningBuilding extends Building{
         return farms.peekLast();
     }
         
-    public void destroyFarm(Farm farm){
+    public void removeFromFarmList(Farm farm){
         farms.remove(farm);
         emptyLand.add(farm.getPoint());
         Collections.shuffle(emptyLand);
@@ -116,16 +111,20 @@ public abstract class FarmOwningBuilding extends Building{
 
     abstract Building getTopOwner();
 
-    public List<Point> getControlledLand() {
+    public Set<Point> getControlledLand() {
         return controlledLand;
     }
 
-    public void setControlledLand(List<Point> controlledLand) {
+    public void setControlledLand(Set<Point> controlledLand) {
         this.controlledLand = controlledLand;
     }
 
     public void removeFromControlledLand(Point point){
         controlledLand.remove(point);
+    }
+
+    public void addToControlledLand(Point point){
+        controlledLand.add(point);
     }
 
     public LinkedList<Point> getEmptyLand() {
@@ -140,7 +139,7 @@ public abstract class FarmOwningBuilding extends Building{
         return emptyLand.pollFirst();
     }
 
-    public void occupyPoint(Point point){
+    public void removePointFromEmptyPointList(Point point){
         emptyLand.remove(point);
     }
 }

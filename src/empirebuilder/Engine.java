@@ -7,7 +7,7 @@ public class Engine {
     private int tickCounter;
     
     public static double REFRESH_RATE = 0.05;
-    private static final double MIN_REFRESH_RATE = 0.01;
+    private static final double MIN_REFRESH_RATE = 0.001;
     private static final double MAX_REFRESH_RATE = 5.0;
 
     Engine(GameManager gameManager) {
@@ -24,14 +24,9 @@ public class Engine {
         running = true;
         gameThread = new Thread(() -> {
             while (running) {
-                //long startTime = System.currentTimeMillis();
                 tick();
-                //long endTime = System.currentTimeMillis();
-                //long duration = endTime - startTime;
-                //System.out.println("Tick: " + tickCounter + ", Duration: " + duration + "ms. Farms: " + gameManager.getGame().farms.size());
-
                 try {
-                    Thread.sleep((int)(REFRESH_RATE * 1000)); //milliseconds
+                    Thread.sleep((int)(REFRESH_RATE * 1000));
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -59,16 +54,30 @@ public class Engine {
 
     public void tick() {
         tickCounter++;
-        gameManager.getGame().tickWorld();
-        if (tickCounter % 5 == 0){
+
+        gameManager.getGame().tickEffects();
+        gameManager.getGame().tickUnits(); // TODO determine suitable tick rate for units and effects
+        gameManager.getGame().attackingBuildingsTick();
+        // eventsTicks are for Map alteringen effects
+        // like calls that affects the dark side, all good building etc
+
+        /*if (tickCounter == 10 || tickCounter % 50 == 0){ // ){
+            gameManager.getGame().eventsTick();
+        }*/
+        if (tickCounter % 10 == 0){
+            gameManager.getGame().tickBuildings();
+        }
+        if (tickCounter % 50 == 0){
             gameManager.getGame().checkForBuildingUpgrades();
         }
-        if (tickCounter % 15 == 0){
-            gameManager.getGame().tickOwningBuildingsGainControlOverIndependents();
+        if (tickCounter % 150 == 0){
+            gameManager.getGame().seldomTick();
         }
-        if (tickCounter % 100 == 0){
+        if (tickCounter % 1000 == 0){
             gameManager.getGame().tickUpdateBuildingOwnershipByDistance();
         }
+
+        gameManager.getGridPanel().repaint();
     }
 
     public boolean isRunning() {

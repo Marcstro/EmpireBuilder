@@ -2,8 +2,9 @@ package empirebuilder;
 
 import graphics.ImageManager;
 import pathfinding.AStarPathfinder;
+import pathfinding.PathfindingSystem;
 
-class GameManager{
+public class GameManager{
     
     Engine engine;
     GridPanel gridPanel;
@@ -13,6 +14,7 @@ class GameManager{
     Game game;
     WorldSettings worldSettings;
     AStarPathfinder pathfinder;
+    PathfindingSystem pathfindingSystem;
 
     // TODO move all of these into world settings.
     static final int WIDTH = 1400;
@@ -26,7 +28,7 @@ class GameManager{
     
     public GameManager(){
 
-        ImageManager.preloadAllBaseImages();
+        ImageManager.loadAllAssets();
 
         engine = new Engine(this);
         worldSettings = new WorldSettings();
@@ -36,8 +38,22 @@ class GameManager{
         buttonPanel = new ButtonPanel(this);
         mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
         pathfinder = new AStarPathfinder(map);
-        
+        pathfindingSystem = new PathfindingSystem(this);
+
         gridPanel.updateUI();
+    }
+
+    /**
+     * Headless constructor for unit testing.
+     * Creates only the pure-logic layers (Map, Game, pathfinder, MapCellGraph) — no Swing/UI.
+     */
+    public GameManager(int mapWidth, int mapHeight, WorldSettings settings) {
+        // Headless constructor — also builds PathfindingSystem
+        this.worldSettings     = settings;
+        this.map               = new Map(this, mapWidth, mapHeight);
+        this.game              = new Game(this);
+        this.pathfinder        = new AStarPathfinder(this.map);
+        this.pathfindingSystem = new PathfindingSystem(this);
     }
 
     public Engine getEngine() {
@@ -68,6 +84,12 @@ class GameManager{
         return game;
     }
 
+    public AStarPathfinder getPathfinder() { return pathfinder; }
+
+    public PathfindingSystem getPathfindingSystem() {
+        return pathfindingSystem;
+    }
+
     public void recreateWorld(){
         engine.stop();
         engine.resetTickCounter();
@@ -75,6 +97,8 @@ class GameManager{
         gridPanel.updateMap(map);
         game = new Game(this);
         pathfinder = new AStarPathfinder(map);
+        pathfindingSystem = new PathfindingSystem(this);
+        pathfindingSystem.reset();
 
         gridPanel.repaint();
     }

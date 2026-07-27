@@ -9,7 +9,8 @@ public class MainWindow {
     JFrame frame;
     
     MainWindow(GameManager gameManager, GridPanel gridPanel, ButtonPanel buttonPanel, int width, int height) {
-        
+
+        // TODO this does not adjust for different screen sizes
         this.gameManager = gameManager;
         frame = new JFrame("Empire Builder");
         frame.setSize(width, height);

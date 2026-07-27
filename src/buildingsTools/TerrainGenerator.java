@@ -19,6 +19,15 @@ public class TerrainGenerator {
         random = new Random();
     }
 
+    /**
+     * Seeded constructor — provides deterministic terrain for reproducible tests.
+     */
+    public TerrainGenerator(Map map, TerrainGeneratorType terrainGeneratorType, long seed) {
+        this.map = map;
+        this.terrainGeneratorType = terrainGeneratorType;
+        random = new Random(seed);
+    }
+
     public void generateTerrain(){
         if (terrainGeneratorType.equals(TerrainGeneratorType.PERLIN_BASED_V1_LARGE_TERRAIN)) {
             generate_PERLIN_BASED_V1(0.01);

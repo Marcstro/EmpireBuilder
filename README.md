@@ -5,8 +5,9 @@ Todo:
 - land/point value
 
 
-Nearest TODO:
+Nearest TODOs:
 - new Farms should not create grassland on their spot
+- mapCells should have id values that can be retrieved and are then the same for every object that needs to use such values
 - Create safe "removeBuilding(Building building)"
 that takes everything into consideration
 - int variable for people should be in building, as all buildings can now have citizens
@@ -15,6 +16,12 @@ that takes everything into consideration
 merge them so that they can and will be used safely
 - create effect for farmOwningBuildings when they lose too many farms
 - villages look for independent nearby farms outside their direct controlled area on occasion, independent farms should not be permanently independent if avoidable
+- Implement "request pathfinding"-queue with limits for how many new paths can be calculated each tick
+- Completely rewrite the "multiple frames effects" system
+
+Future TODOs:
+- Divert all effects into an "effects manager class", both functional and cosmetic effects. Purpose: Separation of concern, Game does not need to handle everything
+- Exchange old object-oriented inheritance system into an Entity-component system (ECS pattern)
 
 
 - Implementations that could be changed:

@@ -2,6 +2,10 @@ package math;
 
 import java.util.*;
 
+/**
+ * This class has mathematical algorithms
+ * but also calculates the positions of Points for buildings that cover multiple points, like a castle with towers
+ */
 public class CircleSearch {
     private final Map<Integer, List<int[]>> precomputedOffsets = new HashMap<>();
     private final Map<Integer, List<int[]>> precomputedCircles = new HashMap<>();
@@ -177,21 +181,4 @@ public class CircleSearch {
         }
         return result;
     }
-
-
-
-    //for testing purposes
-//    public static void main(String[] args) {
-//        int gridWidth = 300, gridHeight = 200;
-//        CircleSearch circleSearch = new CircleSearch(10); // Precompute up to radius 10
-//
-//        int x = 150, y = 100, radius = 5;
-//        List<int[]> points = circleSearch.getPointsAround(x, y, radius, gridWidth, gridHeight);
-//
-//        System.out.println("Points around (" + x + ", " + y + ") with radius " + radius + ":");
-//        for (int[] point : points) {
-//            System.out.println("(" + point[0] + ", " + point[1] + ")");
-//        }
-//        System.out.println("that is " + points.size() + " points");
-//    }
 }

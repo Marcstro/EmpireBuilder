@@ -1,12 +1,18 @@
 package empirebuilder;
 
 import buildings.*;
+import entities.effects.Effect;
+import entities.effects.Missile;
+import entities.units.Unit;
 import graphics.ImageManager;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import java.util.List;
 
 public class GridPanel extends JPanel {
 
@@ -27,6 +33,7 @@ public class GridPanel extends JPanel {
     private Map map;
     private Point selectedPoint;
     private boolean showLines = false;
+    private boolean showPointLines = true;
     private boolean displayBuildingImages = false;
 
     GameManager gameManager;
@@ -76,10 +83,143 @@ public class GridPanel extends JPanel {
             renderPixelView(g2d, pixelSize);
         }
         drawOverlays(g2d, pixelSize);
+
+        renderUnitsView2(g2d, pixelSize);
+        renderEffectsView(g2d, pixelSize);
+    }
+
+    private void renderUnitsView2(Graphics2D g, int pixelSize) {
+
+        // --- CULLING PRE-CALCULATIONS ---
+        // 1. Determine the extent of the visible area in world-coordinate units (points).
+        final double viewWidthInPoints = (double)getWidth() / pixelSize;
+        final double viewHeightInPoints = (double)getHeight() / pixelSize;
+
+        // 2. Define the camera's top-left corner in world coordinates.
+        final double cameraWorldX = (double)cameraX;
+        final double cameraWorldY = (double)cameraY;
+
+        List<Unit> units = gameManager.getGame().getUnits();
+
+        // Take a snapshot under the lock so the game thread is not blocked
+        // for the entire render duration, eliminating tick-rate contention.
+        List<Unit> snapshot;
+        synchronized (units) {
+            snapshot = new java.util.ArrayList<>(units);
+        }
+
+        for (Unit unit : snapshot) {
+
+                // 3. Get unit's precise, smooth position
+                final double unitWorldX = unit.getX();
+                final double unitWorldY = unit.getY();
+
+                // 4. Rigorous Visibility Culling
+                // Check the unit's world coordinate against the visible bounds, plus a 1-tile buffer
+                // to account for any part of the unit image spilling over the edge.
+                if (unitWorldX < cameraWorldX - 1 || unitWorldY < cameraWorldY - 1 ||
+                        unitWorldX > cameraWorldX + viewWidthInPoints + 1 ||
+                        unitWorldY > cameraWorldY + viewHeightInPoints + 1) {
+
+                    // offscreen = ignored
+                    continue;
+                }
+
+                // 5. Calculate relative world position: how far is the unit from the camera's top-left corner?
+                final double relativeWorldX = unitWorldX - cameraWorldX;
+                final double relativeWorldY = unitWorldY - cameraWorldY;
+
+                // 6. Convert world difference into screen pixels
+                final double screenPixelX_double = relativeWorldX * pixelSize;
+                final double screenPixelY_double = relativeWorldY * pixelSize;
+
+                // 7. Convert to integer pixels, using rounding for smooth visual alignment.
+                final int screenX = (int) Math.round(screenPixelX_double);
+                final int screenY = (int) Math.round(screenPixelY_double);
+
+                // --- DRAWING (Fixed Size) ---
+
+                // 7.5 circle surrounding units
+                // remove in future
+                double unitSize = unit.getSize();
+                int circleDiameter = (int) Math.round(unitSize * pixelSize); // Scale size with zoom
+                int circleRadius = circleDiameter / 2;
+
+                int circleX = screenX - circleRadius;
+                int circleY = screenY - circleRadius;
+
+                g.setColor(Color.pink);
+                g.setStroke(new BasicStroke(1));
+
+                g.drawOval(circleX, circleY, circleDiameter, circleDiameter);
+
+                BufferedImage img = ImageManager.getUnitImage(unit.getImageName());
+
+                final int drawX = screenX - (img.getWidth() / 2);
+                final int drawY = screenY - (img.getHeight() / 2);
+
+                g.drawImage(img, drawX, drawY, null);
+            }
+    }
+
+    private void renderEffectsView(Graphics2D g, int pixelSize) {
+
+        // same algorithm as renderUnitsView
+        final double viewWidthInTiles = (double)getWidth() / pixelSize;
+        final double viewHeightInTiles = (double)getHeight() / pixelSize;
+        final double cameraWorldX = (double)cameraX;
+        final double cameraWorldY = (double)cameraY;
+
+        List<Effect> effectsSnapshot;
+        synchronized (gameManager.getGame().getEffects()) {
+            effectsSnapshot = new java.util.ArrayList<>(gameManager.getGame().getEffects());
+        }
+        for (Effect effect : effectsSnapshot) {
+
+            final double effectWorldX = effect.getX();
+            final double effectWorldY = effect.getY();
+
+            if (effectWorldX < cameraWorldX - 1 || effectWorldY < cameraWorldY - 1 ||
+                    effectWorldX > cameraWorldX + viewWidthInTiles + 1 ||
+                    effectWorldY > cameraWorldY + viewHeightInTiles + 1) {
+                continue;
+            }
+
+            final double relativeWorldX = effectWorldX - cameraWorldX;
+            final double relativeWorldY = effectWorldY - cameraWorldY;
+
+            final double screenPixelX_double = relativeWorldX * pixelSize;
+            final double screenPixelY_double = relativeWorldY * pixelSize;
+
+            final int screenX = (int) Math.round(screenPixelX_double);
+            final int screenY = (int) Math.round(screenPixelY_double);
+
+            BufferedImage img = ImageManager.getEffectImage(effect.getImageName());
+            final int imgWidth = img.getWidth();
+            final int imgHeight = img.getHeight();
+
+            if (effect instanceof Missile) {
+                // --- ROTATION FOR MISSILES ---
+                final double rotationAngle = ((Missile)effect).getRotation();
+
+                final int centerX = screenX + imgWidth / 2;
+                final int centerY = screenY + imgHeight / 2;
+
+                AffineTransform oldTransform = g.getTransform();
+                g.translate(centerX, centerY);
+                g.rotate(rotationAngle);
+                g.drawImage(img, -imgWidth / 2, -imgHeight / 2, null);
+                g.setTransform(oldTransform);
+            } else {
+                // --- STANDARD DRAWING FOR OTHER EFFECTS (e.g., Blood Spatter) ---
+                final int drawX = screenX - (imgWidth / 2);
+                final int drawY = screenY - (imgHeight / 2);
+                g.drawImage(img, drawX, drawY, null);
+            }
+        }
     }
 
     private void renderPixelView(Graphics2D g, int pixelSize) {
-        // Calculate visible points
         int tilesAcross = getWidth() / pixelSize + 2;
         int tilesDown = getHeight() / pixelSize + 2;
 
@@ -93,33 +233,26 @@ public class GridPanel extends JPanel {
                 }
 
                 Point point = map.getPoint(worldX, worldY);
-                Building building = point.getBuilding();
-
                 int screenX = x * pixelSize;
                 int screenY = y * pixelSize;
 
 
                 // TODO come up with a pretty way to display fertilityLevel, and/or terrain beneath farms
                 // displaying farm images works at any zoom level but at zoom beneath 10, farms are hard to spot on the map
-                /* if (building instanceof Farm farm && !farm.isPartOfVillageCenter()) {
-                    g.setColor(point.getLand().getColor());
-                    g.fillRect(screenX, screenY, pixelSize, pixelSize);
-                    int innerSize = (int) (Math.sqrt(0.65) * pixelSize);
-                    int offset = (pixelSize - innerSize) / 2;
-                    g.setColor(building.getColor());
-                    g.fillRect(screenX + offset, screenY + offset, innerSize, innerSize);
-                }
-                else if (building != null) {
-                    g.setColor(building.getColor());
-                    g.fillRect(screenX, screenY, pixelSize, pixelSize);
-                } else {
-                    g.setColor(point.getColor());
-                    g.fillRect(screenX, screenY, pixelSize, pixelSize);
-                }*/
                 g.setColor(point.getColor());
                 g.fillRect(screenX, screenY, pixelSize, pixelSize);
+
+                // Draw thin border around each point
+                // not drawing if pixel size is too small to avoid clutter
+                if (showPointLines && pixelSize >= 6) {
+                    g.setColor(new Color(200, 200, 200, 30));
+                    // Only draw bottom and right edges to reduce line density
+                    g.drawLine(screenX, screenY + pixelSize - 1, screenX + pixelSize - 1, screenY + pixelSize - 1); // bottom
+                    g.drawLine(screenX + pixelSize - 1, screenY, screenX + pixelSize - 1, screenY + pixelSize - 1); // right
+                }
             }
         }
+
     }
 
     private void renderImageView(Graphics2D g, int pixelSize) {
@@ -146,7 +279,7 @@ public class GridPanel extends JPanel {
                 g.fillRect(screenX, screenY, pixelSize, pixelSize);
 
                 if (building != null) {
-                    Image img = ImageManager.getBuildingImage(building.getClass());
+                    Image img = ImageManager.getBuildingImage(building.getImageName());
                     if (img != null) {
                         g.drawImage(img, screenX, screenY, pixelSize, pixelSize, null);
                     } else {
@@ -302,7 +435,7 @@ public class GridPanel extends JPanel {
             }
             else {
                 selectedPoint = clickedPoint;
-                System.out.println("Point Info: " + clickedPoint.getInfo());  
+                System.out.println("Point Info: " + clickedPoint.getInfo());
             }
         }
         updateUI();
