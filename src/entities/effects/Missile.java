@@ -6,8 +6,9 @@ public abstract class Missile extends Effect{
     double vx;
     double damage;
     double rotation;
+    double width;
 
-    public Missile(double x, double y,  int initialDuration, double targetX, double targetY, double damage, int factionId, double speed) {
+    public Missile(double x, double y,  int initialDuration, double targetX, double targetY, double damage, int factionId, double speed, double width) {
         super(x, y, initialDuration, factionId, speed);
         double dx = targetX - x;
         double dy = targetY - y;
@@ -23,6 +24,7 @@ public abstract class Missile extends Effect{
             this.rotation = 0;
         }
         this.damage=damage;
+        this.width=width;
     }
 
     public double getVy() {
@@ -55,6 +57,10 @@ public abstract class Missile extends Effect{
 
     public void setRotation(double rotation) {
         this.rotation = rotation;
+    }
+
+    public double getWidth() {
+        return width;
     }
 
 }

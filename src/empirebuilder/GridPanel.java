@@ -115,7 +115,7 @@ public class GridPanel extends JPanel {
                 final double unitWorldY = unit.getY();
 
                 // 4. Rigorous Visibility Culling
-                // Check the unit's world coordinate against the visible bounds, plus a 1-tile buffer
+                // Check the unit's world coordinate against the visible bounds, plus a 1-point buffer
                 // to account for any part of the unit image spilling over the edge.
                 if (unitWorldX < cameraWorldX - 1 || unitWorldY < cameraWorldY - 1 ||
                         unitWorldX > cameraWorldX + viewWidthInPoints + 1 ||
@@ -165,8 +165,8 @@ public class GridPanel extends JPanel {
     private void renderEffectsView(Graphics2D g, int pixelSize) {
 
         // same algorithm as renderUnitsView
-        final double viewWidthInTiles = (double)getWidth() / pixelSize;
-        final double viewHeightInTiles = (double)getHeight() / pixelSize;
+        final double viewWidthInPoints = (double)getWidth() / pixelSize;
+        final double viewHeightInPoints = (double)getHeight() / pixelSize;
         final double cameraWorldX = (double)cameraX;
         final double cameraWorldY = (double)cameraY;
 
@@ -180,8 +180,8 @@ public class GridPanel extends JPanel {
             final double effectWorldY = effect.getY();
 
             if (effectWorldX < cameraWorldX - 1 || effectWorldY < cameraWorldY - 1 ||
-                    effectWorldX > cameraWorldX + viewWidthInTiles + 1 ||
-                    effectWorldY > cameraWorldY + viewHeightInTiles + 1) {
+                    effectWorldX > cameraWorldX + viewWidthInPoints + 1 ||
+                    effectWorldY > cameraWorldY + viewHeightInPoints + 1) {
                 continue;
             }
 
@@ -220,11 +220,11 @@ public class GridPanel extends JPanel {
     }
 
     private void renderPixelView(Graphics2D g, int pixelSize) {
-        int tilesAcross = getWidth() / pixelSize + 2;
-        int tilesDown = getHeight() / pixelSize + 2;
+        int pointsAcross = getWidth() / pixelSize + 2;
+        int pointsDown = getHeight() / pixelSize + 2;
 
-        for (int x = 0; x < tilesAcross; x++) {
-            for (int y = 0; y < tilesDown; y++) {
+        for (int x = 0; x < pointsAcross; x++) {
+            for (int y = 0; y < pointsDown; y++) {
                 int worldX = cameraX + x;
                 int worldY = cameraY + y;
 
@@ -256,12 +256,12 @@ public class GridPanel extends JPanel {
     }
 
     private void renderImageView(Graphics2D g, int pixelSize) {
-        // Calculate visible tiles.
-        int tilesAcross = getWidth() / pixelSize + 2;
-        int tilesDown = getHeight() / pixelSize + 2;
+        // Calculate visible points.
+        int pointsAcross = getWidth() / pixelSize + 2;
+        int pointsDown = getHeight() / pixelSize + 2;
 
-        for (int x = 0; x < tilesAcross; x++) {
-            for (int y = 0; y < tilesDown; y++) {
+        for (int x = 0; x < pointsAcross; x++) {
+            for (int y = 0; y < pointsDown; y++) {
                 int worldX = cameraX + x;
                 int worldY = cameraY + y;
 
@@ -331,33 +331,33 @@ public class GridPanel extends JPanel {
         return basePixelSize;
     }
 
-    private int getTilesAcross() {
+    private int getPointsAcross() {
         return getWidth() / getPixelSize();
     }
-    private int getTilesDown() {
+    private int getPointsDown() {
         return getHeight() / getPixelSize();
     }
 
     public void moveCameraUp() {
-        cameraY -= getTilesDown() / 3;
+        cameraY -= getPointsDown() / 3;
         clampCameraToWorld();
         repaint();
     }
 
     public void moveCameraDown() {
-        cameraY += getTilesDown() / 3;
+        cameraY += getPointsDown() / 3;
         clampCameraToWorld();
         repaint();
     }
 
     public void moveCameraLeft() {
-        cameraX -= getTilesAcross() / 3;
+        cameraX -= getPointsAcross() / 3;
         clampCameraToWorld();
         repaint();
     }
 
     public void moveCameraRight() {
-        cameraX += getTilesAcross() / 3;
+        cameraX += getPointsAcross() / 3;
         clampCameraToWorld();
         repaint();
     }
@@ -410,11 +410,11 @@ public class GridPanel extends JPanel {
     }
 
     private void clampCameraToWorld() {
-        int tilesAcross = Math.max(1, getWidth()  / getPixelSize());
-        int tilesDown   = Math.max(1, getHeight() / getPixelSize());
+        int pointsAcross = Math.max(1, getWidth()  / getPixelSize());
+        int pointsDown   = Math.max(1, getHeight() / getPixelSize());
 
-        cameraX = Math.max(0, Math.min(cameraX, mapWidth  - tilesAcross));
-        cameraY = Math.max(0, Math.min(cameraY, mapHeight - tilesDown));
+        cameraX = Math.max(0, Math.min(cameraX, mapWidth  - pointsAcross));
+        cameraY = Math.max(0, Math.min(cameraY, mapHeight - pointsDown));
     }
 
     public int getPixelSize() {

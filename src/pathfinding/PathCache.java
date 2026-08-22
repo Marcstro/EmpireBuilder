@@ -14,8 +14,8 @@ import java.util.*;
  * SUB-SEGMENT CACHING
  *   When A* produces a path through cells A → B → C → D the cache stores:
  *     (A,D)  full path
- *     (B,D)  path from first tile in B onward
- *     (C,D)  path from first tile in C onward
+ *     (B,D)  path from first point in B onward
+ *     (C,D)  path from first point in C onward
  *   Units that start in B or C get an instant cache hit next time.
  *
  * CELL REVERSE-INDEX
@@ -63,7 +63,7 @@ public class PathCache {
 
         int n = fullPath.size();
 
-        // Map each tile to its cell index
+        // Map each point to its cell index
         int[] pointCell = new int[n];
         for (int i = 0; i < n; i++) {
             Point p = fullPath.get(i);

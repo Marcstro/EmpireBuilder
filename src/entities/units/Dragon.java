@@ -8,10 +8,10 @@ public class Dragon extends Unit{
 
     static String imageName = "dragonUnit";
     static double dragonDamage = 25;
-    static double dragonSpeed = 1.5;
+    static double dragonSpeed = 0.7;
     static double dragonHealth = 300;
     static double size = 0.9;
-    static int dragonFaction = 3;
+    static int dragonFaction = 2;
 
     public Dragon(double x, double y) {
         super(x, y, dragonSpeed, dragonHealth, dragonDamage, dragonFaction, size);

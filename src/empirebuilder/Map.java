@@ -177,6 +177,12 @@ public class Map {
         return result;
     }
 
+    public ArrayList<Point> getPointsInCircleAroundTarget(Point originalPoint, int radius) {
+        return (ArrayList<Point>) circleSearch.getAllPositionsInCircle(originalPoint.getX(), originalPoint.getY(), radius).stream()
+                .map(pos -> grid[pos[0]][pos[1]])
+                .toList();
+    }
+
     public LinkedList<Point> getAllEmptyAndWalkablePointsInCircleAroundTarget(Point originalPoint, int radius){
         return getAllPointsInCircleAroundTarget(originalPoint, radius).stream()
             .filter(Point::isEmpty)
@@ -191,6 +197,14 @@ public class Map {
                 .orElse(null);
     }
     
+    public List<Point> getWalkablePointsOnRing(Point origin, int radius) {
+        return circleSearch.getSingleLinePositionsAroundTargetInCircle(origin.getX(), origin.getY(), radius)
+                .stream()
+                .filter(pos -> isValid(pos[0], pos[1]) && grid[pos[0]][pos[1]].isTerrainWalkable())
+                .map(pos -> grid[pos[0]][pos[1]])
+                .collect(Collectors.toList());
+    }
+
     public List<Point> getAllValidAdjecantPointsToTarget(Point originalPoint){
         return circleSearch.getValidAdjacentPoints(originalPoint.getX(), originalPoint.getY()).stream()
         .filter(pos -> isValid(pos[0], pos[1]))
@@ -226,19 +240,6 @@ public class Map {
         }
 
         return null;
-    }
-
-     public ArrayList<Point> getPointsInCircleAroundTarget(Point originalPoint, int radius) {
-        ArrayList<Point> result = new ArrayList<>();
-
-        ArrayList<int[]> relativePositions = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(originalPoint.getX(), originalPoint.getY(), radius));
-
-         System.out.println("size: " + relativePositions.size());
-        for (int[] pos : relativePositions) {
-            result.add(grid[pos[0]][pos[1]]);
-        }
-
-        return result;
     }
 
     public void setLandTypeAtPoint(int x, int y, LandType landType){
@@ -381,5 +382,30 @@ public class Map {
 
     public int getHeight() {
         return height;
+    }
+
+    /**
+     * Finds a random center point near any map edge (within edgeMargin points)
+     * where a filled circle of the given radius is entirely walkable terrain.
+     */
+    public Point findWalkableSpotForCircleNearEdge(int radius, int edgeMargin) {
+        List<Point> candidates = new ArrayList<>();
+
+        for (int x = radius; x < width - radius; x++) {
+            for (int y = radius; y < height - radius; y++) {
+                boolean nearEdge = x < edgeMargin || x >= width - edgeMargin
+                                || y < edgeMargin || y >= height - edgeMargin;
+                if (!nearEdge) continue;
+
+                List<int[]> footprint = circleSearch.getAllPositionsInCircle(x, y, radius);
+                if (!footprint.isEmpty() && footprint.stream().allMatch(pos ->
+                        grid[pos[0]][pos[1]].isTerrainWalkable() && grid[pos[0]][pos[1]].getBuilding() == null)) {
+                    candidates.add(grid[x][y]);
+                }
+            }
+        }
+
+        if (candidates.isEmpty()) return null;
+        return candidates.get(random.nextInt(candidates.size()));
     }
 }

@@ -12,6 +12,7 @@ public class GameManager{
     MainWindow mainWindow;
     Map map;
     Game game;
+    WorldState worldState;
     WorldSettings worldSettings;
     AStarPathfinder pathfinder;
     PathfindingSystem pathfindingSystem;
@@ -22,9 +23,9 @@ public class GameManager{
     static final int BUTTON_PANEL_WIDTH = 200;
     static final int MAP_WIDTH = 300; //300 == smooth // 900 = slight lagg
     static final int MAP_HEIGHT = 200; // 200 == smooth // 600 == slight laggy
-    static final int TILE_SIZE = 4;
-    static final int GRID_PANEL_WIDTH = (WIDTH-BUTTON_PANEL_WIDTH)/TILE_SIZE;
-    static final int GRID_PANEL_HEIGHT = (HEIGHT)/TILE_SIZE;
+    static final int POINT_SIZE = 4;
+    static final int GRID_PANEL_WIDTH = (WIDTH-BUTTON_PANEL_WIDTH)/ POINT_SIZE;
+    static final int GRID_PANEL_HEIGHT = (HEIGHT)/ POINT_SIZE;
     
     public GameManager(){
 
@@ -34,7 +35,8 @@ public class GameManager{
         worldSettings = new WorldSettings();
         map = new Map(this, MAP_WIDTH, MAP_HEIGHT);
         game = new Game(this);
-        gridPanel = new GridPanel(this, map, GRID_PANEL_WIDTH, GRID_PANEL_HEIGHT, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, BUTTON_PANEL_WIDTH);
+        worldState = new WorldState(this, game);
+        gridPanel = new GridPanel(this, map, GRID_PANEL_WIDTH, GRID_PANEL_HEIGHT, MAP_WIDTH, MAP_HEIGHT, POINT_SIZE, BUTTON_PANEL_WIDTH);
         buttonPanel = new ButtonPanel(this);
         mainWindow = new MainWindow(this, gridPanel, buttonPanel, WIDTH, HEIGHT);
         pathfinder = new AStarPathfinder(map);
@@ -82,6 +84,10 @@ public class GameManager{
 
     public Game getGame() {
         return game;
+    }
+
+    public WorldState getWorldState() {
+        return worldState;
     }
 
     public AStarPathfinder getPathfinder() { return pathfinder; }

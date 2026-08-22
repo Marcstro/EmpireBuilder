@@ -156,7 +156,7 @@ public class AStarPathfinder {
     private double getMovementCost(Point from, Point to) {
         int dx = Math.abs(from.getX() - to.getX());
         int dy = Math.abs(from.getY() - to.getY());
-        // True Euclidean distance — essential for Theta* which can skip multiple tiles in one hop.
+        // True Euclidean distance — essential for Theta* which can skip multiple points in one hop.
         double dist = Math.sqrt((double) dx * dx + (double) dy * dy);
         return to.getWalkingCost() * dist;
     }

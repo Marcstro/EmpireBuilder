@@ -61,9 +61,9 @@ public class Engine {
         // eventsTicks are for Map alteringen effects
         // like calls that affects the dark side, all good building etc
 
-        /*if (tickCounter == 10 || tickCounter % 50 == 0){ // ){
+        if (tickCounter % 50 == 0){
             gameManager.getGame().eventsTick();
-        }*/
+        }
         if (tickCounter % 10 == 0){
             gameManager.getGame().tickBuildings();
         }
@@ -74,7 +74,17 @@ public class Engine {
             gameManager.getGame().seldomTick();
         }
         if (tickCounter % 1000 == 0){
+            //TODO extract these into a method, don't have them just here
             gameManager.getGame().tickUpdateBuildingOwnershipByDistance();
+            CivilizationDevelopmentLevel previousCivilizationDevelopmentLevel =
+                    gameManager.getWorldState().getCivilizationDevelopmentLevel();
+            gameManager.getWorldState().calculateWorldState();
+            CivilizationDevelopmentLevel civilizationDevelopmentLevel =
+                    gameManager.getWorldState().getCivilizationDevelopmentLevel();
+            if (previousCivilizationDevelopmentLevel != civilizationDevelopmentLevel) {
+                System.out.println("The civilization has changed and is now at " + civilizationDevelopmentLevel);
+                gameManager.getGame().getDarkside().updateActiveStatus(civilizationDevelopmentLevel);
+            }
         }
 
         gameManager.getGridPanel().repaint();

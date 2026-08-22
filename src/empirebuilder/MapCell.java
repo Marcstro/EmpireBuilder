@@ -1,7 +1,6 @@
 package empirebuilder;
 
-import buildings.AttackCapableBuilding;
-import buildings.FarmOwningBuilding;
+import buildings.*;
 import entities.effects.Effect;
 import entities.units.Unit;
 
@@ -14,14 +13,17 @@ public class MapCell {
     private final List<Unit> units = new ArrayList<>();
     private final List<Effect> effects = new ArrayList<>();
     private final List<AttackCapableBuilding> attackCapableBuildings = new ArrayList<>();
-    private List<FarmOwningBuilding> largeBuildingsList = null;
+    private List<FarmOwningBuilding> largeBuildingsList = new ArrayList<>();
 
     private final int cellX;
     private final int cellY;
 
     private int dangerLevel = 0;
     private int accumulatedWealth = 0;
+
     private boolean isSearchOnCoolDown = false;
+    boolean plunderCooldown = true;
+    boolean isBeingRaided = false;
 
     public MapCell(int cellX, int cellY) {
         this.cellX = cellX;
@@ -81,25 +83,64 @@ public class MapCell {
     }
 
     public List<FarmOwningBuilding> getLargeBuildingsList(Game game){
-        // TODO the usage of this is wrong,
-        // when a farm upgrade to a large building it should automatically call its
-        // MapCell and tell it that it exists
-        // same when its destroyed
-        if (!isSearchOnCoolDown){
-            largeBuildingsList = game.getAllFarmOwningBuildingsInMapCell(this);
-            isSearchOnCoolDown = true;
-        }
         return largeBuildingsList;
     }
 
+    public void addBuilding(FarmOwningBuilding building){
+        if (!largeBuildingsList.contains(building)){
+            largeBuildingsList.add(building);
+        }
+    }
+
     public void removeBuilding(FarmOwningBuilding building){
-        if (largeBuildingsList != null && largeBuildingsList.contains(building)){
+        if (largeBuildingsList.contains(building)){
             largeBuildingsList.remove(building);
         }
     }
 
+    public void attemptToPlunder(Game game, int currentTick, Unit unit){
+        if (plunderCooldown){
+            game.plunderMapCell(this, unit);
+            plunderCooldown = false;
+        }
+        // TODO fix this ASAP once Building.class has a getOwner() function
+        if (!isBeingRaided){
+            System.out.println("MapCell is being raided, notifying all defensive buildings in the cell");
+            isBeingRaided = true;
+            for(FarmOwningBuilding building : largeBuildingsList){
+                System.out.println(building.getPoint().getInfo() + "is trying to inform others it is being raided");
+                if (building instanceof DefensiveTroopBuilding def){
+                    def.getDefensiveTroopComponent().addToDangerList(this);
+                    System.out.println(((Building)def).getInfo() + " has been notified of the raid");
+                    if (def instanceof Town town && town.hasCity() && town.getCity() instanceof DefensiveTroopBuilding def2){
+                        def2.getDefensiveTroopComponent().addToDangerList(this);
+                        System.out.println(((Building)def2).getInfo() + " has been notified of the raid");
+
+                    }
+                }
+                if (building instanceof Village village
+                        && village.hasOwner()
+                        && village.getOwner() instanceof DefensiveTroopBuilding def2){
+                    def2.getDefensiveTroopComponent().addToDangerList(this);
+                    System.out.println(((Building)def2).getInfo() + " has been notified of the raid");
+
+                    if (def2 instanceof Town town && town.hasCity() && town.getCity() instanceof DefensiveTroopBuilding def3){
+                        def3.getDefensiveTroopComponent().addToDangerList(this);
+                        System.out.println(((Building)def3).getInfo() + " has been notified of the raid");
+
+                    }
+                }
+            }
+        }
+    }
+
+    public void localDangerIsOver(){
+        isBeingRaided =false;
+    }
+
     public void resetCooldowns(){
-        isSearchOnCoolDown = false;
+        //isSearchOnCoolDown = false;
+        plunderCooldown = true;
     }
 
     public List<Unit> getUnits() {

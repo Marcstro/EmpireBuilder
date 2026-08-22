@@ -2,6 +2,7 @@ package pathfinding;
 
 import empirebuilder.*;
 import entities.Entity;
+import entities.units.AI.Focus;
 import entities.units.Unit;
 import java.util.ArrayList;
 import java.util.List;
@@ -239,14 +240,21 @@ public class PathfindingSystem {
             }
 
             // ---- 5. Advance waypoint index if close enough ----
+            // Loop (not if) so fast units (speed > ADVANCE_THRESHOLD) can flush
+            // through multiple already-passed waypoints in a single tick, preventing
+            // the overshoot-then-backtrack pattern.
             int idx = unit.getWaypointIndexB();
-            if (idx < path.points.length) {
+            double advThreshold = Math.max(ADVANCE_THRESHOLD, unit.getSpeed());
+            double advThresholdSq = advThreshold * advThreshold;
+            while (idx < path.points.length) {
                 Point wp = path.points[idx];
-                double wpCX = wp.getX() + 0.5, wpCY = wp.getY() + 0.5;
-                double dwx = wpCX - ux, dwy = wpCY - uy;
-                if (Math.sqrt(dwx * dwx + dwy * dwy) <= ADVANCE_THRESHOLD) {
+                double dwx = wp.getX() + 0.5 - ux;
+                double dwy = wp.getY() + 0.5 - uy;
+                if (dwx * dwx + dwy * dwy <= advThresholdSq) {
                     idx++;
                     unit.setWaypointIndexB(idx);
+                } else {
+                    break;
                 }
             }
 
@@ -284,16 +292,16 @@ public class PathfindingSystem {
         Path cached = pathCache.get(originCellIdx, destCellIdx, tick);
         if (cached != null) return cached;
 
-        int startTileX = (int) unit.getX();
-        int startTileY = (int) unit.getY();
+        int startPointX = (int) unit.getX();
+        int startPointY = (int) unit.getY();
 
-        if (!map.isValidAndWalkable(startTileX, startTileY)) {
-            int[] nearest = nearestWalkable(map, startTileX, startTileY, mapCellSize / 2);
-            startTileX = nearest[0];
-            startTileY = nearest[1];
+        if (!map.isValidAndWalkable(startPointX, startPointY)) {
+            int[] nearest = nearestWalkable(map, startPointX, startPointY, mapCellSize / 2);
+            startPointX = nearest[0];
+            startPointY = nearest[1];
         }
 
-        Point startPoint = map.getPoint(startTileX, startTileY);
+        Point startPoint = map.getPoint(startPointX, startPointY);
         if (startPoint == null) return null;
 
         List<Point> fullPath = gm.getPathfinder().getPathBetween(startPoint, target);
@@ -337,6 +345,9 @@ public class PathfindingSystem {
 
     private void checkStuck(Unit unit, empirebuilder.Map map) {
         if (unit.getCombatTarget() != null && unit.getCombatTarget().isAlive()) {
+            return;
+        }
+        if (unit.getCurrentFocus() == Focus.IDLING) {
             return;
         }
 
@@ -674,7 +685,11 @@ public class PathfindingSystem {
         if (combatTarget != null) {
             return gm.getMap().getPoint((int) combatTarget.getX(), (int) combatTarget.getY());
         }
-        return unit.getPointTarget();
+        Point p = unit.getPointTarget();
+        if (p == null) {
+            p = unit.getIdleTarget();
+        }
+        return p;
     }
 
 

@@ -66,6 +66,10 @@ public abstract class Building extends Entity {
         this.gold = gold;
     }
 
+    public void addGold(double newGold){
+        gold += newGold;
+    }
+
     public double getCurrentFoodTaxIncome() {
         return currentFoodTaxIncome;
     }
@@ -108,10 +112,4 @@ public abstract class Building extends Entity {
     }
 
     public abstract String getInfo();
-
-    // TODO replace with isAlive() ?
-    public boolean isDestroyed(){
-        return getHealth() <= 0;
-    }
-    
 }

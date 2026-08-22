@@ -1,8 +1,17 @@
 Todo:
 
+- arrow/missile factory or just better generation
+- getOwner() for building. getTopOwner() too
+- balance units
+- create specific "evil scout troops"
+- create "militia" units, basic units
+- create "mounted knights"
+- fix bug where units overlapse when they just stand around at arrived spot
+- create proper AI for units (large)
 - implement fortress?
-- orcs/bandits
-- land/point value
+- land/point/mapCell value
+- possible "mapsections", like 50x50 points. will hold threatlevle instead of mapcells
+- give raiding units good defenseless targets if possible
 
 
 Nearest TODOs:

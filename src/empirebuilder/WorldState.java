@@ -2,8 +2,21 @@ package empirebuilder;
 
 public class WorldState {
 
-    boolean beginSpawningUnits = false;
+    CivilizationDevelopmentLevel civilizationDevelopmentLevel;
+    GameManager gameManager;
+    Game game;
 
-    int orcSpawningCoolDownBase = 10;
-    int orcSpawnCooldownRemaining = 0;
+    public WorldState(GameManager gameManager, Game game) {
+        this.gameManager = gameManager;
+        this.game = game;
+        civilizationDevelopmentLevel = CivilizationDevelopmentLevel.PRIMITIVE;
+    }
+
+    public CivilizationDevelopmentLevel getCivilizationDevelopmentLevel() {
+        return civilizationDevelopmentLevel;
+    }
+
+    public void calculateWorldState(){
+        civilizationDevelopmentLevel = game.calculateWorldState();
+    }
 }

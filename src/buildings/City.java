@@ -2,6 +2,7 @@ package buildings;
 
 import LandTypes.LandType;
 import empirebuilder.Game;
+import empirebuilder.MapCell;
 import empirebuilder.Point;
 import entities.units.Unit;
 
@@ -9,7 +10,10 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
-public class City extends VillageOwningBuilding implements AttackCapableBuilding {
+public class City extends VillageOwningBuilding implements AttackCapableBuilding, UnitOwner, DefensiveTroopBuilding {
+
+    private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
+    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
 
     Set<CityArea> cityAreaPoints;
     LinkedList<Town> towns;
@@ -64,7 +68,27 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
 
     @Override
     public void tick(Game game) {
+        //unitManager.getUnits().removeIf(u -> !u.isAlive());
+        getUnitManagerComponent().handleDefenses(game);
+    }
 
+    @Override
+    public Point getInstructions(Unit unit, Game game) {
+        Point p = defensiveTroopComponent.getDefensiveInstructions(unit, game);
+        if (p != null){
+            return p;
+        }
+        if (game.calculateDistance(game.getPoint(unit.getX(), unit.getY()), getPoint()) > 5){
+            unit.setCurrentFocus(entities.units.AI.Focus.RETURNING_TO_BASE);
+            unit.setIdleTarget(null);
+            return getPoint();
+        }
+        return null;
+    }
+
+    @Override
+    public DefensiveTroopComponent getDefensiveTroopComponent() {
+        return defensiveTroopComponent;
     }
 
     @Override
@@ -139,6 +163,11 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
 
     public void setTowns(LinkedList<Town> towns) {
         this.towns = towns;
+    }
+
+    @Override
+    public UnitManagerComponent getUnitManagerComponent() {
+        return unitManager;
     }
 
     @Override

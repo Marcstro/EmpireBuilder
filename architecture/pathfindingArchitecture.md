@@ -35,7 +35,7 @@ This document describes the movement and collision-avoidance system used in Empi
 
 ## 1. Background & Design Rationale
 
-Running A\* on the full 300×200 tile grid every time a unit needs a new route means searching up to 60 000 nodes per search, per unit, potentially every few ticks. With thousands of units this is prohibitively expensive.
+Running A\* on the full 300×200 point grid every time a unit needs a new route means searching up to 60 000 nodes per search, per unit, potentially every few ticks. With thousands of units this is prohibitively expensive.
 
 The system separates movement into three independent concerns:
 
@@ -47,7 +47,7 @@ The system separates movement into three independent concerns:
 
 **Key insight — per-cell-pair path caching:**
 
-Two units travelling between the *same pair of MapCells* will almost always want the same tile-level route. By running A\* once for each `(originCellIndex, destCellIndex)` pair and sharing the result across all units with the same source/dest cells, the system pays the A\* cost once and amortises it over the entire lifetime of that route.
+Two units travelling between the *same pair of MapCells* will almost always want the same point-level route. By running A\* once for each `(originCellIndex, destCellIndex)` pair and sharing the result across all units with the same source/dest cells, the system pays the A\* cost once and amortises it over the entire lifetime of that route.
 
 The first unit to request a given pair triggers one full-map A\* call. Every subsequent unit that starts in the same origin cell and heads to the same destination cell gets an O(1) cache hit. In a battle with 500 units marching on the same city, only a handful of A\* calls are ever made — one per unique origin cell along the route — regardless of unit count.
 
@@ -57,10 +57,10 @@ The first unit to request a given pair triggers one full-map A\* call. Every sub
 
 | Term | Meaning |
 |---|---|
-| **Point** | A single tile on the map; integer coordinates `(x, y)`. May be walkable (grass, dirt) or unwalkable (mountain, water). |
-| **MapCell** | A rectangular block of `MAP_CELL_SIZE × MAP_CELL_SIZE` tiles (currently 5×5). The map is divided into a grid of these cells. Also acts as a spatial bucket for nearby-unit lookup. |
+| **Point** | A single point on the map; integer coordinates `(x, y)`. May be walkable (grass, dirt) or unwalkable (mountain, water). |
+| **MapCell** | A rectangular block of `MAP_CELL_SIZE × MAP_CELL_SIZE` points (currently 5×5). The map is divided into a grid of these cells. Also acts as a spatial bucket for nearby-unit lookup. |
 | **Cell index** | Flat integer uniquely identifying a cell: `cellX * cellGridHeight + cellY`. |
-| **PathB** | An immutable cached tile path from one cell to another, stored as a `Point[]`. |
+| **PathB** | An immutable cached point path from one cell to another, stored as a `Point[]`. |
 | **PathCacheB** | The shared cache mapping `(originCellIdx, destCellIdx)` → `PathB`. |
 | **Waypoint index** | The index into `PathB.points[]` that a unit is currently targeting. Each unit stores its own index so multiple units can share one `PathB` while walking it at different speeds. |
 | **ORCA** | Optimal Reciprocal Collision Avoidance — a velocity-space algorithm that adjusts each unit's preferred velocity to avoid collision with nearby units. |
@@ -91,7 +91,7 @@ Game tick
     │           └── PathCacheB.put()        ← stores full path + sub-segments
     │
     ├── findJoinIndex()                     ← find best waypoint for THIS unit's position
-    ├── advance waypoint index              ← if within ADVANCE_THRESHOLD tiles
+    ├── advance waypoint index              ← if within ADVANCE_THRESHOLD points
     ├── preferred velocity ← waypoint center
     │
     └── applyOrcaAndTerrain()
@@ -120,8 +120,8 @@ When A\* returns a path that crosses cells **A → B → C → D**, `PathCacheB.
 
 ```
 (A, D) → full path
-(B, D) → sub-path starting at the first tile inside B
-(C, D) → sub-path starting at the first tile inside C
+(B, D) → sub-path starting at the first point inside B
+(C, D) → sub-path starting at the first point inside C
 ```
 
 This means any unit that happens to start in cell B or C **already has a cache hit** the next time it requests a path to D, without requiring another A\* call. The sub-segments are stored as `subList` views of the original `List<Point>` (backed by the same array) so there is no extra memory allocation.
@@ -294,11 +294,11 @@ beginTick()   ← called once per game tick by Game.tickUnits(), NOT per unit
 computeNextPosition(unit)
 │
 ├── 1. resolveTarget()
-│       combatTarget != null → use combatTarget's tile as Point
+│       combatTarget != null → use combatTarget's Point position
 │       else                 → use unit.getPointTarget()
 │       null target          → return null (no movement)
 │
-├── 1a. Guard: target tile unwalkable?
+├── 1a. Guard: target point unwalkable?
 │       → clearPointTarget(), setPointTarget(newRandom), return null
 │
 ├── 1b. Attack-range check
@@ -310,14 +310,14 @@ computeNextPosition(unit)
 ├── 1c. checkStuck()  (see Section 9)
 │
 ├── 2. Already at destination?
-│       dist <= unit.speed → snap to tile center, return
+│       dist <= unit.speed → snap to point center, return
 │
 ├── 3. Determine cells
 │       unitCellIdx = (int)ux / mapCellSize * cellGridH + (int)uy / mapCellSize
 │       destCellIdx = target.x / mapCellSize * cellGridH + target.y / mapCellSize
 │
 ├── 4a. Same cell?
-│       → clear path, steer directly to tile center
+│       → clear path, steer directly to point center
 │
 ├── 4b. Ensure valid cached path
 │       path = unit.getPathB()
@@ -331,7 +331,7 @@ computeNextPosition(unit)
 │
 ├── 5. Advance waypoint index
 │       wp = path.points[idx]
-│       dist(unit, wp+0.5) <= ADVANCE_THRESHOLD (0.8 tiles)?
+│       dist(unit, wp+0.5) <= ADVANCE_THRESHOLD (0.8 points)?
 │           → idx++, unit.setWaypointIndexB(idx)
 │
 ├── 6. Preferred velocity
@@ -343,8 +343,8 @@ computeNextPosition(unit)
 └── 7. applyOrcaAndTerrain(unit, prefX, prefY, ux, uy, map)
 ```
 
-**Why tile centers (+0.5)?**
-A `Point` at integer `(x, y)` maps to the *top-left corner* of its tile. Steering toward a corner creates velocity components pointing up and left, which frequently intersects the adjacent tile above or to the left when those tiles are water/mountain. Steering toward the *center* `(x+0.5, y+0.5)` is equidistant from all four neighbouring tiles, so it never preferentially pokes into any of them. This one change eliminated a large class of "unit walking into walls" bugs.
+**Why point centers (+0.5)?**
+A `Point` at integer `(x, y)` maps to the *top-left corner* of its point. Steering toward a corner creates velocity components pointing up and left, which frequently intersects the adjacent point above or to the left when those points are water/mountain. Steering toward the *center* `(x+0.5, y+0.5)` is equidistant from all four neighbouring points, so it never preferentially pokes into any of them. This one change eliminated a large class of "unit walking into walls" bugs.
 
 ---
 
@@ -355,17 +355,17 @@ Units can get genuinely stuck — wedged in a concave terrain feature, or in a d
 ```
 Every STUCK_SAMPLE_INTERVAL (100) ticks:
   Compute distance from saved sample position to current position.
-  If moved < STUCK_MIN_DISTANCE (2.0 tiles):
+  If moved < STUCK_MIN_DISTANCE (2.0 points):
     → unit is stuck
 ```
 
 **Recovery procedure (stuck detected):**
 1. Look `STUCK_LOOKAHEAD = 10` waypoints ahead in the unit's current `PathB`. Use that point as an *escape sub-goal*.
-2. Run a **bounded local A\*** (`getLocalPath`) from the unit's current tile to the escape sub-goal, confined to a `STUCK_LOCAL_RADIUS = 20` tile bounding box.
+2. Run a **bounded local A\*** (`getLocalPath`) from the unit's current point to the escape sub-goal, confined to a `STUCK_LOCAL_RADIUS = 20` point bounding box.
 3. If a local escape path is found: store it in the cache (keyed from the unit's current cell to the original destination cell) and assign it to the unit. This gives a fresh short detour around the obstacle while preserving the rest of the original route.
 4. If the local A\* also fails (unit is fully enclosed): clear `pointTarget`, request a new random target.
 
-**Why not just re-run the full A\*?** The full long-range A\* might return the *same* path that the unit is already stuck on, because the obstacle causing the stuck is a *dynamic* one (a crowd of units, not terrain). The local escape A\* focuses only on the next few tiles and finds a way around the immediate blockage without discarding the rest of the route.
+**Why not just re-run the full A\*?** The full long-range A\* might return the *same* path that the unit is already stuck on, because the obstacle causing the stuck is a *dynamic* one (a crowd of units, not terrain). The local escape A\* focuses only on the next few points and finds a way around the immediate blockage without discarding the rest of the route.
 
 **Skipped when in combat:** if `unit.getCombatTarget() != null && unit.getCombatTarget().isAlive()`, stuck detection is skipped. A combat unit near its target may legitimately not be moving — it is fighting.
 
@@ -424,7 +424,7 @@ With sub-segment caching (Section 4.2), a single A\* call seeds the cache for ev
 
 | Constant | Location | Value | Purpose |
 |---|---|---|---|
-| `ADVANCE_THRESHOLD` | PathfindingSystemB | 0.8 tiles | Distance at which a unit advances to the next waypoint |
+| `ADVANCE_THRESHOLD` | PathfindingSystemB | 0.8 points | Distance at which a unit advances to the next waypoint |
 | `ORCA_TAU` | PathfindingSystemB | 10.0 ticks | ORCA time horizon — how far ahead to look for collisions |
 | `ORCA_CELL_RADIUS` | PathfindingSystemB | 0 | Cell window for ORCA neighbour search (0 = own cell only) |
 | `MAX_ORCA_NEIGHBORS` | PathfindingSystemB | 7 | Maximum neighbours fed to the ORCA LP per unit per tick |
@@ -435,11 +435,11 @@ With sub-segment caching (Section 4.2), a single A\* call seeds the cache for ev
 | `JOIN_LOOKAHEAD` | PathfindingSystemB | 20 | Waypoints searched when a unit joins a cached path |
 | `EVICT_INTERVAL` | PathfindingSystemB | 200 | Ticks between TTL eviction passes |
 | `STUCK_SAMPLE_INTERVAL` | PathfindingSystemB | 100 | Ticks between stuck-detection position samples |
-| `STUCK_MIN_DISTANCE` | PathfindingSystemB | 2.0 tiles | Minimum movement in one interval before "stuck" fires |
+| `STUCK_MIN_DISTANCE` | PathfindingSystemB | 2.0 points | Minimum movement in one interval before "stuck" fires |
 | `STUCK_LOOKAHEAD` | PathfindingSystemB | 10 | Waypoints ahead used as escape sub-goal during stuck recovery |
-| `STUCK_LOCAL_RADIUS` | PathfindingSystemB | 20 | Bounding-box half-size (tiles) for the local escape A\* |
+| `STUCK_LOCAL_RADIUS` | PathfindingSystemB | 20 | Bounding-box half-size (points) for the local escape A\* |
 | `TTL_TICKS` | PathCacheB | 6 000 | Ticks of disuse before a cached path is evicted |
-| `MAP_CELL_SIZE` | Game | 5 | Tiles per cell side; changing this rebuilds cell indices everywhere |
+| `MAP_CELL_SIZE` | Game | 5 | Points per cell side; changing this rebuilds cell indices everywhere |
 
 ---
 
@@ -447,11 +447,11 @@ With sub-segment caching (Section 4.2), a single A\* call seeds the cache for ev
 
 | Situation | What happens |
 |---|---|
-| Target tile is unwalkable | `clearPointTarget()`, request new random target, return null this tick |
-| Path cache miss | A\* computed from unit's current tile to target; result stored in cache with all sub-segments |
+| Target point is unwalkable | `clearPointTarget()`, request new random target, return null this tick |
+| Path cache miss | A\* computed from unit's current point to target; result stored in cache with all sub-segments |
 | A\* returns null (destination unreachable) | `clearPointTarget()`, request new random target |
 | Unit already in attack range | Stand still; if physically overlapped by another unit, one separation step via `computePhysicalSeparation` |
-| Unit stuck (< 2 tiles in 100 ticks) | Local bounded A\* toward a waypoint 10 steps ahead; if that also fails, abandon target |
+| Unit stuck (< 2 points in 100 ticks) | Local bounded A\* toward a waypoint 10 steps ahead; if that also fails, abandon target |
 | ORCA LP constraint infeasible (all blocked) | LP returns `(0, 0)` → terrain fallback tries preferred velocity and axis slides |
 | Two units physically overlapping (dist < combined radii) | Emergency overlap pre-pass fires; unit moves at full speed away from closest overlapper for 1–3 ticks |
 | ORCA pushes unit into terrain | `applyOrcaAndTerrain` step 2: fall back to preferred (A\*) velocity |
@@ -487,7 +487,7 @@ pathfinding/
 │       maybeEvict()            — TTL sweep
 │
 ├── PathB.java                  — immutable cached path
-│       points[]                — tile array for O(1) waypoint access
+│       points[]                — point array for O(1) waypoint access
 │       cellIndices             — set of cells this path passes through
 │       lastUsedTick            — TTL timer
 │
@@ -511,7 +511,7 @@ pathfinding/
 | `empirebuilder.MapCell` | `getUnits()` for ORCA neighbour scan |
 | `entities.units.Unit` | All unit state: position, velocity, path, target, tier, etc. |
 | `empirebuilder.Coordinates` | Return type for new position |
-| `empirebuilder.Point` | Tile representation |
+| `empirebuilder.Point` | Point representation |
 
 ---
 

@@ -120,7 +120,7 @@ public class TerrainGenerator {
         Point current = source;
 
         while (current.getElevation() > 85) { // 85 = sea level/coastline
-            // Mark a band of tiles around current as RIVER
+            // Mark a band of points around current as RIVER
             for (int dx = -riverWidth; dx <= riverWidth; dx++) {
                 for (int dy = -riverWidth; dy <= riverWidth; dy++) {
                     int nx = current.getX() + dx;

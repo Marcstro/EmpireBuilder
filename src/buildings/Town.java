@@ -10,7 +10,10 @@ import java.util.LinkedList;
 import java.util.Set;
 
 
-public class Town extends VillageOwningBuilding implements AttackCapableBuilding {
+public class Town extends VillageOwningBuilding implements AttackCapableBuilding, UnitOwner, DefensiveTroopBuilding {
+
+    private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
+    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
 
     Set<TownArea> townAreaPoints;
     City city = null;
@@ -102,7 +105,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
                     attackTarget = null;
                     return;
                 }
-                System.out.println("Shooting from town : " + this.getInfo());
+                //System.out.println("Shooting from town : " + this.getInfo());
                 game.spawnArrow(this, attackTarget, getFactionId()); // TODO change factionId if more factions introduced
                 resetAttackCoolDown();
                 resetTimeSinceLastShot();
@@ -145,7 +148,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
 
     @Override
     public void tick(Game game) {
-
+        getUnitManagerComponent().handleDefenses(game);
     }
 
     @Override
@@ -211,6 +214,30 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     }
 
     @Override
+    public UnitManagerComponent getUnitManagerComponent() {
+        return unitManager;
+    }
+
+    @Override
+    public DefensiveTroopComponent getDefensiveTroopComponent() {
+        return defensiveTroopComponent;
+    }
+
+    @Override
+    public Point getInstructions(Unit unit, Game game) {
+        Point p = defensiveTroopComponent.getDefensiveInstructions(unit, game);
+        if (p != null){
+            return p;
+        }
+        if (game.calculateDistance(game.getPoint(unit.getX(), unit.getY()), getPoint()) > 5){
+            unit.setCurrentFocus(entities.units.AI.Focus.RETURNING_TO_BASE);
+            unit.setIdleTarget(null);
+            return getPoint();
+        }
+        return null;
+    }
+
+    @Override
     public String getInfo() {
         return "{Town: " + getId() +
                 ", health: " + getHealth() + "/" + DEFAULT_BUILDING_HEALTH +
@@ -224,7 +251,8 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
                 ", villages=" + getVillages().size() +
                 ", currentTaxIncome=" + String.format("%.2f", getLastIterationFoodTaxIncome()) +
                 (getCity()!=null ? " (" + String.format("%.2f",(TOWN_TAXATION_RATE*getLastIterationFoodTaxIncome())) + " taxed)" : "") +
-                (this.hasCity() ? ", City: " + getCity().getPoint().getPositionString() : ", Has city: None")
-                + ".} ";
+                (this.hasCity() ? ", City: " + getCity().getPoint().getPositionString() : ", Has city: None") +
+                ", is aware of danger: " + getDefensiveTroopComponent().hasDanger() +
+                 ".} ";
     }
 }
