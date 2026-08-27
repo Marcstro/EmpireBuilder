@@ -9,7 +9,6 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Farm extends Building {
     
-    int people;
     double food;
     int timeUntilNextDeath;
     private FarmTechLevel techLevel;
@@ -31,7 +30,7 @@ public class Farm extends Building {
 
     public Farm(int people, Point point) {
         super(point, FarmFertilityColors.getColor(STARTING_FERTILITY_LEVEL), DEFAULT_BUILDING_HEALTH); // change this
-        this.people = people;
+        setPeople(people);
         food=0;
         timeUntilNextDeath = ThreadLocalRandom.current().nextInt(MAXIMUM_TIME_BEFORE_DEATH);
         techLevel = FarmTechLevel.LEVEL_1;
@@ -144,7 +143,7 @@ public class Farm extends Building {
     }
 
     public void resetState(){
-        people = 0;
+        setPeople(0);
         food = 0;
         setOwner(null);
         techLevel = FarmTechLevel.LEVEL_1;
@@ -162,7 +161,7 @@ public class Farm extends Building {
         successLevel = 1;
         successLevelChange = 0;
         setPoint(point);
-        this.people = people;
+        setPeople(people);
         active = true;
     }
 
@@ -199,7 +198,7 @@ public class Farm extends Building {
             }
         }
         else {
-            if (people >= PEOPLE_REQUIRED_FOR_TECHNOLOGY_LEVEL_2) {
+            if (getPeople() >= PEOPLE_REQUIRED_FOR_TECHNOLOGY_LEVEL_2) {
                 techLevel = FarmTechLevel.LEVEL_2;
             }
             else {
@@ -212,7 +211,7 @@ public class Farm extends Building {
     }
 
     public boolean farmHasRoomForMorePeople(){
-        return people < calculateMaxPopulation();
+        return getPeople() < calculateMaxPopulation();
     }
 
     public int calculateMaxPopulation(){
@@ -242,12 +241,12 @@ public class Farm extends Building {
     
     public boolean checkIfLastPersonOnFarmDies(){
         if (timeUntilNextDeath <= 0){
-            people--;
-            if (people <= 0){
+            setPeople(getPeople() - 1);
+            if (getPeople() <= 0){
                 // Game class removes this farm
                 return true;
             }
-            if (people < PEOPLE_REQUIRED_FOR_TECHNOLOGY_LEVEL_2){
+            if (getPeople() < PEOPLE_REQUIRED_FOR_TECHNOLOGY_LEVEL_2){
                 checkAndUpdateTechLevel();
             }
             timeUntilNextDeath = ThreadLocalRandom.current().nextInt(MAXIMUM_TIME_BEFORE_DEATH);
@@ -263,13 +262,9 @@ public class Farm extends Building {
         this.successLevelChange = successLevelChange;
     }
 
-    public void increasePeople(){
-        people++;
-    }
-
     public boolean isTimeToCreateNewFarm(){
         return (getFood() >= foodRequiredForNewFarm()
-        && people > EXPAND_THRESHOLD);
+        && getPeople() > EXPAND_THRESHOLD);
     }
 
     public void consumeFoodForNewFarm(){
@@ -289,7 +284,7 @@ public class Farm extends Building {
     }
 
     public void halvePeopleAmount(){
-        people=people/2;
+        setPeople(getPeople() / 2);
         checkAndUpdateTechLevel();
     }
     
@@ -310,14 +305,6 @@ public class Farm extends Building {
         food++;
     }
 
-    public int getPeople() {
-        return people;
-    }
-
-    public void setPeople(int people) {
-        this.people = people;
-    }
-
     public double getFood() {
         return food;
     }
@@ -328,12 +315,12 @@ public class Farm extends Building {
 
     @Override
     public String toString() {
-        return "Farm{" + "people=" + people + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + BASE_FARM_CAPACITY + ", food=" + food + ", FarmOwningBuilding=" + getFarmOwningBuilding() + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
+        return "Farm{" + "people=" + getPeople() + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + BASE_FARM_CAPACITY + ", food=" + food + ", FarmOwningBuilding=" + getFarmOwningBuilding() + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
     }
 
     @Override
     public String getInfo(){
-        return "Farm(id:" + getId() + "){" + "people=" + people + "/" +calculateMaxPopulation()
+        return "Farm(id:" + getId() + "){" + "people=" + getPeople() + "/" +calculateMaxPopulation()
                 + ",point=" + getPoint().getX() + ","+getPoint().getY()
                 + ", pos=" + getX() + "," + getY()
                 + ", Tech=" + getTechLevel()

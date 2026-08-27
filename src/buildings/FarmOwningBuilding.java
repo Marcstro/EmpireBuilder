@@ -12,7 +12,6 @@ public abstract class FarmOwningBuilding extends Building{
     LinkedList<Point> emptyLand;
     double food;
     int foodNeededToCreateNewFarm;
-    private int people;
 
 
     public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
@@ -26,16 +25,16 @@ public abstract class FarmOwningBuilding extends Building{
     public void tick(){
 
         resetCurrentFoodTaxIncome();
-        int foodCost = people;
+        int foodCost = getPeople();
         if (foodCost > food){
             int deaths = (int)((food-foodCost)/FOOD_NEEDED_FOR_NEW_PERSON); //this will be a negative number
-            people += deaths;
+            setPeople(getPeople() + deaths);
             food = 0;
         }
         else {
             food -= foodCost;
             int births = (int)(food/FOOD_NEEDED_FOR_NEW_PERSON);
-            people += births;
+            setPeople(getPeople() + births);
         }
 
         // TODO implement destruction of Buildings when they lose all people
@@ -44,7 +43,7 @@ public abstract class FarmOwningBuilding extends Building{
             people = 0;
         }*/
 
-        int goldIncome = people;
+        int goldIncome = getPeople();
 
         if (goldIncome > getWealth()) {
             increaseWealth();
@@ -96,16 +95,8 @@ public abstract class FarmOwningBuilding extends Building{
         emptyLand.remove(farm.getPoint());
     }
 
-    public int getPeople() {
-        return people;
-    }
-
-    public void setPeople(int people) {
-        this.people = people;
-    }
-
     public void increasePeopleByOne(){
-        people++;
+        increasePeople();
     }
 
     public Set<Point> getControlledLand() {

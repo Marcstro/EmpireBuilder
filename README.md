@@ -1,7 +1,6 @@
 Todo:
 
 - arrow/missile factory or just better generation
-- getOwner() for building. getTopOwner() too
 - balance units
 - create specific "evil scout troops"
 - create "militia" units, basic units
@@ -19,7 +18,6 @@ Nearest TODOs:
 - mapCells should have id values that can be retrieved and are then the same for every object that needs to use such values
 - Create safe "removeBuilding(Building building)"
 that takes everything into consideration
-- int variable for people should be in building, as all buildings can now have citizens
 - dont have CityLand or Townland. MultiPointSize buildings should be a thing. where there is Point middlePoint and List<Point> exterior points
 - completely remove "setLand", or maybe the other function
 merge them so that they can and will be used safely

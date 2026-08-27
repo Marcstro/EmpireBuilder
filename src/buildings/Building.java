@@ -23,6 +23,7 @@ public abstract class Building extends Entity {
     public static final double DEFAULT_BUILDING_HEALTH = 100;
 
     Building owner = null;
+    private int people = 0;
 
     public Building(Point point, Color color, double health){
         super(point.getX(), point.getY(), health, SIZE_OF_BUILDINGS, FACTION_OF_BUILDINGS);
@@ -140,6 +141,18 @@ public abstract class Building extends Entity {
 
     public void decrease(){
         wealth--;
+    }
+
+    public int getPeople() {
+        return people;
+    }
+
+    public void setPeople(int people) {
+        this.people = people;
+    }
+
+    public void increasePeople() {
+        people++;
     }
 
     public abstract String getInfo();
