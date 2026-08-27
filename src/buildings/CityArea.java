@@ -11,6 +11,7 @@ public class CityArea extends Building{
     public CityArea(Point point, City cityCenter) {
         super(point, LandType.getBaseColor(LandType.CITY), DEFAULT_BUILDING_HEALTH);
         this.cityCenter = cityCenter;
+        owner=cityCenter;
     }
 
     @Override

@@ -16,7 +16,6 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
 
     Set<TownArea> townAreaPoints;
-    City city = null;
     
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
     final double TOWN_TAXATION_RATE = 0.6;
@@ -53,8 +52,8 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
 
     @Override
     void processTaxation(double foodIncome) {
-        if (city != null){
-            city.processTaxation(((foodIncome*TOWN_TAXATION_RATE)));
+        if (hasCity()){
+            getCity().processTaxation(((foodIncome*TOWN_TAXATION_RATE)));
             addToCurrentFoodTaxIncome((foodIncome*(1-TOWN_TAXATION_RATE)));
             food += (foodIncome*(1-TOWN_TAXATION_RATE));
         }
@@ -62,14 +61,6 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
             addToCurrentFoodTaxIncome(foodIncome);
             food += foodIncome;
         }
-    }
-
-    @Override
-    Building getTopOwner() {
-        if (hasCity()){
-            return city.getTopOwner();
-        }
-        else return this;
     }
 
     @Override
@@ -180,19 +171,19 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     }
 
     public void setCity(City city){
-        this.city = city;
+        setOwner(city);
     }
 
     public void removeCity(){
-        city = null;
+        setOwner(null);
     }
 
     public City getCity(){
-        return city;
+        return (City) getOwner();
     }
 
     public boolean hasCity(){
-        return city != null;
+        return hasOwner();
     }
     
     public void addTownArea(TownArea townArea){

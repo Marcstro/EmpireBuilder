@@ -300,8 +300,8 @@ public class GridPanel extends JPanel {
                     g2d.drawLine(
                             (village.getPoint().getX() - cameraX) * pixelSize,
                             (village.getPoint().getY() - cameraY) * pixelSize,
-                            (village.getOwner().getPoint().getX() - cameraX) * pixelSize,
-                            (village.getOwner().getPoint().getY() - cameraY) * pixelSize
+                            (village.getVillageOwningBuilding().getPoint().getX() - cameraX) * pixelSize,
+                            (village.getVillageOwningBuilding().getPoint().getY() - cameraY) * pixelSize
                     );
                 }
             }

@@ -11,7 +11,6 @@ public class Farm extends Building {
     
     int people;
     double food;
-    FarmOwningBuilding farmOwningBuilding;
     int timeUntilNextDeath;
     private FarmTechLevel techLevel;
     boolean partOfVillageCenter = false;
@@ -147,7 +146,7 @@ public class Farm extends Building {
     public void resetState(){
         people = 0;
         food = 0;
-        farmOwningBuilding = null;
+        setOwner(null);
         techLevel = FarmTechLevel.LEVEL_1;
         partOfVillageCenter = false;
         successLevel = 1;
@@ -187,8 +186,8 @@ public class Farm extends Building {
     }
 
     public void checkAndUpdateTechLevel(){
-        if (farmOwningBuilding != null) {
-            Building topOwner = farmOwningBuilding.getTopOwner();
+        if (hasOwner()) {
+            Building topOwner = getFarmOwningBuilding().getTopOwner();
             if (topOwner instanceof Village){
                 techLevel = FarmTechLevel.LEVEL_3;
             }
@@ -232,7 +231,7 @@ public class Farm extends Building {
     }
 
     public boolean belongsToFarmOwningBuilding(){
-        return farmOwningBuilding != null;
+        return hasOwner();
     }
 
     public void updateColor(){
@@ -295,16 +294,16 @@ public class Farm extends Building {
     }
     
     public FarmOwningBuilding getFarmOwningBuilding() {
-        return farmOwningBuilding;
+        return (FarmOwningBuilding) getOwner();
     }
 
     public void setFarmOwningBuilding(FarmOwningBuilding farmOwningBuilding) {
-        this.farmOwningBuilding = farmOwningBuilding;
+        setOwner(farmOwningBuilding);
         checkAndUpdateTechLevel();
     }
     
     public void removeFarmingOwningBuilding(){
-        this.farmOwningBuilding =null;
+        setOwner(null);
     }
     
     public void increaseFoodBy1(){
@@ -329,7 +328,7 @@ public class Farm extends Building {
 
     @Override
     public String toString() {
-        return "Farm{" + "people=" + people + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + BASE_FARM_CAPACITY + ", food=" + food + ", FarmOwningBuilding=" + farmOwningBuilding + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
+        return "Farm{" + "people=" + people + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + BASE_FARM_CAPACITY + ", food=" + food + ", FarmOwningBuilding=" + getFarmOwningBuilding() + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
     }
 
     @Override
@@ -343,7 +342,7 @@ public class Farm extends Building {
                 + (getFarmOwningBuilding()!=null ? " (" + String.format("%.2f",(calculateTaxRate()*getLastIterationFoodTaxIncome())) + " taxed)" : "")
                 + ", farmSuccessLevel=" + String.format("%.2f", getSuccessLevel())
                 + ", timeUntilNextDeath=" + timeUntilNextDeath
-                + ", Owned by=" +(belongsToFarmOwningBuilding() ? (farmOwningBuilding.getClass().getSimpleName() + "(" + farmOwningBuilding.getPoint().getPositionString()) +")" : "None ")
+                + ", Owned by=" +(belongsToFarmOwningBuilding() ? (getFarmOwningBuilding().getClass().getSimpleName() + "(" + getFarmOwningBuilding().getPoint().getPositionString()) +")" : "None ")
                 + ", isPartOfVillageCenter=" + isPartOfVillageCenter()
                 + '}';
     }

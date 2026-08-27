@@ -103,32 +103,18 @@ public class MapCell {
             game.plunderMapCell(this, unit);
             plunderCooldown = false;
         }
-        // TODO fix this ASAP once Building.class has a getOwner() function
         if (!isBeingRaided){
             System.out.println("MapCell is being raided, notifying all defensive buildings in the cell");
             isBeingRaided = true;
-            for(FarmOwningBuilding building : largeBuildingsList){
+            for (FarmOwningBuilding building : largeBuildingsList){
                 System.out.println(building.getPoint().getInfo() + "is trying to inform others it is being raided");
-                if (building instanceof DefensiveTroopBuilding def){
-                    def.getDefensiveTroopComponent().addToDangerList(this);
-                    System.out.println(((Building)def).getInfo() + " has been notified of the raid");
-                    if (def instanceof Town town && town.hasCity() && town.getCity() instanceof DefensiveTroopBuilding def2){
-                        def2.getDefensiveTroopComponent().addToDangerList(this);
-                        System.out.println(((Building)def2).getInfo() + " has been notified of the raid");
-
+                Building current = building;
+                while (current != null) {
+                    if (current instanceof DefensiveTroopBuilding def){
+                        def.getDefensiveTroopComponent().addToDangerList(this);
+                        System.out.println(current.getInfo() + " has been notified of the raid");
                     }
-                }
-                if (building instanceof Village village
-                        && village.hasOwner()
-                        && village.getOwner() instanceof DefensiveTroopBuilding def2){
-                    def2.getDefensiveTroopComponent().addToDangerList(this);
-                    System.out.println(((Building)def2).getInfo() + " has been notified of the raid");
-
-                    if (def2 instanceof Town town && town.hasCity() && town.getCity() instanceof DefensiveTroopBuilding def3){
-                        def3.getDefensiveTroopComponent().addToDangerList(this);
-                        System.out.println(((Building)def3).getInfo() + " has been notified of the raid");
-
-                    }
+                    current = current.getOwner();
                 }
             }
         }

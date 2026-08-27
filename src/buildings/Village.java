@@ -7,7 +7,6 @@ import empirebuilder.Point;
 public class Village extends FarmOwningBuilding{
     
     Point villageCenter;
-    VillageOwningBuilding owner;
     private int ticksUntilNextSearch;
     private double communalFoodForNewFarms;
     private double currentCommunalFoodIncome;
@@ -119,14 +118,6 @@ public class Village extends FarmOwningBuilding{
     }
 
     @Override
-    Building getTopOwner() {
-        if (getOwner() == null){
-            return this;
-        }
-        else return getOwner().getTopOwner();
-    }
-
-    @Override
     public String getImagePath() {
         return "/resources/images/VillageImage.png";
     }
@@ -143,7 +134,7 @@ public class Village extends FarmOwningBuilding{
     @Override
     void processTaxation(double foodIncome) {
         if (hasOwner()){
-            getOwner().processTaxation(foodIncome*TAXATION_VILLAGE_RATE);
+            getVillageOwningBuilding().processTaxation(foodIncome*TAXATION_VILLAGE_RATE);
             food += foodIncome*(1-TAXATION_VILLAGE_RATE);
             addToCurrentFoodTaxIncome(foodIncome*(1-TAXATION_VILLAGE_RATE));
         }
@@ -162,15 +153,15 @@ public class Village extends FarmOwningBuilding{
     }
 
     public boolean hasOwner(){
-        return owner != null;
+        return getOwner() != null;
     }
 
-    public VillageOwningBuilding getOwner() {
-        return owner;
+    public VillageOwningBuilding getVillageOwningBuilding() {
+        return (VillageOwningBuilding) getOwner();
     }
 
-    public void setOwner(VillageOwningBuilding owner) {
-        this.owner = owner;
+    public void setVillageOwningBuilding(VillageOwningBuilding villageOwningBuilding) {
+        setOwner(villageOwningBuilding);
     }
 
     public Point getVillageCenter() {
@@ -196,7 +187,7 @@ public class Village extends FarmOwningBuilding{
                 ", communalFoodIncome="+ String.format("%.2f", getLastIterationCommunalFoodIncome()) +
                 ", currentFoodTaxIncome=" + String.format("%.2f", getLastIterationFoodTaxIncome()) +
                 (hasOwner() ? " (" + String.format("%.2f",(TAXATION_VILLAGE_RATE*getLastIterationFoodTaxIncome())) + " taxed)" : "") +
-                ", owner=" + (hasOwner() ? (owner.getPoint().getPositionString() + ", class: " + owner.getClass()) : "NONE") +
+                ", owner=" + (hasOwner() ? (getVillageOwningBuilding().getPoint().getPositionString() + ", class: " + getVillageOwningBuilding().getClass()) : "NONE") +
                 ", gold=" + String.format("%.2f", getGold()) +
                 ", wealth=" + String.format("%.2f", getWealth()) +
                 "}";

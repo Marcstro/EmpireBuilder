@@ -115,11 +115,6 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
 
     }
 
-    @Override
-    Building getTopOwner() {
-        return this;
-    }
-
     public void addCityArea(CityArea cityArea){
         cityAreaPoints.add(cityArea);
     }

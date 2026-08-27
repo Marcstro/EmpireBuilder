@@ -110,9 +110,9 @@ public class TerrainGenerator {
                 }
                 attempts++;
             }
-            if (source == null) continue; // Couldn’t find source, skip
+            if (source == null) continue;
 
-            carveRiver2(source, 2); // 2 = width of river
+            carveRiver2(source, 2);
         }
     }
 

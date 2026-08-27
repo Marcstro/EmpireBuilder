@@ -471,7 +471,7 @@ public class Game{
                     .filter(v -> calculateDistance(villageOwningBuilding.getPoint(), v.getPoint()) <= villageOwningRange)
                     .toList();
             for (Village village: nearbyIndependentVillages){
-                village.setOwner(villageOwningBuilding);
+                village.setVillageOwningBuilding(villageOwningBuilding);
                 village.markCenter();
                 villageOwningBuilding.addVillage(village);
             }
@@ -721,7 +721,7 @@ public class Game{
             point.setOwnerBuilding(newTown);
         }
         for(Village nearbyVillage: nearbyVillages){
-            nearbyVillage.setOwner(newTown);
+            nearbyVillage.setVillageOwningBuilding(newTown);
             newTown.addVillage(nearbyVillage);
             nearbyVillage.markCenter();
         }
@@ -801,7 +801,7 @@ public class Game{
         // change ownership of surrounding villages
         newCity.setVillages(town.getVillages());
         for (Village village: town.getVillages()){
-            village.setOwner(newCity);
+            village.setVillageOwningBuilding(newCity);
         }
 
         cities.add(newCity);
@@ -1327,9 +1327,9 @@ public class Game{
                 village.unmarkCenter();
                 villages.remove(village);
                 if (village.hasOwner()){
-                    village.getOwner().removeVillage(village);
+                    village.getVillageOwningBuilding().removeVillage(village);
                 }
-                village.setOwner(null);
+                village.setVillageOwningBuilding(null);
             }
             case Farm farm -> {
                 gm.getMap().removeBuildingFromPoint(farm.getPoint());
@@ -1355,7 +1355,7 @@ public class Game{
 
         if (building instanceof VillageOwningBuilding villageOwningBuilding){
             for (Village village: villageOwningBuilding.getVillages()){
-                village.setOwner(null);
+                village.setVillageOwningBuilding(null);
                 village.unmarkCenter();
                 updateVillageControlledLand(village);
                 villageReactToOwnerBeingDestroyed(village);

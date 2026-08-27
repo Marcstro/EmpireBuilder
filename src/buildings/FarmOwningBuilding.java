@@ -4,7 +4,6 @@ import empirebuilder.Point;
 
 import java.awt.*;
 import java.util.*;
-import java.util.List;
 
 public abstract class FarmOwningBuilding extends Building{
     
@@ -108,8 +107,6 @@ public abstract class FarmOwningBuilding extends Building{
     public void increasePeopleByOne(){
         people++;
     }
-
-    abstract Building getTopOwner();
 
     public Set<Point> getControlledLand() {
         return controlledLand;

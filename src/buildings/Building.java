@@ -4,6 +4,8 @@ import empirebuilder.Point;
 import entities.Entity;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class Building extends Entity {
     
@@ -19,6 +21,8 @@ public abstract class Building extends Entity {
     public static final int SIZE_OF_BUILDINGS = 1;
     public static final int FACTION_OF_BUILDINGS = 1;
     public static final double DEFAULT_BUILDING_HEALTH = 100;
+
+    Building owner = null;
 
     public Building(Point point, Color color, double health){
         super(point.getX(), point.getY(), health, SIZE_OF_BUILDINGS, FACTION_OF_BUILDINGS);
@@ -68,6 +72,33 @@ public abstract class Building extends Entity {
 
     public void addGold(double newGold){
         gold += newGold;
+    }
+
+    public Building getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Building owner) {
+        this.owner = owner;
+    }
+
+    public boolean hasOwner(){
+        return owner != null;
+    }
+
+    public Building getTopOwner() {
+        if (owner == null) return this;
+        return owner.getTopOwner();
+    }
+
+    public List<Building> getAllHierarchicalOwners() {
+        List<Building> owners = new ArrayList<>();
+        Building current = owner;
+        while (current != null) {
+            owners.add(current);
+            current = current.owner;
+        }
+        return owners;
     }
 
     public double getCurrentFoodTaxIncome() {
