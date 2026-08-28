@@ -21,10 +21,18 @@ public class Arrow extends Missile{
         this.x += this.vx;
         this.y += this.vy;
 
-        if (game.checkArrowHit(this, oldX, oldY)) {
+        entities.Entity hit = game.checkArrowHit(this, oldX, oldY);
+        if (hit != null) {
+            this.x = hit.getX();
+            this.y = hit.getY();
+            game.spawnLingeringFallenArrow(this);
             setRemainingDuration(0);
+        } else {
+            lowerDuration();
+            if (getRemainingDuration() <= 0) {
+                game.spawnLingeringFallenArrow(this);
+            }
         }
-        lowerDuration();
     }
 
     @Override

@@ -6,6 +6,7 @@ import entities.Entity;
 import entities.effects.Arrow;
 import entities.effects.BloodSpark;
 import entities.effects.Effect;
+import entities.effects.LingeringFallenArrow;
 import entities.units.*;
 import pathfinding.PathfindingSystem;
 
@@ -1034,13 +1035,17 @@ public class Game{
         createEffect(arrow);
     }
 
+    public void spawnLingeringFallenArrow(Arrow arrow) {
+        createEffect(new LingeringFallenArrow(arrow.getX(), arrow.getY(), arrow.getRotation()));
+    }
+
     public void unitShootArrow(Unit shooter, Entity target, int senderFactionId) {
         Arrow arrow = new Arrow(shooter.getX(), shooter.getY(), target.getX(), target.getY(), senderFactionId);
         createEffect(arrow);
     }
 
     // TODO extend so this allows for other missiles
-    public boolean checkArrowHit(Arrow arrow, double oldX, double oldY) {
+    public Entity checkArrowHit(Arrow arrow, double oldX, double oldY) {
         int cellAx = getCellCoord((int) oldX);
         int cellAy = getCellCoord((int) oldY);
         int cellBx = getCellCoord((int) arrow.getX());
@@ -1059,15 +1064,14 @@ public class Game{
             }
         }
 
-        if (hit == null) return false;
+        if (hit == null) return null;
 
         hit.causeHealthLoss(arrow.getDamage());
         if (hit instanceof Unit) {
             createEffect(new BloodSpark(hit.getX(), hit.getY()));
-            // TODO replace bloodspark with different effect when hiting non bleeding targets (i.e. buildings)
-            // TODO place the arrow at units position and delay there, visualizing impact
+            // TODO replace bloodspark with different effect when hitting non bleeding targets (i.e. buildings)
         }
-        return true;
+        return hit;
     }
 
     private Entity rayCastCheckUnitsInCell(Arrow arrow, double oldX, double oldY, int cellX, int cellY) {
