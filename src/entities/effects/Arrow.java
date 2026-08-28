@@ -8,10 +8,15 @@ public class Arrow extends Missile{
     static final String imageName = "arrow";
     static final double arrowSpeed = 1;
     static final int INITIAL_ARROW_DURATION = 20;
-    static final double arrowWidth = 0.1;
+    static final double standardArrowWidth = 0.1;
 
     public Arrow(double x, double y, double targetX, double targetY, int factionId) {
-        super(x, y, INITIAL_ARROW_DURATION, targetX, targetY, arrowDamage, factionId, arrowSpeed, arrowWidth);
+        super(x, y, INITIAL_ARROW_DURATION, targetX, targetY, arrowDamage, factionId, arrowSpeed, standardArrowWidth);
+    }
+
+    public Arrow(double x, double y, double targetX, double targetY, int factionId,
+                 double damage, int duration) {
+        super(x, y, duration, targetX, targetY, damage, factionId, arrowSpeed, standardArrowWidth);
     }
 
     @Override

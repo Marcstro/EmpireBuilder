@@ -13,6 +13,7 @@ public class UnitManagerComponent {
 
     private final List<Unit> units = new ArrayList<>();
     private final Building ownerBuilding;
+    private int unitCost = 50000;
 
     public UnitManagerComponent(Building ownerBuilding) {
         this.ownerBuilding = ownerBuilding;
@@ -37,8 +38,8 @@ public class UnitManagerComponent {
     public void handleDefenses(Game game){
         if (ownerBuilding instanceof DefensiveTroopBuilding def && def.getDefensiveTroopComponent().hasDanger()
         ){
-            if (ownerBuilding.getGold() > 50000){
-                ownerBuilding.addGold(-50000);
+            if (ownerBuilding.getGold() > unitCost){
+                ownerBuilding.addGold(-unitCost);
                 List<Point> points = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(), ownerBuilding.getPoint().getY(), 4 );
 
                 Knight knight1 = new Knight(points.getFirst().getX(), points.getFirst().getY());

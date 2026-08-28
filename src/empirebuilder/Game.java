@@ -171,7 +171,7 @@ public class Game{
 
     public void attackingBuildingsTick(){
         for(AttackCapableBuilding attackCapableBuilding: attackCapableBuildings){
-            attackCapableBuilding.tickAttack(this);
+            attackCapableBuilding.getAttackCapableBuildingComponent().tickAttack(this);
         }
     }
 
@@ -604,6 +604,12 @@ public class Game{
         int dy = p1.getY() - p2.getY();
         return Math.sqrt(dx * dx + dy * dy);
     }
+
+    public double calculateDistance(double x1, double y1, double x2, double y2) {
+        int dx = (int)(x1 - x2);
+        int dy = (int)(y1 - y2);
+        return Math.sqrt(dx * dx + dy * dy);
+    }
    
     public void convertFarmToVillageCenter(Farm farm){
         
@@ -841,7 +847,7 @@ public class Game{
 
 
                 if (unit.getFactionId() == 2) {
-                    wakeAttackCapableBuildings(unit, 1);
+                    wakeAttackCapableBuildings(unit, rangeToMapCellDistance(25));
                 }
             }
         }
@@ -951,7 +957,44 @@ public class Game{
         return nearestUnit;
     }
 
-    // TODO implement unit/effect size?
+    public int rangeToMapCellDistance(double range) {
+        return (int) Math.ceil(range / MAP_CELL_SIZE) + 1;
+    }
+
+    public Unit getNearestUnitSearchOutwards(double lookerX, double lookerY, Unit searcher, int distanceOut, UnitPredicate filter) {
+        int centerCellX = getCellCoord((int) lookerX);
+        int centerCellY = getCellCoord((int) lookerY);
+
+        for (int r = 0; r <= distanceOut; r++) {
+            Unit nearest = null;
+            double minDistSq = Double.MAX_VALUE;
+
+            for (int dx = -r; dx <= r; dx++) {
+                for (int dy = -r; dy <= r; dy++) {
+                    if (Math.abs(dx) != r && Math.abs(dy) != r) continue; // only the border ring
+                    int cx = centerCellX + dx;
+                    int cy = centerCellY + dy;
+                    if (cx < 0 || cx >= mapCellGrid.length || cy < 0 || cy >= mapCellGrid[cx].length) continue;
+
+                    for (Unit candidate : mapCellGrid[cx][cy].getUnits()) {
+                        if (candidate == searcher || !filter.test(candidate)) continue;
+                        double ddx = lookerX - candidate.getX();
+                        double ddy = lookerY - candidate.getY();
+                        double distSq = ddx * ddx + ddy * ddy;
+                        if (distSq < minDistSq) {
+                            minDistSq = distSq;
+                            nearest = candidate;
+                        }
+                    }
+                }
+            }
+
+            if (nearest != null) return nearest;
+        }
+        return null;
+    }
+
+
     // has future usages
     private boolean checkSimpleCollision(double x1, double y1, Unit neighbor) {
         double minSeparation = neighbor.getSize() + UNIT_BASE_SIZE;// instead of base size, check targeters size
@@ -1028,10 +1071,8 @@ public class Game{
         effectsToBeAdded.add(effect);
     }
 
-    // TODO rewrite, add many more variables
     // possibly implement some sort of "missile creation factory"
-    public void spawnArrow(AttackCapableBuilding shooter, Unit target, int senderFactionId) {
-        Arrow arrow = new Arrow(shooter.getX(), shooter.getY(), target.getX(), target.getY(), senderFactionId);
+    public void spawnArrow(Arrow arrow, Entity shooter, Entity target, int senderFactionId){
         createEffect(arrow);
     }
 
@@ -1115,7 +1156,7 @@ public class Game{
                     MapCell cell = mapCellGrid[x][y];
 
                     for (AttackCapableBuilding building : cell.getAttackCapableBuildings()) {
-                        building.setAttackReady(true);
+                        building.getAttackCapableBuildingComponent().setAttackReady(true);
                     }
                 }
             }
@@ -1157,7 +1198,7 @@ public class Game{
 
                     if (!threatPresent) {
                         for (AttackCapableBuilding building : cell.getAttackCapableBuildings()) {
-                            building.setAttackReady(false);
+                            building.getAttackCapableBuildingComponent().setAttackReady(false);
                         }
                     }
                 }
@@ -1189,10 +1230,10 @@ public class Game{
                     MapCell cell = mapCellGrid[x][y];
 
                     for (AttackCapableBuilding building : cell.getAttackCapableBuildings()) {
-                        if (searcher.isHostileTo(building.getFactionId())) {
+                        if (searcher.isHostileTo(building.getAttackCapableBuildingComponent().getBuilding().getFactionId())) {
 
-                            double bX = building.getX(); // Building's getX()
-                            double bY = building.getY(); // Building's getY()
+                            double bX = building.getX();
+                            double bY = building.getY();
                             double dx = searcher.getX() - bX;
                             double dy = searcher.getY() - bY;
                             double distanceSq = (dx * dx) + (dy * dy);

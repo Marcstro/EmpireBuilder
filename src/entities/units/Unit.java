@@ -57,9 +57,9 @@ public abstract class Unit extends MovingEntity {
 
     public static final int IDLE_SEARCH_COOLDOWN = 70;
     // how far outwards units searches for target units
-    public static final int COMBAT_SEARCH_CELLS = 1;
+    public static final int COMBAT_SEARCH_CELLS = 4;
     // how far outwards units searches for target buildings
-    public static final int BUILDING_SEARCH_CELLS = 2;
+    public static final int BUILDING_SEARCH_CELLS = 3;
 
     // Position-based stuck detector — sampled every STUCK_SAMPLE_INTERVAL ticks
     private double stuckSampleX   = Double.MIN_VALUE;
@@ -129,6 +129,7 @@ public abstract class Unit extends MovingEntity {
             if (unitTarget != null) {
                 combatTarget = unitTarget;
             } else {
+                // TODO only once get local buildings, then sort by distance and prio attackCapableBuildings
                 Building buildingTarget = (Building)game.getNearestAttackCapableBuilding(this, BUILDING_SEARCH_CELLS);
                 if (buildingTarget == null){
                     buildingTarget = game.getNearestLargeBuilding(this, BUILDING_SEARCH_CELLS);

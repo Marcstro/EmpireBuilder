@@ -1,6 +1,5 @@
 Todo:
 
-- arrow/missile factory or just better generation
 - balance units
 - create specific "evil scout troops"
 - create "militia" units, basic units
@@ -11,6 +10,7 @@ Todo:
 - land/point/mapCell value
 - possible "mapsections", like 50x50 points. will hold threatlevle instead of mapcells
 - give raiding units good defenseless targets if possible
+- Add all removeUnit/effect/building etc in their own tick that gets ticked the fastest of all
 
 
 Nearest TODOs:

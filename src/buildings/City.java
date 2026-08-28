@@ -2,7 +2,6 @@ package buildings;
 
 import LandTypes.LandType;
 import empirebuilder.Game;
-import empirebuilder.MapCell;
 import empirebuilder.Point;
 import entities.units.Unit;
 
@@ -12,9 +11,6 @@ import java.util.Set;
 
 public class City extends VillageOwningBuilding implements AttackCapableBuilding, UnitOwner, DefensiveTroopBuilding {
 
-    private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
-    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
-
     Set<CityArea> cityAreaPoints;
     LinkedList<Town> towns;
     boolean isAttackReady;
@@ -22,6 +18,14 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
 
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
     final int CITY_ATTACK_RANGE = 25;
+    final int CITY_ATTACK_DAMAGE = 12;
+    final int CITY_ARROW_DISTANCE = 35;
+    final int CITY_ATTACK_COOLDOWN = 20;
+
+    private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
+    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
+    private final AttackCapableBuildingComponent attackCapableBuildingComponent =
+            new AttackCapableBuildingComponent(this, CITY_ATTACK_DAMAGE, CITY_ATTACK_RANGE, CITY_ARROW_DISTANCE, CITY_ATTACK_COOLDOWN);
 
     public City(Point point) {
         super(point, INITIAL_FOOD_NEEDED_TO_GROW, LandType.getBaseColor(LandType.CITY), DEFAULT_BUILDING_HEALTH);
@@ -29,41 +33,6 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
         cityAreaPoints = new HashSet();
         isAttackReady=false;
         timeSinceLastShot=0;
-    }
-
-    @Override
-    public double getAttackRange() {
-        return CITY_ATTACK_RANGE;
-    }
-
-    @Override
-    public void setTarget(Unit unit) {
-
-    }
-
-    @Override
-    public void tickAttack(Game game) {
-
-    }
-
-    @Override
-    public void setAttackReady(boolean state) {
-        isAttackReady=state;
-    }
-
-    @Override
-    public int getAttackCooldown() {
-        return 0;
-    }
-
-    @Override
-    public void resetAttackCoolDown() {
-
-    }
-
-    @Override
-    public boolean isAttackReady() {
-        return isAttackReady;
     }
 
     @Override
@@ -89,30 +58,6 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     @Override
     public DefensiveTroopComponent getDefensiveTroopComponent() {
         return defensiveTroopComponent;
-    }
-
-    @Override
-    public double getX() {
-        return getPoint().getX();
-    }
-
-    @Override
-    public double getY() {
-        return getPoint().getY();
-    }
-
-    @Override
-    public void resetTimeSinceLastShot() {
-        timeSinceLastShot=0;
-    }
-
-    @Override
-    public boolean hasSufficientTimePassedSinceLastShot() {
-        return timeSinceLastShot > 100;
-    }
-
-    public void setShootCooldown(int in){
-
     }
 
     public void addCityArea(CityArea cityArea){
@@ -163,6 +108,11 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     @Override
     public UnitManagerComponent getUnitManagerComponent() {
         return unitManager;
+    }
+
+    @Override
+    public AttackCapableBuildingComponent getAttackCapableBuildingComponent() {
+        return attackCapableBuildingComponent;
     }
 
     @Override
