@@ -289,7 +289,7 @@ public class GridPanel extends JPanel {
                 if (building != null) {
                     Image img = ImageManager.getBuildingImage(building.getImageName());
                     if (img != null) {
-                        g.drawImage(img, screenX, screenY, pixelSize, pixelSize, null);
+                        g.drawImage(img, screenX, screenY, null);
                     } else {
                         g.setColor(building.getColor());
                         g.fillRect(screenX, screenY, pixelSize, pixelSize);

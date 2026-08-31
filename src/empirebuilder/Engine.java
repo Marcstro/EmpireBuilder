@@ -3,6 +3,7 @@ package empirebuilder;
 public class Engine {
     private volatile boolean running = false;
     private Thread gameThread;
+    private javax.swing.Timer renderTimer;
     GameManager gameManager;
     private int tickCounter;
     
@@ -34,6 +35,10 @@ public class Engine {
         });
 
         gameThread.start();
+
+        renderTimer = new javax.swing.Timer(16, e -> gameManager.getGridPanel().repaint());
+        renderTimer.start();
+
         System.out.println("Engine started.");
     }
 
@@ -44,6 +49,9 @@ public class Engine {
         }
 
         running = false;
+        if (renderTimer != null) {
+            renderTimer.stop();
+        }
         try {
             gameThread.join(); // Wait for the thread to finish
         } catch (InterruptedException e) {
@@ -86,8 +94,6 @@ public class Engine {
                 gameManager.getGame().getDarkside().updateActiveStatus(civilizationDevelopmentLevel);
             }
         }
-
-        gameManager.getGridPanel().repaint();
     }
 
     public boolean isRunning() {

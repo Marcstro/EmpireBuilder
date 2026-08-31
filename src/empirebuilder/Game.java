@@ -152,9 +152,15 @@ public class Game{
                 Effect effect = it.next();
 
                 effect.tick(this);
+
+                if (!gm.getMap().isValid((int) effect.getX(), (int) effect.getY())) {
+                    effect.endEffect();
+                }
+
                 if (effect.getRemainingDuration() <= 0) {
-                    // TODO remove effect from its MapCell ?
-                    // TODO investigate this with both effects and units, see that they are not lingering in MapCell objects as variables
+                    int cellX = effect.getMapCellX();
+                    int cellY = effect.getMapCellY();
+                    mapCellGrid[cellX][cellY].removeEffect(effect);
                     it.remove();
                 }
             }

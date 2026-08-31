@@ -30,6 +30,10 @@ public abstract class Effect extends MovingEntity {
         this.remainingDuration = remainingDuration;
     }
 
+    public void endEffect(){
+        remainingDuration=0;
+    }
+
     public void lowerDuration(){
         remainingDuration--;
     }
