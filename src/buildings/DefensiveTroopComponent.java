@@ -3,7 +3,7 @@ package buildings;
 import empirebuilder.Game;
 import empirebuilder.MapCell;
 import empirebuilder.Point;
-import entities.units.AI.Focus;
+import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 
 import java.util.LinkedList;
@@ -32,10 +32,10 @@ public class DefensiveTroopComponent {
 
     public Point getDefensiveInstructions(Unit unit, Game game){
         if (hasDanger()) {
-            unit.setCurrentFocus(Focus.DEFENDING_EXTERNAL_AREA);
+            unit.setUnitOrder(UnitOrder.DEFEND_EXTERNAL_AREA);
             return game.getPointByMapCell(getNextDangerCell());
         }
-        unit.setCurrentFocus(Focus.IDLING);
+        unit.setUnitOrder(UnitOrder.NONE);
         return null;
     }
 }

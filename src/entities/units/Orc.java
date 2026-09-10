@@ -2,6 +2,9 @@ package entities.units;
 
 import empirebuilder.Point;
 import entities.Entity;
+import entities.units.AI.AIProfileFactory;
+import entities.units.AI.Node;
+import entities.units.AI.UnitOrder;
 
 public class Orc extends Unit{
 
@@ -11,10 +14,17 @@ public class Orc extends Unit{
     static double orcHealth = 50;
     static double size = DEFAULT_UNIT_SIZE;
     static int orcFactionId = 2;
+    static int orcAttackCooldown = 6;
 
     public Orc(double x, double y) {
-        super(x, y, orcSpeed, orcHealth, orcDamage, orcFactionId, size);
+        super(x, y, orcSpeed, orcHealth, orcDamage, orcFactionId, size, orcAttackCooldown);
         setPriorityTier(1);
+    }
+
+    @Override
+    public Node createAISystem() {
+        unitorder= UnitOrder.RAIDING;
+        return AIProfileFactory.createMeleeAttackerAI();
     }
 
     @Override

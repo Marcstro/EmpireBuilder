@@ -2,7 +2,7 @@ package pathfinding;
 
 import empirebuilder.*;
 import entities.Entity;
-import entities.units.AI.Focus;
+import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 import java.util.ArrayList;
 import java.util.List;
@@ -347,7 +347,7 @@ public class PathfindingSystem {
         if (unit.getCombatTarget() != null && unit.getCombatTarget().isAlive()) {
             return;
         }
-        if (unit.getCurrentFocus() == Focus.IDLING) {
+        if (unit.getUnitOrder() == UnitOrder.IDLING || unit.getUnitOrder() == UnitOrder.NONE){
             return;
         }
 

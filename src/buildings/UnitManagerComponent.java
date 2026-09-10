@@ -36,7 +36,8 @@ public class UnitManagerComponent {
     }
 
     public void handleDefenses(Game game){
-        if (ownerBuilding instanceof DefensiveTroopBuilding def && def.getDefensiveTroopComponent().hasDanger()
+        if (ownerBuilding instanceof DefensiveTroopBuilding def
+                && def.getDefensiveTroopComponent().hasDanger()
         ){
             if (ownerBuilding.getGold() > unitCost){
                 ownerBuilding.addGold(-unitCost);

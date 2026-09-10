@@ -1,5 +1,7 @@
 package entities;
 
+import empirebuilder.Game;
+
 public abstract class MovingEntity extends Entity {
 
     protected int mapCellListIndex;

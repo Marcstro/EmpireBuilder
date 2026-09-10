@@ -17,7 +17,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
     final double TOWN_TAXATION_RATE = 0.6;
 
-    private final int TOWN_ATTACK_COOLDOWN = 20;
+    private final int TOWN_ATTACK_COOLDOWN = 60;
     private final int TOWN_ATTACK_DAMAGE = 8;
     private final double TOWN_ATTACK_RANGE = 15;
     private final int TOWN_ARROW_DISTANCE = 35;
@@ -64,6 +64,12 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     @Override
     public void tick(Game game) {
         getUnitManagerComponent().handleDefenses(game);
+        if (gold > animalCost){
+            int r = (int) (Math.random() * villages.size());
+            Village v = villages.get(r);
+            v.spawnAnimal(game);
+            setGold(getGold()-animalCost);
+        }
     }
 
     public void setCity(City city){
@@ -117,7 +123,6 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
             return p;
         }
         if (game.calculateDistance(game.getPoint(unit.getX(), unit.getY()), getPoint()) > 5){
-            unit.setCurrentFocus(entities.units.AI.Focus.RETURNING_TO_BASE);
             unit.setIdleTarget(null);
             return getPoint();
         }

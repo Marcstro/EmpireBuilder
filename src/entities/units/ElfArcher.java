@@ -3,6 +3,8 @@ package entities.units;
 
 import empirebuilder.Point;
 import entities.Entity;
+import entities.units.AI.AIProfileFactory;
+import entities.units.AI.Node;
 
 public class ElfArcher extends Unit{
 
@@ -13,9 +15,15 @@ public class ElfArcher extends Unit{
     static double size = DEFAULT_UNIT_SIZE;
     static int elfArcherFactionId = 1;
     static double attackRange = 2.4;
+    static int elfArcherAttackCooldown = 12;
 
     public ElfArcher(double x, double y) {
-        super(x, y, elfArcherSpeed, elfArcherHealth, elfArcherDamage, elfArcherFactionId, size);
+        super(x, y, elfArcherSpeed, elfArcherHealth, elfArcherDamage, elfArcherFactionId, size, elfArcherAttackCooldown);
+    }
+
+    @Override
+    public Node createAISystem() {
+        return AIProfileFactory.createRangedDefenderAI();
     }
 
     @Override

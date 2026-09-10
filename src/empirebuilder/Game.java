@@ -113,6 +113,32 @@ public class Game{
         citiesToRemove = new HashSet();
     }
 
+    public void removeDeadOrExpired(){
+        List<Farm> farmsSnapshot = new ArrayList<>(farmsToRemove);
+        farmsToRemove.clear();
+        for (Farm farm : farmsSnapshot) {
+            destroyBuilding(farm);
+        }
+
+        List<Village> villagesSnapshot = new ArrayList<>(villagesToRemove);
+        villagesToRemove.clear();
+        for (Village village : villagesSnapshot) {
+            destroyBuilding(village);
+        }
+
+        List<Town> townsSnapshot = new ArrayList<>(townsToRemove);
+        townsToRemove.clear();
+        for (Town town : townsSnapshot) {
+            destroyBuilding(town);
+        }
+
+        List<City> citiesSnapshot = new ArrayList<>(citiesToRemove);
+        citiesToRemove.clear();
+        for (City city : citiesSnapshot) {
+            destroyBuilding(city);
+        }
+    }
+
     public void tickUnits() {
         gm.getPathfindingSystem().beginTick();
         synchronized (units) {
@@ -127,6 +153,7 @@ public class Game{
                     continue;
                 }
 
+                //unit.tick(this);
                 unit.tick(this);
                 Coordinates newPos = attemptToMoveUnit(unit);
 
@@ -182,31 +209,6 @@ public class Game{
     }
 
     public void tickBuildings(){
-
-        List<Farm> farmsSnapshot = new ArrayList<>(farmsToRemove);
-        for (Farm farmToRemove: farmsSnapshot) {
-            destroyBuilding(farmToRemove);
-            farmToRemove.resetState();
-            farmsToRemove.remove(farmToRemove);
-        }
-
-        List<Village> villagesSnapshot = new ArrayList<>(villagesToRemove);
-        for(Village village: villagesSnapshot){
-            destroyBuilding(village);
-            villagesToRemove.remove(village);
-        }
-
-        List<Town> townsSnapshot = new ArrayList<>(townsToRemove);
-        for(Town town: townsSnapshot){
-            destroyBuilding(town);
-            townsToRemove.remove(town);
-        }
-
-        List<City> citiesSnapshot = new ArrayList<>(citiesToRemove);
-        for(City city: citiesSnapshot){
-            destroyBuilding(city);
-            citiesToRemove.remove(city);
-        }
 
         if (LOGGING && gm.getGridPanel().getSelectedPoint() != null){
             System.out.println(gm.getGridPanel().getSelectedPoint().getInfo());
@@ -1073,6 +1075,10 @@ public class Game{
         effect.setMapCellX(cellX);
         effect.setMapCellY(cellY);
 
+        if (cellX < 0 || cellX >= mapCellGrid.length || cellY < 0 || cellY >= mapCellGrid[cellX].length) {
+            System.out.println("Effect out of bounds: " + effect);
+            return;
+        }
         mapCellGrid[cellX][cellY].addEffect(effect);
         effectsToBeAdded.add(effect);
     }
@@ -1113,10 +1119,13 @@ public class Game{
 
         if (hit == null) return null;
 
-        hit.causeHealthLoss(arrow.getDamage());
+        boolean died = hit.causeHealthLoss(arrow.getDamage());
         if (hit instanceof Unit) {
             createEffect(new BloodSpark(hit.getX(), hit.getY()));
             // TODO replace bloodspark with different effect when hitting non bleeding targets (i.e. buildings)
+        }
+        else if (died && hit instanceof Building){
+            markBuildingForDestruction((Building) hit);
         }
         return hit;
     }
@@ -1136,13 +1145,23 @@ public class Game{
     private Entity rayCastCheckBuildingsInCell(Arrow arrow, double oldX, double oldY, int cellX, int cellY) {
         if (cellX < 0 || cellX >= mapCellGrid.length || cellY < 0 || cellY >= mapCellGrid[cellX].length) return null;
         for (FarmOwningBuilding candidate : mapCellGrid[cellX][cellY].getLargeBuildingsList(this)) {
-            if (!candidate.isHostileTo(arrow.getFactionId())) continue;
+            if (!candidate.isHostileTo(arrow.getFactionId()) || !candidate.isAlive()) continue;
             if (checkRaycastCollision(oldX, oldY, arrow.getX(), arrow.getY(),
                     candidate.getX(), candidate.getY(), candidate.getSize() + arrow.getWidth())) {
                 return candidate;
             }
         }
         return null;
+    }
+
+    public void markBuildingForDestruction(Building building) {
+        switch (building) {
+            case Farm farm -> farmsToRemove.add(farm);
+            case Village village -> villagesToRemove.add(village);
+            case Town town -> townsToRemove.add(town);
+            case City city -> citiesToRemove.add(city);
+            default -> throw new IllegalArgumentException("Unknown building type: " + building.getClass().getName());
+        }
     }
 
     public void wakeAttackCapableBuildings(Unit unit, int distanceOut) {
@@ -1215,7 +1234,7 @@ public class Game{
     private void handleUnitDeath(Unit unit) {
 
         // TODO possible make nearby areas react on death unit?
-        unit.getUnitOwner().getUnitManagerComponent().removeUnit(unit);
+         unit.getUnitOwner().getUnitManagerComponent().removeUnit(unit);
          MapCell mapCell = mapCellGrid[unit.getMapCellX()][unit.getMapCellY()];
          mapCell.removeUnit(unit);
     }
@@ -1293,7 +1312,10 @@ public class Game{
 
     public boolean performMeleeAttack(Unit attacker, Entity target) {
 
-        target.causeHealthLoss(attacker.getDamage());
+        boolean died = target.causeHealthLoss(attacker.getDamage());
+        if (died && target instanceof Building) {
+            markBuildingForDestruction((Building) target);
+        }
         BloodSpark bloodSpark = new BloodSpark(target.getX(), target.getY());
         createEffect(bloodSpark);
         //System.out.println(attacker.getClass().getSimpleName() + " attacked and did " + attacker.getDamage() + " damage on " + target + ", target has " + target.getHealth() + " health left.");

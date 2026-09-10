@@ -48,7 +48,6 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
             return p;
         }
         if (game.calculateDistance(game.getPoint(unit.getX(), unit.getY()), getPoint()) > 5){
-            unit.setCurrentFocus(entities.units.AI.Focus.RETURNING_TO_BASE);
             unit.setIdleTarget(null);
             return getPoint();
         }

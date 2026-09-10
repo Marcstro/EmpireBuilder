@@ -20,15 +20,17 @@ public abstract class Entity {
         isAlive = true;
     }
 
-    public void causeHealthLoss(double healthLoss){
+    public boolean causeHealthLoss(double healthLoss){
         health -= healthLoss;
         if (health <= 0){
            // System.out.println("Entity " + this.getClass().getSimpleName() + " took " + healthLoss + " damage AND FUCKING DIED!");
             setIsAlive(false);
+            return true;
         }
         /*else {
           //  System.out.println("Entity " + this.getClass().getSimpleName() + " took " + healthLoss + " damage, health remaining: " + health);
         }*/
+        return false;
     }
 
     public abstract void tick(Game game);

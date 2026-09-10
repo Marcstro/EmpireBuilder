@@ -1,14 +1,12 @@
 package entities.units;
 
-import buildings.Building;
-import buildings.DefensiveTroopBuilding;
 import buildings.UnitOwner;
 import empirebuilder.Game;
-import empirebuilder.MapCell;
 import empirebuilder.Point;
 import entities.Entity;
 import entities.MovingEntity;
-import entities.units.AI.Focus;
+import entities.units.AI.Node;
+import entities.units.AI.UnitOrder;
 import pathfinding.Path;
 
 public abstract class Unit extends MovingEntity {
@@ -18,13 +16,15 @@ public abstract class Unit extends MovingEntity {
         MELEE,
         RANGED,
         SIEGE,
-        MAGIC
+        MAGIC,
+        NONE
     }
 
     double speed;
     double damage;
     CombatStyle combatStyle;
     int attackCooldown;
+    int attackCooldownBase;
 
     int searchCooldown;
 
@@ -35,10 +35,8 @@ public abstract class Unit extends MovingEntity {
     int loot;
     UnitOwner unitOwner = null;
 
-    Focus currentFocus;
-
-    static final int idleWalkCooldown = 15;
-    int idleCooldown = 0;
+    UnitOrder unitorder;
+    private Node logicMotor;
 
     // priorityTier decides what unit can push what friendly other units out of the way
     // melee pushes ranged away, cavalry pushes melee away etc
@@ -46,16 +44,17 @@ public abstract class Unit extends MovingEntity {
     private Path pathB = null;
     private int waypointIndexB = 0;
 
-    int factionId; // 1 = good, 2 = evil, 3 = neutral or other
+    //int factionId; // 1 = good, 2 = evil, 3 = neutral or other
 
     // --- Movement system ---
     private double lastVelX = 0;
     private double lastVelY = 0;
+    private boolean facingLeft = false;
 
     private static final double DEFAULT_MELEE_BUFFER = 0.2;
     static final double DEFAULT_UNIT_SIZE = 0.2;
 
-    public static final int IDLE_SEARCH_COOLDOWN = 70;
+    public static final int IDLE_SEARCH_COOLDOWN = 100;
     // how far outwards units searches for target units
     public static final int COMBAT_SEARCH_CELLS = 4;
     // how far outwards units searches for target buildings
@@ -66,135 +65,41 @@ public abstract class Unit extends MovingEntity {
     private double stuckSampleY   = Double.MIN_VALUE;
     private int    stuckSampleTick = 0;
 
-    public Unit(double x, double y, double speed, double health, double damage, int factionId, double size) {
+    public Unit(double x, double y, double speed, double health, double damage, int factionId, double size, int attackCooldownBase) {
         super(x, y, health, size, factionId, speed);
+        this.logicMotor = createAISystem();
         this.speed = speed;
         this.damage = damage;
+        this.attackCooldownBase = attackCooldownBase;
         attackCooldown = 0;
         loot = 0;
-        currentFocus=Focus.IDLING;
+        setUnitOrder(UnitOrder.NONE);
     }
 
-    // TODO major redo here, create a proper ai system
-    @Override
-    public void tick(Game game) {
+    public boolean attemptMeleeAttack(Entity target, Game game){
+        if (isTargetInMeleeRange(this, target) && attackCooldown <= 0){
+            game.performMeleeAttack(this, target);
+            if (!target.isAlive()){
+                combatTarget = null;
+                searchCooldown = 0;
+            }
+            resetAttackCooldown();
+            return true;
+        }
+        return false;
+    }
+
+    public void resetAttackCooldown(){
+        attackCooldown=attackCooldownBase;
+    }
+
+    public void tick(Game game){
+        searchCooldown--;
         attackCooldown--;
-        if (combatTarget != null && !combatTarget.isAlive()) {
-            combatTarget = null;
-            searchCooldown = 0;
-        }
-
-        if (getLoot() > 1000 && combatTarget == null){
-            pointTarget=getUnitOwner().getInstructions(this, game);
-            setCurrentFocus(Focus.IS_RETURNING_WITH_LOOT);
-        }
-        else if (combatTarget != null) {
-            if (combatTarget == this){
-                System.out.println("Unit targeted itself. it has hurt itself in confusion. OBVIOUS ERROR");
-            }
-            if (this.getCombatStyle() == CombatStyle.MELEE) {
-                if (isTargetInMeleeRange(this, combatTarget)) {
-                    if (attackCooldown <= 0){
-                        attackCooldown = 6;
-                        game.performMeleeAttack(this, combatTarget);
-                        if (!combatTarget.isAlive()){
-                            combatTarget = null;
-                            searchCooldown = 0;
-                        }
-                        else {
-                            clearPathB();
-                        }
-                        return;
-                    }
-                }
-            }
-            else if (getCombatStyle() == CombatStyle.RANGED){
-                if (isTargetInRangedAttack(this, combatTarget)){
-                    if (attackCooldown <= 0){
-                        game.unitShootArrow(this, combatTarget, getFactionId());
-                        attackCooldown = 12;
-                    }
-                    clearPathB();
-                }
-            }
-        }
-
-        if (getCurrentFocus() != Focus.IS_RETURNING_WITH_LOOT && searchCooldown <= 0) {
-            searchCooldown = IDLE_SEARCH_COOLDOWN;
-
-            Unit unitTarget = game.getNearestUnit(getX(), getY(), this, COMBAT_SEARCH_CELLS, (neighbor) ->
-                    neighbor.isAlive() && this.isHostileTo(neighbor.getFactionId())
-            );
-
-            if (unitTarget != null) {
-                combatTarget = unitTarget;
-            } else {
-                // TODO only once get local buildings, then sort by distance and prio attackCapableBuildings
-                Building buildingTarget = (Building)game.getNearestAttackCapableBuilding(this, BUILDING_SEARCH_CELLS);
-                if (buildingTarget == null){
-                    buildingTarget = game.getNearestLargeBuilding(this, BUILDING_SEARCH_CELLS);
-                }
-                if (buildingTarget != null) {
-                    combatTarget = buildingTarget;
-                }
-            }
-        } else {
-            searchCooldown--;
-        }
-
-        // long term position goal. ADJUST THIS OBVIOSLY
-        if (combatTarget == null && pointTarget == null) {
-            if (getCurrentFocus() == Focus.IDLING && idleCooldown <= 0) {
-                pointTarget = getUnitOwner().getInstructions(this, game);
-                idleTarget = game.getIdleWalkTarget(getUnitOwner().getUnitManagerComponent().getOwnerBuilding().getPoint());
-                idleCooldown = IDLE_SEARCH_COOLDOWN;
-            } else if (getCurrentFocus() == Focus.IDLING) {
-                idleCooldown--;
-            }
-            else {
-                getUnitOwner().getInstructions(this, game);
-            }
-        }
-
-        // reached current position target? Reset target
-        if (combatTarget == null && pointTarget != null ) {
-            if (game.isUnitInDestinedMapCell(this)){
-                if (getCurrentFocus() == Focus.IS_RETURNING_WITH_LOOT){
-                    getUnitOwner().getUnitManagerComponent().getOwnerBuilding().addGold((int)loot);
-                    loot=0;
-                    setCurrentFocus(Focus.IDLING);
-                }
-
-                else if (getCurrentFocus() == Focus.DEFENDING_EXTERNAL_AREA) {
-                    if (getUnitOwner() instanceof DefensiveTroopBuilding def) {
-                        MapCell mapCell = game.getMapCellByPoint(game.getPoint(getX(), getY()));
-                        def.getDefensiveTroopComponent().dangerIsOver(mapCell);
-                        mapCell.localDangerIsOver();
-                        setCurrentFocus(Focus.RETURNING_TO_BASE);
-                        pointTarget = def.getInstructions(this, game);
-                    }
-                }
-                else{
-                    pointTarget = null;
-
-                }
-
-            }
-        }
-        else if (combatTarget == null && pointTarget == null && getCurrentFocus() == Focus.IDLING) {
-            if (idleTarget != null && game.isUnitInDestinedPoint(this, idleTarget)) {
-                idleTarget = null;
-            }
-        }
+        logicMotor.tick(this, game);
     }
 
-    public Focus getCurrentFocus() {
-        return currentFocus;
-    }
-
-    public void setCurrentFocus(Focus currentFocus) {
-        this.currentFocus = currentFocus;
-    }
+    public abstract Node createAISystem();
 
     public void setLongtermTarget(Point pointTarget) {
         this.pointTarget = pointTarget;
@@ -212,6 +117,10 @@ public abstract class Unit extends MovingEntity {
         this.loot -= loot;
     }
 
+    public void clearLoot(){
+        this.loot = 0;
+    }
+
     public void setUnitOwner(UnitOwner unitOwner) {
         this.unitOwner = unitOwner;
     }
@@ -222,6 +131,30 @@ public abstract class Unit extends MovingEntity {
 
     public double getMeleeRange() {
         return this.getSize() + DEFAULT_MELEE_BUFFER;
+    }
+
+    public int getSearchForUnitsDistance(){
+        return COMBAT_SEARCH_CELLS;
+    }
+
+    public int getSearchForBuildingsDistance(){
+        return BUILDING_SEARCH_CELLS;
+    }
+
+    public boolean isSeachCooldownReady(){
+        return searchCooldown <= 0;
+    }
+
+    public void resetSearchCooldown(){
+        searchCooldown = IDLE_SEARCH_COOLDOWN;
+    }
+
+    public UnitOrder getUnitOrder() {
+        return unitorder;
+    }
+
+    public void setUnitOrder(UnitOrder unitorder) {
+        this.unitorder = unitorder;
     }
 
     public abstract double getAttackRange();
@@ -248,20 +181,41 @@ public abstract class Unit extends MovingEntity {
         idleTarget = null;
     }
 
+    @Override
+    public double getSpeed(){
+        if (getUnitOrder().equals(UnitOrder.IDLING)){
+            return super.getSpeed() * 0.1;
+        }
+        return speed;
+    }
+
+    public boolean isAttackReady(){
+        return attackCooldown <= 0;
+    }
+
     public void clearPointTarget()      { this.pointTarget = null; }
     public void setPointTarget(Point p) { this.pointTarget = p; }
 
     public double getDamage() { return damage; }
 
     public Entity getCombatTarget()         { return combatTarget; }
+    public void  setCombatTarget(Entity target) { this.combatTarget = target; }
     public Point  getPointTarget()          { return pointTarget; }
     public Point  getIdleTarget()           { return idleTarget; }
     public void setIdleTarget(Point p) { this.idleTarget = p; }
 
     public double getLastVelX()             { return lastVelX; }
     public double getLastVelY()             { return lastVelY; }
-    public void   setLastVelX(double v)     { lastVelX = v; }
+    public void   setLastVelX(double v)     {
+        lastVelX = v;
+        if (v < -1e-6) {
+            facingLeft = true;
+        } else if (v > 1e-6) {
+            facingLeft = false;
+        }
+    }
     public void   setLastVelY(double v)     { lastVelY = v; }
+    public boolean isFacingLeft()           { return facingLeft; }
 
     public double getStuckSampleX()         { return stuckSampleX; }
     public double getStuckSampleY()         { return stuckSampleY; }

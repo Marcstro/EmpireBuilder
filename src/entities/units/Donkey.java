@@ -1,30 +1,28 @@
 package entities.units;
 
-
 import empirebuilder.Point;
 import entities.Entity;
 import entities.units.AI.AIProfileFactory;
 import entities.units.AI.Node;
 
-public class Knight extends Unit{
+public class Donkey extends FarmAnimal {
 
-    static String imageName = "knightUnit";
-    static double knightDamage = 1;
-    static double knightSpeed = 0.1;
-    static double knightHealth = 30;
+    static String imageName = "donkeyUnit";
+    static double donkeyDamage = 0;
+    static double donkeySpeed = 0.1;
+    static double donkeyHealth = 8;
     static double size = DEFAULT_UNIT_SIZE;
-    static int knightFactionId = 1;
-    static int knightAttackCooldown = 6;
+    static int donkeyFactionId = 1;
+    static double donkeyAttackCooldown = 50;
 
-    public Knight(double x, double y) {
-
-        super(x, y, knightSpeed, knightHealth, knightDamage, knightFactionId, size, knightAttackCooldown);
-        setPriorityTier(1);
+    public Donkey(double x, double y) {
+        super(x, y, donkeySpeed, donkeyHealth, donkeyDamage, donkeyFactionId, size, (int)donkeyAttackCooldown);
+        setPriorityTier(0);
     }
 
     @Override
     public Node createAISystem() {
-        return AIProfileFactory.createMeleeDefenderAI();
+        return AIProfileFactory.justIdleAI();
     }
 
     @Override
@@ -34,12 +32,12 @@ public class Knight extends Unit{
 
     @Override
     public double getAttackRange() {
-        return getMeleeRange();
+        return 0;
     }
 
     @Override
     public CombatStyle getCombatStyle() {
-        return CombatStyle.MELEE;
+        return CombatStyle.NONE;
     }
 
     public Entity getCombatTarget() {
@@ -58,4 +56,3 @@ public class Knight extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-

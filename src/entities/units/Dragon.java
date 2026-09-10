@@ -3,19 +3,29 @@ package entities.units;
 
 import empirebuilder.Point;
 import entities.Entity;
+import entities.units.AI.AIProfileFactory;
+import entities.units.AI.Node;
+import entities.units.AI.UnitOrder;
 
 public class Dragon extends Unit{
 
     static String imageName = "dragonUnit";
-    static double dragonDamage = 25;
+    static double dragonDamage = 50;
     static double dragonSpeed = 0.7;
     static double dragonHealth = 300;
     static double size = 0.9;
     static int dragonFaction = 2;
+    static int attackCooldownBase = 50;
 
     public Dragon(double x, double y) {
-        super(x, y, dragonSpeed, dragonHealth, dragonDamage, dragonFaction, size);
+        super(x, y, dragonSpeed, dragonHealth, dragonDamage, dragonFaction, size, attackCooldownBase);
         setPriorityTier(3);
+    }
+
+    @Override
+    public Node createAISystem() {
+        unitorder= UnitOrder.RAIDING;
+        return AIProfileFactory.createDestructiveAttackerAI();
     }
 
     @Override

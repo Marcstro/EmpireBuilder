@@ -66,6 +66,8 @@ public class Engine {
         gameManager.getGame().tickEffects();
         gameManager.getGame().tickUnits(); // TODO determine suitable tick rate for units and effects
         gameManager.getGame().attackingBuildingsTick();
+        //this cleaning method needs to be called AFTER effects and units
+        gameManager.getGame().removeDeadOrExpired();
         // eventsTicks are for Map alteringen effects
         // like calls that affects the dark side, all good building etc
 

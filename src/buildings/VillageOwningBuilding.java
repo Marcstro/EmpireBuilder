@@ -7,6 +7,8 @@ import java.util.LinkedList;
 
 public abstract class VillageOwningBuilding extends FarmOwningBuilding{
 
+    static int animalCost = 100000;
+
     LinkedList<Village> villages;
 
     public VillageOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {

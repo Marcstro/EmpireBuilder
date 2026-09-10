@@ -1,10 +1,15 @@
 package buildings;
 
 import LandTypes.LandType;
+import buildingsTools.AnimalType;
 import empirebuilder.Game;
 import empirebuilder.Point;
+import entities.units.*;
 
-public class Village extends FarmOwningBuilding{
+import java.util.LinkedList;
+import java.util.List;
+
+public class Village extends FarmOwningBuilding implements UnitOwner {
     
     Point villageCenter;
     private int ticksUntilNextSearch;
@@ -14,6 +19,11 @@ public class Village extends FarmOwningBuilding{
     
     final static int INITIAL_FOOD_NEEDED_TO_CREATE_FARM = 30;
     final double TAXATION_VILLAGE_RATE = 0.6;
+
+    List<FarmAnimal> animalPopulation = new LinkedList<FarmAnimal>();
+    int animals = 0;
+
+    private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
 
     public Village(Point point) {
         super(point, INITIAL_FOOD_NEEDED_TO_CREATE_FARM, LandType.getBaseColor(LandType.VILLAGE), DEFAULT_BUILDING_HEALTH);
@@ -35,6 +45,37 @@ public class Village extends FarmOwningBuilding{
     public void convertCommunalFoodToTaxes(){
         processTaxation(getCommunalFoodForNewFarms());
         clearCommunalFoodStorage();
+    }
+
+    public void spawnAnimal(Game game){
+        animals++;
+        int random = (int)(Math.random()*AnimalType.values().length);
+        FarmAnimal animal;
+        if (random==0){
+            animal = new Capybara(villageCenter.getX(), villageCenter.getY());
+        }
+        else if (random==1) {
+            animal = new Donkey(villageCenter.getX(), villageCenter.getY());
+        }
+        else {
+            animal = new Alpaca(villageCenter.getX(), villageCenter.getY());
+        }
+        animalPopulation.add(animal);
+        game.spawnUnitAt(animal, villageCenter);
+        animal.setIdleTarget(villageCenter);
+        animal.setIdleBasePoint(villageCenter);
+        animal.setUnitOwner(this);
+        unitManager.addUnit(animal);
+    }
+
+    @Override
+    public UnitManagerComponent getUnitManagerComponent() {
+        return unitManager;
+    }
+
+    @Override
+    public Point getInstructions(Unit unit, Game game) {
+        return getPoint();
     }
 
     public boolean timeToRedoNearbySearch(){
@@ -192,5 +233,4 @@ public class Village extends FarmOwningBuilding{
                 ", wealth=" + String.format("%.2f", getWealth()) +
                 "}";
     }
-    
 }

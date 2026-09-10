@@ -5,7 +5,7 @@ import empirebuilder.Game;
 import empirebuilder.Point;
 import empirebuilder.TheDarkSide;
 import entities.units.*;
-import entities.units.AI.Focus;
+import entities.units.AI.UnitOrder;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -44,6 +44,7 @@ public class EvilSideBase extends Building implements UnitOwner {
             unitManager.addUnit(dragon);
             game.spawnUnitAt(dragon, dragonPoint.getFirst());
             dragon.setLongtermTarget(theDarkSide.getTargetLocation());
+            dragon.setUnitOrder(UnitOrder.RAIDING);
             addGold(-dragonCost);
         }
 
@@ -59,6 +60,7 @@ public class EvilSideBase extends Building implements UnitOwner {
             unitManager.addUnit(orc);
             game.spawnUnitAt(orc, point);
             orc.setLongtermTarget(theDarkSide.getTargetLocation());
+            orc.setUnitOrder(UnitOrder.RAIDING);
         }
         for (Point point: goblinPoints){
             GoblinArcher goblinArcher = new GoblinArcher(point.getX(), point.getY());
@@ -66,6 +68,7 @@ public class EvilSideBase extends Building implements UnitOwner {
             unitManager.addUnit(goblinArcher);
             game.spawnUnitAt(goblinArcher, point);
             goblinArcher.setLongtermTarget(theDarkSide.getTargetLocation());
+            goblinArcher.setUnitOrder(UnitOrder.RAIDING);
         }
     }
 
@@ -95,10 +98,10 @@ public class EvilSideBase extends Building implements UnitOwner {
     @Override
     public Point getInstructions(Unit unit, Game game) {
         if (unit.getLoot() > 1000){
-            unit.setCurrentFocus(Focus.IS_RETURNING_WITH_LOOT);
+            unit.setUnitOrder(UnitOrder.RETURN_LOOT);
             return getPoint();
         }
-        unit.setCurrentFocus(Focus.RAIDING);
+        unit.setUnitOrder(UnitOrder.RAIDING);
         return theDarkSide.getTargetLocation();
     }
 

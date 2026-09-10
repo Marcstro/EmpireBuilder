@@ -3,6 +3,9 @@ package entities.units;
 
 import empirebuilder.Point;
 import entities.Entity;
+import entities.units.AI.AIProfileFactory;
+import entities.units.AI.Node;
+import entities.units.AI.UnitOrder;
 
 public class GoblinArcher extends Unit{
 
@@ -13,9 +16,16 @@ public class GoblinArcher extends Unit{
     static double size = DEFAULT_UNIT_SIZE;
     static int goblinArcherFactionId = 2;
     static double attackRange = 2.0;
+    static int goblinArcherAttackCooldown = 12;
 
     public GoblinArcher(double x, double y) {
-        super(x, y, goblinArcherSpeed, goblinArcherHealth, goblinArcherDamage, goblinArcherFactionId, size);
+        super(x, y, goblinArcherSpeed, goblinArcherHealth, goblinArcherDamage, goblinArcherFactionId, size, goblinArcherAttackCooldown);
+    }
+
+    @Override
+    public Node createAISystem() {
+        unitorder= UnitOrder.RAIDING;
+        return AIProfileFactory.createRangedAttackerAI();
     }
 
     @Override

@@ -158,7 +158,7 @@ public class GridPanel extends JPanel {
                 final int drawX = screenX - (img.getWidth() / 2);
                 final int drawY = screenY - (img.getHeight() / 2);
 
-                if (unit.getLastVelX() < 0) {
+                if (unit.isFacingLeft()) {
                     AffineTransform oldTransform = g.getTransform();
                     g.translate(screenX, screenY);
                     g.scale(-1, 1);
