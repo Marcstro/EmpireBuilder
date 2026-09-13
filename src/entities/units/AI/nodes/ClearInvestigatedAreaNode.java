@@ -13,7 +13,11 @@ public class ClearInvestigatedAreaNode implements Node {
     @Override
     public GoalStatus tick(Unit unit, Game game) {
 
-        if (!unit.getUnitOrder().equals(UnitOrder.DEFEND_EXTERNAL_AREA)){
+        boolean buildingHasDanger =
+                unit.getUnitOwner() instanceof DefensiveTroopBuilding def
+                        && def.getDefensiveTroopComponent().hasDanger();
+
+        if (!buildingHasDanger) {
             return GoalStatus.REJECTED;
         }
         if (unit.getPointTarget() == null){

@@ -64,12 +64,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     @Override
     public void tick(Game game) {
         getUnitManagerComponent().handleDefenses(game);
-        if (gold > animalCost){
-            int r = (int) (Math.random() * villages.size());
-            Village v = villages.get(r);
-            v.spawnAnimal(game);
-            setGold(getGold()-animalCost);
-        }
+        attemptToSpawnAnimal(game);
     }
 
     public void setCity(City city){

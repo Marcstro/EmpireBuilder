@@ -268,11 +268,11 @@ public class Game{
                 continue;
             }
             village.tick();
+            if (!village.timeToRedoNearbySearch()){ //TODO move village.timeToRedoNearbySearch() up 1 line to prevent villages with no empty space nearby from
+                village.convertCommunalFoodToTaxes(); // only sending excess food upwards when it has food enough to create a new farm
+                continue;
+            }
             if (village.hasCommunalFoodToCreateNewFarm()){
-                if (!village.timeToRedoNearbySearch()){ //TODO move village.timeToRedoNearbySearch() up 1 line to prevent villages with no empty space nearby from
-                    village.convertCommunalFoodToTaxes(); // only sending excess food upwards when it has food enough to create a new farm
-                    continue;
-                }
                 Point newFarmPoint = null;
                 if (!village.getEmptyLand().isEmpty()){
                     newFarmPoint = village.getRandomEmptySpotWithinDomain();

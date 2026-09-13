@@ -20,8 +20,10 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     final static int INITIAL_FOOD_NEEDED_TO_CREATE_FARM = 30;
     final double TAXATION_VILLAGE_RATE = 0.6;
 
-    List<FarmAnimal> animalPopulation = new LinkedList<FarmAnimal>();
-    int animals = 0;
+    final static int FOOD_PER_FARM_ANIMAL = 25;
+
+    int animalPopulation = 0;
+    AnimalType animalType;
 
     private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
 
@@ -48,7 +50,6 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     }
 
     public void spawnAnimal(Game game){
-        animals++;
         int random = (int)(Math.random()*AnimalType.values().length);
         FarmAnimal animal;
         if (random==0){
@@ -60,12 +61,30 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
         else {
             animal = new Alpaca(villageCenter.getX(), villageCenter.getY());
         }
-        animalPopulation.add(animal);
         game.spawnUnitAt(animal, villageCenter);
         animal.setIdleTarget(villageCenter);
         animal.setIdleBasePoint(villageCenter);
         animal.setUnitOwner(this);
         unitManager.addUnit(animal);
+    }
+
+    public void addAnimal(Game game){
+        if (animalPopulation == 0){
+            spawnAnimal(game);
+        }
+        animalPopulation++;
+    }
+
+    public void animalDied(){
+        animalPopulation--;
+    }
+
+    public AnimalType getAnimalType() {
+        return animalType;
+    }
+
+    public void setAnimalType(AnimalType animalType) {
+        this.animalType = animalType;
     }
 
     @Override
@@ -174,14 +193,15 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
 
     @Override
     void processTaxation(double foodIncome) {
+        double totalIncome = foodIncome + (animalPopulation * FOOD_PER_FARM_ANIMAL);
         if (hasOwner()){
-            getVillageOwningBuilding().processTaxation(foodIncome*TAXATION_VILLAGE_RATE);
-            food += foodIncome*(1-TAXATION_VILLAGE_RATE);
-            addToCurrentFoodTaxIncome(foodIncome*(1-TAXATION_VILLAGE_RATE));
+            getVillageOwningBuilding().processTaxation(totalIncome*TAXATION_VILLAGE_RATE);
+            food += totalIncome*(1-TAXATION_VILLAGE_RATE);
+            addToCurrentFoodTaxIncome(totalIncome*(1-TAXATION_VILLAGE_RATE));
         }
         else {
-            food += foodIncome;
-            addToCurrentFoodTaxIncome(foodIncome);
+            food += totalIncome;
+            addToCurrentFoodTaxIncome(totalIncome);
         }
     }
     
@@ -221,6 +241,8 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
                 ", isAlive=" + isAlive() +
                 ", people=" + getPeople() +
                 ", food=" + String.format("%.2f", getFood()) +
+                ", gold=" + String.format("%.2f", getGold()) +
+                ", animalPopulation=" + animalPopulation +
                 ", communalFood=" + String.format("%.2f", getCommunalFoodForNewFarms()) +
                 "/" + calculateFoodToCreateNewFarm() +
                 ", amount of farms controlled: " + getFarms().size() +

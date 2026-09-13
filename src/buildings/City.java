@@ -39,6 +39,7 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     public void tick(Game game) {
         //unitManager.getUnits().removeIf(u -> !u.isAlive());
         getUnitManagerComponent().handleDefenses(game);
+        attemptToSpawnAnimal(game);
     }
 
     @Override

@@ -11,6 +11,7 @@ Todo:
 - possible "mapsections", like 50x50 points. will hold threatlevle instead of mapcells
 - give raiding units good defenseless targets if possible
 - Add all removeUnit/effect/building etc in their own tick that gets ticked the fastest of all
+- Add "SeldomTick" in the building class, for non every tick things.
 
 
 Nearest TODOs:

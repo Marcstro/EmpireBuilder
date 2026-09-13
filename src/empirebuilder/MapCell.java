@@ -104,7 +104,7 @@ public class MapCell {
             plunderCooldown = false;
         }
         if (!isBeingRaided){
-            System.out.println("MapCell is being raided, notifying all defensive buildings in the cell");
+            //System.out.println("MapCell is being raided, notifying all defensive buildings in the cell");
             isBeingRaided = true;
             for (FarmOwningBuilding building : largeBuildingsList){
                 System.out.println(building.getPoint().getInfo() + "is trying to inform others it is being raided");

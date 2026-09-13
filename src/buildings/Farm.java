@@ -125,7 +125,7 @@ public class Farm extends Building {
                 double foodToPay = increasedFood * calculateTaxRate();
                 getFarmOwningBuilding().processTaxation(foodToPay);
                 food += increasedFood-foodToPay;
-                if (getFood() > FOOD_COST_TO_MULTIPLY && farmHasRoomForMorePeople()){
+                if (farmHasRoomForMorePeople() && getFood() > FOOD_COST_TO_MULTIPLY){
                     increasePeople();
                     food -= FOOD_COST_TO_MULTIPLY;
                     checkAndUpdateTechLevel();

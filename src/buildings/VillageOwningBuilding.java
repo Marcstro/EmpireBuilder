@@ -1,5 +1,6 @@
 package buildings;
 
+import empirebuilder.Game;
 import empirebuilder.Point;
 
 import java.awt.*;
@@ -10,6 +11,15 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
     static int animalCost = 100000;
 
     LinkedList<Village> villages;
+
+    public void attemptToSpawnAnimal(Game game){
+        if (gold > animalCost){
+            int r = (int) (Math.random() * villages.size());
+            Village v = villages.get(r);
+            v.addAnimal(game);
+            setGold(getGold()-animalCost);
+        }
+    }
 
     public VillageOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
         super(point, foodNeededToCreateNewFarm, color, health);
