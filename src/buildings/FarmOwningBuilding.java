@@ -12,6 +12,7 @@ public abstract class FarmOwningBuilding extends Building{
     LinkedList<Point> emptyLand;
     double food;
     int foodNeededToCreateNewFarm;
+    private double foodIncomeThisRound;
 
 
     public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
@@ -20,6 +21,7 @@ public abstract class FarmOwningBuilding extends Building{
         controlledLand = new HashSet<>();
         emptyLand = new LinkedList();
         this.foodNeededToCreateNewFarm = foodNeededToCreateNewFarm;
+        foodIncomeThisRound = 0;
     }
 
     public void tick(){
@@ -53,7 +55,17 @@ public abstract class FarmOwningBuilding extends Building{
         gold += goldIncome;
     }
 
-    abstract void processTaxation(double foodIncome);
+    void payFoodTax(double foodIncome){
+        foodIncomeThisRound += foodIncome;
+    }
+
+    protected double collectTotalFoodAcquired(){
+        double income = foodIncomeThisRound;
+        foodIncomeThisRound = 0;
+        return income;
+    }
+
+    public abstract void processTotalFoodIncome();
     
     public Farm getRandomFarm(){
         return farms.peekLast();

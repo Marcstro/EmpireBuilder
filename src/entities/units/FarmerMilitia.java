@@ -1,31 +1,29 @@
 package entities.units;
 
-
 import empirebuilder.Point;
 import entities.Entity;
 import entities.units.AI.AIProfileFactory;
 import entities.units.AI.Node;
-import entities.units.AI.UnitOrder;
 
-public class GoblinArcher extends Unit{
+public class FarmerMilitia extends Unit {
 
-    static String imageName = "goblinArcherUnit";
-    static double goblinArcherDamage = 1;
-    static double goblinArcherSpeed = 0.1;
-    static double goblinArcherHealth = 15;
+    static String imageName = "farmerMilitiaUnit";
+    static double farmerMilitiaDamage = 1;
+    static double farmerMilitiaSpeed = 0.1;
+    static double farmerMilitiaHealth = 15;
     static double size = DEFAULT_UNIT_SIZE;
-    static int goblinArcherFactionId = 2;
-    static double attackRange = 2.0;
-    static int goblinArcherAttackCooldown = 12;
+    static int farmerMilitiaFactionId = 1;
+    static int farmerMilitiaAttackCooldown = 8;
 
-    public GoblinArcher(double x, double y) {
-        super(x, y, goblinArcherSpeed, goblinArcherHealth, goblinArcherDamage, goblinArcherFactionId, size, goblinArcherAttackCooldown);
+    public FarmerMilitia(double x, double y) {
+        super(x, y, farmerMilitiaSpeed, farmerMilitiaHealth, farmerMilitiaDamage,
+                farmerMilitiaFactionId, size, farmerMilitiaAttackCooldown);
+        setPriorityTier(1);
     }
 
     @Override
     public Node createAISystem() {
-        unitorder= UnitOrder.RAIDING;
-        return AIProfileFactory.createRangedAttackerAI();
+        return AIProfileFactory.createMeleeDefenderAI();
     }
 
     @Override
@@ -35,12 +33,12 @@ public class GoblinArcher extends Unit{
 
     @Override
     public double getAttackRange() {
-        return attackRange;
+        return getMeleeRange();
     }
 
     @Override
     public CombatStyle getCombatStyle() {
-        return CombatStyle.RANGED;
+        return CombatStyle.MELEE;
     }
 
     public Entity getCombatTarget() {
@@ -59,5 +57,3 @@ public class GoblinArcher extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-
-

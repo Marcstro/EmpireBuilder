@@ -1,31 +1,29 @@
 package entities.units;
 
-
 import empirebuilder.Point;
 import entities.Entity;
 import entities.units.AI.AIProfileFactory;
 import entities.units.AI.Node;
-import entities.units.AI.UnitOrder;
 
-public class GoblinArcher extends Unit{
+public class HumanScout extends Unit {
 
-    static String imageName = "goblinArcherUnit";
-    static double goblinArcherDamage = 1;
-    static double goblinArcherSpeed = 0.1;
-    static double goblinArcherHealth = 15;
+    static String imageName = "humanScoutUnit";
+    static double humanScoutDamage = 1;
+    static double humanScoutSpeed = 0.13;
+    static double humanScoutHealth = 20;
     static double size = DEFAULT_UNIT_SIZE;
-    static int goblinArcherFactionId = 2;
-    static double attackRange = 2.0;
-    static int goblinArcherAttackCooldown = 12;
+    static int humanScoutFactionId = 1;
+    static int humanScoutAttackCooldown = 6;
 
-    public GoblinArcher(double x, double y) {
-        super(x, y, goblinArcherSpeed, goblinArcherHealth, goblinArcherDamage, goblinArcherFactionId, size, goblinArcherAttackCooldown);
+    public HumanScout(double x, double y) {
+        super(x, y, humanScoutSpeed, humanScoutHealth, humanScoutDamage,
+                humanScoutFactionId, size, humanScoutAttackCooldown);
+        setPriorityTier(1);
     }
 
     @Override
     public Node createAISystem() {
-        unitorder= UnitOrder.RAIDING;
-        return AIProfileFactory.createRangedAttackerAI();
+        return AIProfileFactory.createScoutAI();
     }
 
     @Override
@@ -35,12 +33,12 @@ public class GoblinArcher extends Unit{
 
     @Override
     public double getAttackRange() {
-        return attackRange;
+        return getMeleeRange();
     }
 
     @Override
     public CombatStyle getCombatStyle() {
-        return CombatStyle.RANGED;
+        return CombatStyle.MELEE;
     }
 
     public Entity getCombatTarget() {
@@ -59,5 +57,3 @@ public class GoblinArcher extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-
-

@@ -13,10 +13,24 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
     LinkedList<Village> villages;
 
     public void attemptToSpawnAnimal(Game game){
-        if (gold > animalCost){
-            int r = (int) (Math.random() * villages.size());
-            Village v = villages.get(r);
-            v.addAnimal(game);
+        while (gold >= animalCost && !villages.isEmpty()){
+            Village villageWithRoom = null;
+            for (Village village : villages){
+                if (village.hasRoomForAdditionalAnimals()){
+                    villageWithRoom = village;
+                    break;
+                }
+            }
+
+            if (villageWithRoom == null){
+                break;
+            }
+
+            int animalsToAdd = Village.MAX_ANIMAL_POPULATION - villageWithRoom.animalPopulation;
+            for (int animal = 0; animal < animalsToAdd; animal++){
+                villageWithRoom.addAnimal(game);
+            }
+
             setGold(getGold()-animalCost);
         }
     }

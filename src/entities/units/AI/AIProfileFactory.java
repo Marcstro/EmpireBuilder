@@ -8,7 +8,7 @@ public class AIProfileFactory {
         Node combatNode = isMelee ? new EngagedEnemyMeleeNode() : new EngagedEnemyRangedNode();
         return new ReactiveSelector(
                 // Tier 1: Combat emergencies (always checked, highest priority)
-                new SearchForEnemyNode(),
+                new SearchForEnemyTargetNode(),
                 combatNode,
                 // Tier 2: Committed work (remembers choice, re-evals every 60 ticks)
                 new StatefulSelector(60,
@@ -32,7 +32,7 @@ public class AIProfileFactory {
         return new ReactiveSelector(
                 new DepositLootNode(),
                 new ReturnLootNode(),
-                new SearchForEnemyNode(),
+                new SearchForEnemyTargetNode(),
                 combatNode,
                 new StatefulSelector(60,
                     new RaidAreaNode(),
@@ -52,7 +52,7 @@ public class AIProfileFactory {
 
     public static Node createDestructiveAttackerAI(){
         return new ReactiveSelector(
-                new SearchForEnemyNode(),
+                new SearchForEnemyTargetNode(),
                 new EngagedEnemyMeleeNode(),
                 new StatefulSelector(60,
                     new WalkTowardsPointTargetNode(),
@@ -63,5 +63,29 @@ public class AIProfileFactory {
 
     public static Node justIdleAI(){
         return new IdleNode();
+    }
+
+    public static Node createScoutAI(){
+        return new ReactiveSelector(
+                new ScoutForDangerNode(),
+                new FleeNode(),
+                new ScoutForEnemyBuildingNode(),
+                new StatefulSelector(60,
+                    new WalkTowardsPointTargetNode(),
+                    new IdleNode()
+                )
+        );
+    }
+
+    public static Node createTraderAI(){
+        return new ReactiveSelector(
+                new ScoutForDangerNode(),
+                new FleeNode(),
+                new StatefulSelector(60,
+                    new WalkTowardsPointTargetNode(),
+                    new AskOwnerForInstructionsNode(),
+                    new IdleNode()
+                )
+        );
     }
 }

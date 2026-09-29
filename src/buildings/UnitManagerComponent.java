@@ -14,6 +14,7 @@ public class UnitManagerComponent {
     private final List<Unit> units = new ArrayList<>();
     private final Building ownerBuilding;
     private int unitCost = 50000;
+    List<Building> knownHostileBuildings = new ArrayList<>();
 
     public UnitManagerComponent(Building ownerBuilding) {
         this.ownerBuilding = ownerBuilding;
@@ -66,5 +67,10 @@ public class UnitManagerComponent {
         }
     }
 
+    public void reportHostileBuilding(Building building){
+        if (!knownHostileBuildings.contains(building)){
+            knownHostileBuildings.add(building);
+        }
+    }
 
 }

@@ -44,9 +44,10 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     }
 
     @Override
-    void processTaxation(double foodIncome) {
+    public void processTotalFoodIncome() {
+        double foodIncome = collectTotalFoodAcquired();
         if (hasCity()){
-            getCity().processTaxation(((foodIncome*TOWN_TAXATION_RATE)));
+            getCity().payFoodTax(((foodIncome*TOWN_TAXATION_RATE)));
             addToCurrentFoodTaxIncome((foodIncome*(1-TOWN_TAXATION_RATE)));
             food += (foodIncome*(1-TOWN_TAXATION_RATE));
         }

@@ -8,7 +8,7 @@ import entities.units.AI.Node;
 import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 
-public class SearchForEnemyNode implements Node {
+public class SearchForEnemyTargetNode implements Node {
 
     @Override
     public GoalStatus tick(Unit unit, Game game) {

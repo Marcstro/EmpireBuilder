@@ -59,7 +59,7 @@ public class Farm extends Building {
 
     // TODO fix, farmowningBuilding can be null
     public void donateAllFoodToOwner(){
-        getFarmOwningBuilding().processTaxation(getFood());
+        getFarmOwningBuilding().payFoodTax(getFood());
         setFood(0);
     }
 
@@ -123,7 +123,7 @@ public class Farm extends Building {
         if (increasedFood > 0){
             if (farmHasRoomForMorePeople() || getFood() > FOOD_COST_TO_MULTIPLY){
                 double foodToPay = increasedFood * calculateTaxRate();
-                getFarmOwningBuilding().processTaxation(foodToPay);
+                getFarmOwningBuilding().payFoodTax(foodToPay);
                 food += increasedFood-foodToPay;
                 if (farmHasRoomForMorePeople() && getFood() > FOOD_COST_TO_MULTIPLY){
                     increasePeople();
@@ -133,11 +133,11 @@ public class Farm extends Building {
             }
             else if (getFarmOwningBuilding() instanceof Village village){
                 double foodToPay = increasedFood * calculateTaxRate();
-                village.processTaxation(foodToPay);
+                village.payFoodTax(foodToPay);
                 village.addCommunalFood(increasedFood-foodToPay);
             }
             else {
-                getFarmOwningBuilding().processTaxation(increasedFood);
+                getFarmOwningBuilding().payFoodTax(increasedFood);
             }
         }
     }

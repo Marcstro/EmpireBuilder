@@ -13,7 +13,7 @@ public class MapCell {
     private final List<Unit> units = new ArrayList<>();
     private final List<Effect> effects = new ArrayList<>();
     private final List<AttackCapableBuilding> attackCapableBuildings = new ArrayList<>();
-    private List<FarmOwningBuilding> largeBuildingsList = new ArrayList<>();
+    private final List<FarmOwningBuilding> largeBuildingsList = new ArrayList<>();
 
     private final int cellX;
     private final int cellY;

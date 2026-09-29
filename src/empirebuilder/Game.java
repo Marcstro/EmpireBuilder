@@ -8,6 +8,7 @@ import entities.effects.BloodSpark;
 import entities.effects.Effect;
 import entities.effects.LingeringFallenArrow;
 import entities.units.*;
+import entities.units.AI.ThreatScan;
 import pathfinding.PathfindingSystem;
 
 import java.util.*;
@@ -20,7 +21,7 @@ public class Game{
     GameManager gm;
     TheDarkSide darkside;
     int tickCounter;
-    static final int MAP_CELL_SIZE = 5;
+    public static final int MAP_CELL_SIZE = 5;
 
     private MapCell[][] mapCellGrid;
 
@@ -267,6 +268,7 @@ public class Game{
                 villagesToRemove.add(village);
                 continue;
             }
+            village.processTotalFoodIncome();
             village.tick();
             if (!village.timeToRedoNearbySearch()){ //TODO move village.timeToRedoNearbySearch() up 1 line to prevent villages with no empty space nearby from
                 village.convertCommunalFoodToTaxes(); // only sending excess food upwards when it has food enough to create a new farm
@@ -319,6 +321,7 @@ public class Game{
                 townsToRemove.add(town);
                 continue;
             }
+            town.processTotalFoodIncome();
             town.tick();
             town.tick(this);
         }
@@ -327,6 +330,7 @@ public class Game{
                 citiesToRemove.add(city);
                 continue;
             }
+            city.processTotalFoodIncome();
             city.tick();
             city.tick(this);
         }
@@ -846,6 +850,7 @@ public class Game{
                 MapCell newCell = mapCellGrid[newMapCellX][newMapCellY];
                 oldCell.removeUnit(unit);
                 newCell.addUnit(unit);
+                unit.setSearchForBuildingCooldown(false);
                 if (unit.getFactionId()==2){
                     newCell.attemptToPlunder(this, tickCounter, unit);
                 }
@@ -963,6 +968,47 @@ public class Game{
             }
         }
         return nearestUnit;
+    }
+
+    // method to calculate flee destination (saved on ThreatScan object) and if fleeing is necessary
+    public void accumulateHostileRepulsion(double lookerX, double lookerY, Unit searcher, int distanceOut,
+                                           UnitPredicate filter, ThreatScan scan) {
+        scan.reset();
+
+        int startX = getCellCoord((int) lookerX) - distanceOut;
+        int endX = getCellCoord((int) lookerX) + distanceOut;
+        int startY = getCellCoord((int) lookerY) - distanceOut;
+        int endY = getCellCoord((int) lookerY) + distanceOut;
+
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+
+                if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
+                    MapCell cell = mapCellGrid[x][y];
+
+                    for (Unit neighbor : cell.getUnits()) {
+                        if (neighbor != searcher && filter.test(neighbor)) {
+
+                            double dx = lookerX - neighbor.getX();
+                            double dy = lookerY - neighbor.getY();
+                            double distanceSq = (dx * dx) + (dy * dy);
+                            if (distanceSq < 1e-6) continue;
+
+                            double weight = 1.0 / distanceSq;
+                            scan.repulsionX += dx * weight;
+                            scan.repulsionY += dy * weight;
+                            if (distanceSq < scan.nearestDistanceSq) scan.nearestDistanceSq = distanceSq;
+                            scan.threatCount++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public Point getWalkablePointOrNull(int x, int y) {
+        if (!gm.getMap().isValidAndWalkable(x, y)) return null;
+        return gm.getMap().getPoint(x, y);
     }
 
     public int rangeToMapCellDistance(double range) {
@@ -1292,8 +1338,8 @@ public class Game{
                     for (FarmOwningBuilding building : cell.getLargeBuildingsList(this)) {
                         if (searcher.isHostileTo(building.getFactionId()) && building.isAlive()) {
 
-                            double bX = building.getX(); // Building's getX()
-                            double bY = building.getY(); // Building's getY()
+                            double bX = building.getX();
+                            double bY = building.getY();
                             double dx = searcher.getX() - bX;
                             double dy = searcher.getY() - bY;
                             double distanceSq = (dx * dx) + (dy * dy);
@@ -1519,7 +1565,7 @@ public class Game{
         return getPoint(x,y);
     }
 
-    public Point getNewPointTarget(){
+    public Point getNewCompletelyRandomPointTarget(){
         return getRandomWalkablePoint();
     }
 

@@ -27,10 +27,14 @@ public abstract class Unit extends MovingEntity {
     int attackCooldownBase;
 
     int searchCooldown;
+    boolean searchForBuildingCooldown = false;
 
     Entity combatTarget;
     Point pointTarget;
     Point idleTarget = null;
+
+    Point fleeTarget = null;
+    int fleeTicksRemaining = 0;
 
     int loot;
     UnitOwner unitOwner = null;
@@ -56,7 +60,7 @@ public abstract class Unit extends MovingEntity {
 
     public static final int IDLE_SEARCH_COOLDOWN = 100;
     // how far outwards units searches for target units
-    public static final int COMBAT_SEARCH_CELLS = 4;
+    public static final int COMBAT_SEARCH_CELLS = 3;
     // how far outwards units searches for target buildings
     public static final int BUILDING_SEARCH_CELLS = 3;
 
@@ -96,6 +100,9 @@ public abstract class Unit extends MovingEntity {
     public void tick(Game game){
         searchCooldown--;
         attackCooldown--;
+        if (fleeTarget != null && --fleeTicksRemaining <= 0){
+            clearFleeTarget();
+        }
         logicMotor.tick(this, game);
     }
 
@@ -175,10 +182,11 @@ public abstract class Unit extends MovingEntity {
         return Math.sqrt(dx * dx + dy * dy) <= minDistance;
     }
 
-    public void resetTarget(){
+    public void clearAllTargets(){
         pointTarget = null;
         combatTarget = null;
         idleTarget = null;
+        clearFleeTarget();
     }
 
     @Override
@@ -193,8 +201,30 @@ public abstract class Unit extends MovingEntity {
         return attackCooldown <= 0;
     }
 
+    public boolean isSearchForBuildingCooldown() {
+        return searchForBuildingCooldown;
+    }
+
+    public void setSearchForBuildingCooldown(boolean searchForBuildingCooldown) {
+        this.searchForBuildingCooldown = searchForBuildingCooldown;
+    }
+
     public void clearPointTarget()      { this.pointTarget = null; }
     public void setPointTarget(Point p) { this.pointTarget = p; }
+
+    public Point getFleeTarget() { return fleeTarget; }
+
+    public boolean isFleeing() { return fleeTarget != null; }
+
+    public void setFleeTarget(Point p, int ticks) {
+        this.fleeTarget = p;
+        this.fleeTicksRemaining = ticks;
+    }
+
+    public void clearFleeTarget() {
+        this.fleeTarget = null;
+        this.fleeTicksRemaining = 0;
+    }
 
     public double getDamage() { return damage; }
 

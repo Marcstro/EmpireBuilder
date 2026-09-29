@@ -2,7 +2,6 @@ package pathfinding;
 
 import empirebuilder.*;
 import entities.Entity;
-import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 import java.util.ArrayList;
 import java.util.List;
@@ -160,8 +159,11 @@ public class PathfindingSystem {
         empirebuilder.Map map = gm.getMap();
 
         if (!map.isValidAndWalkable(target.getX(), target.getY())) {
-            unit.clearPointTarget();
-            unit.setPointTarget(gm.getGame().getNewPointTarget());
+            unit.clearAllTargets();
+            // TODO
+            // verify that the line below can safely be commented out
+            // now htat we have implemented a decent AI system
+            //unit.setPointTarget(gm.getGame().getNewPointTarget());
             return null;
         }
 
@@ -176,7 +178,7 @@ public class PathfindingSystem {
         // TODO change this for future ai logic handling. how to determine if ranged units
         // are within shooting distsance, backwarding distance etc
         Entity combatTarget = unit.getCombatTarget();
-        if (combatTarget != null) {
+        if (combatTarget != null && !unit.isFleeing()) {
             double cdx  = combatTarget.getX() - ux;
             double cdy  = combatTarget.getY() - uy;
             double cdist = Math.sqrt(cdx * cdx + cdy * cdy);
@@ -192,7 +194,7 @@ public class PathfindingSystem {
         }
 
         // ---- 1c. Stuck detection ----
-        checkStuck(unit, map);
+        checkStuck(unit, map, target);
 
         // ---- 2. Already at destination? ----
         double targetCX = target.getX() + 0.5;
@@ -231,8 +233,7 @@ public class PathfindingSystem {
             if (needNewPath) {
                 path = getOrComputePath(unit, unitCellIdx, destCellIdx, target, map, mapCellSize);
                 if (path == null) {
-                    unit.clearPointTarget();
-                    unit.setPointTarget(gm.getGame().getNewPointTarget());
+                    unit.clearAllTargets();
                     return null;
                 }
                 unit.setPathB(path, findJoinIndex(unit, path));
@@ -343,11 +344,10 @@ public class PathfindingSystem {
     // Stuck detection
     // -------------------------------------------------------------------------
 
-    private void checkStuck(Unit unit, empirebuilder.Map map) {
-        if (unit.getCombatTarget() != null && unit.getCombatTarget().isAlive()) {
-            return;
-        }
-        if (unit.getUnitOrder() == UnitOrder.IDLING || unit.getUnitOrder() == UnitOrder.NONE){
+    private void checkStuck(Unit unit, empirebuilder.Map map, Point resolvedTarget) {
+        if (resolvedTarget == null || resolvedTarget != unit.getPointTarget()) {
+            unit.setStuckSampleX(Double.MIN_VALUE);
+            unit.setStuckSampleY(Double.MIN_VALUE);
             return;
         }
 
@@ -403,8 +403,8 @@ public class PathfindingSystem {
                 }
 
                 unit.clearPathB();
-                unit.clearPointTarget();
-                unit.setPointTarget(gm.getGame().getNewPointTarget());
+                unit.clearAllTargets();
+                // TODO here make the unit try to get a new point target
             }
         }
 
@@ -681,6 +681,10 @@ public class PathfindingSystem {
     // -------------------------------------------------------------------------
 
     private Point resolveTarget(Unit unit) {
+        Point fleeTarget = unit.getFleeTarget();
+        if (fleeTarget != null) {
+            return fleeTarget;
+        }
         Entity combatTarget = unit.getCombatTarget();
         if (combatTarget != null) {
             return gm.getMap().getPoint((int) combatTarget.getX(), (int) combatTarget.getY());

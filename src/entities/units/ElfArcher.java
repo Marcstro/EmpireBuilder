@@ -8,7 +8,7 @@ import entities.units.AI.Node;
 
 public class ElfArcher extends Unit{
 
-    static String imageName = "elfArcher";
+    static String imageName = "elfArcherUnit2";
     static double elfArcherDamage = 1;
     static double elfArcherSpeed = 0.1;
     static double elfArcherHealth = 15;

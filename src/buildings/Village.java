@@ -20,7 +20,8 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     final static int INITIAL_FOOD_NEEDED_TO_CREATE_FARM = 30;
     final double TAXATION_VILLAGE_RATE = 0.6;
 
-    final static int FOOD_PER_FARM_ANIMAL = 25;
+    final static int FOOD_PER_FARM_ANIMAL = 1;
+    final static int MAX_ANIMAL_POPULATION = 24;
 
     int animalPopulation = 0;
     AnimalType animalType;
@@ -45,7 +46,7 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     }
 
     public void convertCommunalFoodToTaxes(){
-        processTaxation(getCommunalFoodForNewFarms());
+        payFoodTax(getCommunalFoodForNewFarms());
         clearCommunalFoodStorage();
     }
 
@@ -192,10 +193,12 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     }
 
     @Override
-    void processTaxation(double foodIncome) {
-        double totalIncome = foodIncome + (animalPopulation * FOOD_PER_FARM_ANIMAL);
+    public void processTotalFoodIncome() {
+        int effectiveAnimalPopulation = Math.min(animalPopulation, MAX_ANIMAL_POPULATION);
+        double totalIncome = collectTotalFoodAcquired()
+                + (effectiveAnimalPopulation * FOOD_PER_FARM_ANIMAL);
         if (hasOwner()){
-            getVillageOwningBuilding().processTaxation(totalIncome*TAXATION_VILLAGE_RATE);
+            getVillageOwningBuilding().payFoodTax(totalIncome*TAXATION_VILLAGE_RATE);
             food += totalIncome*(1-TAXATION_VILLAGE_RATE);
             addToCurrentFoodTaxIncome(totalIncome*(1-TAXATION_VILLAGE_RATE));
         }
@@ -203,6 +206,10 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
             food += totalIncome;
             addToCurrentFoodTaxIncome(totalIncome);
         }
+    }
+
+    public boolean hasRoomForAdditionalAnimals(){
+        return animalPopulation < MAX_ANIMAL_POPULATION;
     }
     
     public void markCenter(){

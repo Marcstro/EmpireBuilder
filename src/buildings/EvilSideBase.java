@@ -77,7 +77,9 @@ public class EvilSideBase extends Building implements UnitOwner {
         if (respawnCooldownRemaining > 0) {
             respawnCooldownRemaining--;
         } else {
-            if (theDarkSide.isDarkSideActivated() && getUnitManagerComponent().getUnits().size() < MAX_AMOUNT_OF_SCOUTS) {
+            if (theDarkSide.isDarkSideActivated() && getUnitManagerComponent().getUnits().size() < 
+                    MAX_AMOUNT_OF_SCOUTS
+            ) {
                 spawnUnits(game);
                 respawnCooldownRemaining = respawnBaseCooldown;
             }
