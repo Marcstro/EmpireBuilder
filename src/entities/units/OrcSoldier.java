@@ -4,7 +4,6 @@ import empirebuilder.Point;
 import entities.Entity;
 import entities.units.AI.AIProfileFactory;
 import entities.units.AI.Node;
-import entities.units.AI.UnitOrder;
 
 public class OrcSoldier extends Unit {
 
@@ -24,7 +23,6 @@ public class OrcSoldier extends Unit {
 
     @Override
     public Node createAISystem() {
-        unitorder = UnitOrder.RAIDING;
         return AIProfileFactory.createMeleeAttackerAI();
     }
 

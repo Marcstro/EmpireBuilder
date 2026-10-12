@@ -1,108 +1,120 @@
 package buildings.ai.profiles;
 
 import buildings.Building;
-import buildings.DefensiveTroopBuilding;
-import buildings.FarmOwningBuilding;
-import buildings.ai.BuildingAIProfile;
-import buildings.ai.BuildingAIState;
+import buildings.City;
+import buildings.ai.BuildingAI;
+import buildings.ai.GoodSideBuildingStates;
+import buildings.ai.ThreatFact;
+import buildings.subBuildings.AnimalHusbandry;
+import buildings.subBuildings.Barracks;
+import buildings.subBuildings.ElvenArcheryRange;
+import buildings.subBuildings.MountedKnightSchool;
+import buildings.subBuildings.ShootingTower;
+import buildings.subBuildings.Stable;
 import empirebuilder.Game;
 
-/**
- * AI for cities: multi-faceted.
- * Priority queue: DEFENDING > SUSTAINING > EXPANDING > DEVELOPING
- *
- * More complex than fortress because cities need to balance defense, economy, and growth.
- */
-public class CityAI implements BuildingAIProfile {
+public class CityAI extends SettlementAI {
 
-    int maxFood = 10000;
-    private static final int MAX_DEFENDERS = 30;
-    private static final float FOOD_CRISIS_THRESHOLD = 0.2f;  // 20% of capacity
-    private static final float GOLD_EXPAND_THRESHOLD = 200f;
-    
     @Override
-    public BuildingAIState evaluate(Building building, Game game) {
-        if (!(building instanceof DefensiveTroopBuilding)) {
-            return BuildingAIState.IDLE;
-        }
-        
-        DefensiveTroopBuilding city = (DefensiveTroopBuilding) building;
-        
-        // Priority 1: Danger
-        if (city.getDefensiveTroopComponent().hasDanger()) {
-            return BuildingAIState.DEFENDING;
-        }
-        
-        // Priority 2: Survival (food crisis)
-        if (city instanceof FarmOwningBuilding farmOwner) {
-            float foodRatio = (float) farmOwner.getFood() / maxFood;
-            if (foodRatio < FOOD_CRISIS_THRESHOLD) {
-                return BuildingAIState.SUSTAINING;
-            }
-        }
-        
-        // Priority 3: Growth (expansion)
-        if (building.getGold() > GOLD_EXPAND_THRESHOLD && 
-            building instanceof FarmOwningBuilding farmOwner && 
-            farmOwner.getFood() > maxFood * 0.7f) {
-            return BuildingAIState.EXPANDING;
-        }
-        
-        // Priority 4: Development (economy, infrastructure)
-        return BuildingAIState.DEVELOPING;
-    }
-    
-    @Override
-    public void execute(Building building, Game game, BuildingAIState currentState) {
-        if (!(building instanceof DefensiveTroopBuilding defBuilding)) {
+    public void determineWhatToBuildNext(Building building, Game game, BuildingAI ai) {
+        if (!(building instanceof City)) {
             return;
         }
-        
-        switch (currentState) {
-            case DEFENDING:
-                int activeDefenders = 10;
-                /*if (activeDefenders < MAX_DEFENDERS && (Building(defBuilding)) > 50) {
-                    defBuilding.spawnUnit();
-                }*/
-                break;
-                
-            case SUSTAINING:
-                // Request food from owner, halt expansion
-                if (building.getOwner() != null) {
-                    // Could send a message or set a flag for owner to send resources
-                    // For now, just stop expansion-related activities
+
+        if (assessment.getBand() == GoodSideBuildingStates.SAFE &&
+            !assessment.has(ThreatFact.ALLY_NEEDS_HELP) &&
+            !assessment.has(ThreatFact.ENEMY_SCOUT_DETECTED)) {
+            int animalCount = countSubBuildingType(building, AnimalHusbandry.class);
+            if (animalCount < 2) {
+                if (canBuildSubBuilding(building, AnimalHusbandry.class)) {
+                    ai.setSubBuildingToBuildNext(AnimalHusbandry.class);
+                    return;
                 }
-                break;
-                
-            case EXPANDING:
-                // Try to build new farms/settlements
-                if (building instanceof FarmOwningBuilding farmOwner) {
-                    // This would call into the existing farm-creation logic
-                    // farmOwner.attemptToCreateNewFarm(game);
+            }
+        }
+
+        if (assessment.has(ThreatFact.ENEMY_SCOUT_DETECTED)) {
+            int towerCount = countSubBuildingType(building, ShootingTower.class);
+            if (towerCount < 2) {
+                if (canBuildSubBuilding(building, ShootingTower.class)) {
+                    ai.setSubBuildingToBuildNext(ShootingTower.class);
+                    return;
                 }
-                break;
-                
-            case DEVELOPING:
-                // Long-term economy: could train population, build infrastructure
-                // For now, just a placeholder for future economy systems
-                break;
-                
-            default:
-                break;
+            }
+        }
+
+        if (assessment.has(ThreatFact.OWNED_AREA_RAIDED)) {
+            int towerCount = countSubBuildingType(building, ShootingTower.class);
+            if (towerCount < 1) {
+                if (canBuildSubBuilding(building, ShootingTower.class)) {
+                    ai.setSubBuildingToBuildNext(ShootingTower.class);
+                    return;
+                }
+            }
+        }
+
+        if (assessment.has(ThreatFact.ENEMIES_WITHIN_SHOOTING_DISTANCE)
+                || assessment.has(ThreatFact.UNDER_DIRECT_ATTACK)
+                || assessment.has(ThreatFact.LOSING_UNITS)) {
+            int towerCount = countSubBuildingType(building, ShootingTower.class);
+            if (towerCount < 4) {
+                if (canBuildSubBuilding(building, ShootingTower.class)) {
+                    ai.setSubBuildingToBuildNext(ShootingTower.class);
+                    return;
+                }
+            }
+        }
+
+        if (canBuildSubBuilding(building, MountedKnightSchool.class)) {
+            int archerCount = countSubBuildingType(building, ElvenArcheryRange.class);
+            int mountedKnightCount = countSubBuildingType(building, MountedKnightSchool.class);
+            if (mountedKnightCount < archerCount) {
+                ai.setSubBuildingToBuildNext(MountedKnightSchool.class);
+                return;
+            }
+        }
+
+        int barracksCount = countSubBuildingType(building, Barracks.class);
+        int archerCount = countSubBuildingType(building, ElvenArcheryRange.class);
+        if (archerCount < 3 && barracksCount < 3) {
+            if (barracksCount <= archerCount) {
+                if (canBuildSubBuilding(building, Barracks.class)) {
+                    ai.setSubBuildingToBuildNext(Barracks.class);
+                    return;
+                }
+            } else {
+                if (canBuildSubBuilding(building, ElvenArcheryRange.class)) {
+                    ai.setSubBuildingToBuildNext(ElvenArcheryRange.class);
+                    return;
+                }
+            }
+        } else if (archerCount < 3) {
+            if (canBuildSubBuilding(building, ElvenArcheryRange.class)) {
+                ai.setSubBuildingToBuildNext(ElvenArcheryRange.class);
+                return;
+            }
+        } else if (barracksCount < 3) {
+            if (canBuildSubBuilding(building, Barracks.class)) {
+                ai.setSubBuildingToBuildNext(Barracks.class);
+                return;
+            }
+        }
+
+        if (assessment.has(ThreatFact.ENEMY_SCOUT_DETECTED) ||
+            assessment.has(ThreatFact.ALLY_NEEDS_HELP)) {
+            if (countSubBuildingType(building, Stable.class) == 0) {
+                if (canBuildSubBuilding(building, Stable.class)) {
+                    ai.setSubBuildingToBuildNext(Stable.class);
+                    return;
+                }
+            }
+        }
+
+        // TODO ADD TRADER AND BUILDER BUILDING HERE
+        // This is the default. build ElvenArcheryRange
+        if (canBuildSubBuilding(building, ElvenArcheryRange.class)) {
+            ai.setSubBuildingToBuildNext(ElvenArcheryRange.class);
         }
     }
-    
-    @Override
-    public void onStateEnter(Building building, BuildingAIState enteringState) {
-        switch (enteringState) {
-            case DEFENDING:
-                // Alert: city under threat
-                break;
-            case SUSTAINING:
-                // Alert: food crisis
-                break;
-            default:
-                break;
-        }
-    }
+
 }

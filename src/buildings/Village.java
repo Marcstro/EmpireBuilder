@@ -6,9 +6,6 @@ import empirebuilder.Game;
 import empirebuilder.Point;
 import entities.units.*;
 
-import java.util.LinkedList;
-import java.util.List;
-
 public class Village extends FarmOwningBuilding implements UnitOwner {
     
     Point villageCenter;
@@ -69,11 +66,11 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
         unitManager.addUnit(animal);
     }
 
-    public void addAnimal(Game game){
+    public void addAnimals(Game game){
         if (animalPopulation == 0){
             spawnAnimal(game);
         }
-        animalPopulation++;
+        animalPopulation = MAX_ANIMAL_POPULATION;
     }
 
     public void animalDied(){
@@ -158,7 +155,7 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     }
 
     public int calculateFoodToCreateNewFarm(){
-        return FOOD_NEEDED_FOR_NEW_PERSON + getFarms().size()*2; // Administrative cost. Adjust?
+        return FOOD_NEEDED_FOR_NEW_FARM + getFarms().size()*2; // TODO Administrative cost. Adjust?
     }
 
     public double getCommunalFoodForNewFarms() {

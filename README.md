@@ -1,11 +1,7 @@
 Todo:
 
 - balance units
-- create specific "evil scout troops"
-- create "militia" units, basic units
-- create "mounted knights"
 - fix bug where units overlapse when they just stand around at arrived spot
-- create proper AI for units (large)
 - implement fortress?
 - land/point/mapCell value
 - possible "mapsections", like 50x50 points. will hold threatlevle instead of mapcells
@@ -14,7 +10,14 @@ Todo:
 - Add "SeldomTick" in the building class, for non every tick things.
 - Make farmAnimal-owning villages get the possibility to handle farm animals, instead of just giving them the animals
 - UnitOwningTroops need a "can units reach a Point from my location"? that is checked before sending troops somewhere, also handle what to do if its a non possible destination
-- 
+- change plundercooldown in mapcell to be a number ticking down instead of a boolean
+- EvilSideBase can't be informed of nearby units, since only FarmOwningBuildings are informed
+- function detectAllyNeedsHelp() needs developing, buildings should call other buildings asking for help when possible
+- only up to 3 units should be idling outside of a UnitOwner, rest should jump into "garrison" where they away deployment
+- Regarding garrison, have some sort of "visualisation" how many units a building have in garrison. like 10^x, display x stars
+- evilSideBase should own all of its points
+- make destruction of evilSideBase safe, current will bug if more than 1 exist
+- Shooting towers (subbuildings) should not fetch stats from owning building, also new types of shooting towers
 
 Nearest TODOs:
 - new Farms should not create grassland on their spot
@@ -31,8 +34,6 @@ merge them so that they can and will be used safely
 
 Future TODOs:
 - Divert all effects into an "effects manager class", both functional and cosmetic effects. Purpose: Separation of concern, Game does not need to handle everything
-- Exchange old object-oriented inheritance system into an Entity-component system (ECS pattern)
-
 
 - Implementations that could be changed:
 

@@ -8,13 +8,14 @@ public abstract class FarmAnimal extends Unit{
 
     Point idleBasePoint;
     int lifeRemaining;
-    final static int lifeSpan = 20000;
+    final static int lifeSpan = 3600;
 
     public FarmAnimal(double x, double y, double speed, double health, double damage, int factionId, double size, int attackCooldownBase) {
         super(x, y, speed, health, damage, factionId, size, attackCooldownBase);
         lifeRemaining = lifeSpan;
     }
 
+    // TODO change how farm animals get their idle point, currently they fetch their owners point instead of this
     public Point getIdleBasePoint() {
         return idleBasePoint;
     }

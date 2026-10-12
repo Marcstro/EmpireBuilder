@@ -226,11 +226,11 @@ public class Map {
         return grid[chosen[0]][chosen[1]]; 
     }
 
-    public Point getOwnedAdjecantFarm(Point originalPoint){
-        List<int[]> adjecantPoints = circleSearch.getValidAdjacentPoints(originalPoint.getX(), originalPoint.getY());
+    public Point getOwnedAdjacentFarm(Point originalPoint){
+        List<int[]> adjacentPoints = circleSearch.getValidAdjacentPoints(originalPoint.getX(), originalPoint.getY());
 
-        Collections.shuffle(adjecantPoints);
-        for (int[] coord : adjecantPoints) {
+        Collections.shuffle(adjacentPoints);
+        for (int[] coord : adjacentPoints) {
             Point p = grid[coord[0]][coord[1]];
 
             if (p.getBuilding() instanceof Farm farm &&

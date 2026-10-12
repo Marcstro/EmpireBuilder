@@ -13,7 +13,7 @@ public class MapCell {
     private final List<Unit> units = new ArrayList<>();
     private final List<Effect> effects = new ArrayList<>();
     private final List<AttackCapableBuilding> attackCapableBuildings = new ArrayList<>();
-    private final List<FarmOwningBuilding> largeBuildingsList = new ArrayList<>();
+    private final List<Building> largeBuildingsList = new ArrayList<>();
 
     private final int cellX;
     private final int cellY;
@@ -82,17 +82,17 @@ public class MapCell {
         attackCapableBuildings.remove(attackCapableBuilding);
     }
 
-    public List<FarmOwningBuilding> getLargeBuildingsList(Game game){
+    public List<Building> getLargeBuildingsList(Game game){
         return largeBuildingsList;
     }
 
-    public void addBuilding(FarmOwningBuilding building){
+    public void addBuilding(Building building){
         if (!largeBuildingsList.contains(building)){
             largeBuildingsList.add(building);
         }
     }
 
-    public void removeBuilding(FarmOwningBuilding building){
+    public void removeBuilding(Building building){
         if (largeBuildingsList.contains(building)){
             largeBuildingsList.remove(building);
         }
@@ -106,7 +106,7 @@ public class MapCell {
         if (!isBeingRaided){
             //System.out.println("MapCell is being raided, notifying all defensive buildings in the cell");
             isBeingRaided = true;
-            for (FarmOwningBuilding building : largeBuildingsList){
+            for (Building building : largeBuildingsList){
                 System.out.println(building.getPoint().getInfo() + "is trying to inform others it is being raided");
                 Building current = building;
                 while (current != null) {

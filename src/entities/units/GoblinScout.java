@@ -19,6 +19,7 @@ public class GoblinScout extends Unit {
         super(x, y, goblinScoutSpeed, goblinScoutHealth, goblinScoutDamage,
                 goblinScoutFactionId, size, goblinScoutAttackCooldown);
         setPriorityTier(1);
+        createAISystem();
     }
 
     @Override

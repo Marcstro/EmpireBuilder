@@ -1,5 +1,8 @@
 package buildings;
 
+import buildings.ai.BuildingAI;
+import buildings.ai.BuildingAIFactory;
+import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import empirebuilder.Point;
 import entities.Entity;
 
@@ -17,13 +20,16 @@ public abstract class Building extends Entity {
     private double wealth;
     private double currentFoodTaxIncome;
     private double lastIterationFoodTaxIncome;
-    public final int FOOD_NEEDED_FOR_NEW_PERSON = 10;
+    public final int FOOD_NEEDED_FOR_NEW_CITIZEN = 100;
+    public final int FOOD_NEEDED_FOR_NEW_FARM = 100;
     public static final int SIZE_OF_BUILDINGS = 1;
     public static final int FACTION_OF_BUILDINGS = 1;
     public static final double DEFAULT_BUILDING_HEALTH = 100;
 
     Building owner = null;
     private int people = 0;
+    private BuildingAI buildingAI;
+    private List<SubBuilding> subBuildings = new ArrayList<>();
 
     public Building(Point point, Color color, double health){
         super(point.getX(), point.getY(), health, SIZE_OF_BUILDINGS, FACTION_OF_BUILDINGS);
@@ -38,9 +44,70 @@ public abstract class Building extends Entity {
 
     public abstract String getImageName();
 
+    protected void initBuildingAI() {
+        this.buildingAI = BuildingAIFactory.createAI(this);
+    }
+
+    /** null for simple building */
+    public BuildingAI getBuildingAI() {
+        return buildingAI;
+    }
+
+    public void tickBuildingAI(empirebuilder.Game game) {
+        if (buildingAI != null) {
+            buildingAI.tick(this, game);
+        }
+    }
+
     // Default, TODO create default image to displaying missing images
     public String getImagePath() {
          return "/resources/images/farmImage.png";
+    }
+
+    @Override
+    protected void reactOnDamage() {
+        if (this instanceof DefensiveTroopBuilding def) {
+            def.getDefensiveTroopComponent().recordDamageTaken();
+        }
+    }
+
+    public void addSubBuilding(SubBuilding subBuilding) {
+        subBuildings.add(subBuilding);
+    }
+
+    public void removeSubBuilding(SubBuilding subBuilding) {
+        subBuildings.remove(subBuilding);
+    }
+
+    public List<SubBuilding> getSubBuildings() {
+        return subBuildings;
+    }
+
+    protected double calculateTotalSubBuildingMaintenance() {
+        double total = 0;
+        for (SubBuilding subBuilding : subBuildings) {
+            if (subBuilding != null) {
+                total += subBuilding.getMaintenanceCost();
+            }
+        }
+        return total;
+    }
+
+    protected void tickAreaBuildingsWithMaintenance(java.util.Collection<? extends buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot> areas, empirebuilder.Game game) {
+        for (buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot area : areas) {
+            buildings.subBuildings.subBuildingFunctions.SubBuilding subBuilding = area.getSubBuilding();
+            if (subBuilding != null) {
+                double maintenanceCost = subBuilding.getMaintenanceCost();
+                if (this.getGold() < maintenanceCost) {
+                    break;
+                }
+                subBuilding.tick(game);
+                this.addGold(-maintenanceCost);
+                if (subBuilding.hasExpired()) {
+                    game.destroySubBuilding(subBuilding);
+                }
+            }
+        }
     }
 
     public Point getPoint(){
@@ -139,7 +206,7 @@ public abstract class Building extends Entity {
         wealth++;
     }
 
-    public void decrease(){
+    public void decreaseWealth(){
         wealth--;
     }
 

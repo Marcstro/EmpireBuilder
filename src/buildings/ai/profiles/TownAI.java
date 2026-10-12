@@ -1,64 +1,68 @@
 package buildings.ai.profiles;
 
 import buildings.Building;
-import buildings.DefensiveTroopBuilding;
-import buildings.UnitOwner;
-import buildings.ai.BuildingAIProfile;
-import buildings.ai.BuildingAIState;
+import buildings.ai.BuildingAI;
+import buildings.ai.GoodSideBuildingStates;
+import buildings.ai.ThreatFact;
+import buildings.subBuildings.AnimalHusbandry;
+import buildings.subBuildings.Barracks;
+import buildings.subBuildings.ElvenArcheryRange;
+import buildings.subBuildings.ShootingTower;
 import empirebuilder.Game;
 
-/**
- * AI for fortresses: single-purpose.
- * If danger: spawn defenders and manage them.
- * Else: idle and conserve resources.
- */
+public class TownAI extends SettlementAI {
 
-public class TownAI implements BuildingAIProfile {
-    
-    private static final int MAX_DEFENDERS = 20;
-    
     @Override
-    public BuildingAIState evaluate(Building building, Game game) {
-        if (!(building instanceof DefensiveTroopBuilding defBuilding)) {
-            return BuildingAIState.IDLE;
+    public void determineWhatToBuildNext(Building building, Game game, BuildingAI ai) {
+
+        if (assessment.getBand() == GoodSideBuildingStates.SAFE && 
+            !assessment.has(ThreatFact.ALLY_NEEDS_HELP)) {
+            if (countSubBuildingType(building, AnimalHusbandry.class) == 0) {
+                ai.setSubBuildingToBuildNext(AnimalHusbandry.class);
+                return;
+            }
         }
-        
-        // Priority queue: DEFENDING > IDLE
-        if (defBuilding.getDefensiveTroopComponent().hasDanger()) {
-            return BuildingAIState.DEFENDING;
-        }
-        
-        return BuildingAIState.IDLE;
-    }
-    
-    @Override
-    public void execute(Building building, Game game, BuildingAIState currentState) {
-        if (!(building instanceof UnitOwner defBuilding)) {
-            return;
-        }
-        
-        switch (currentState) {
-            case DEFENDING:
-                // Spawn defenders if under limit and we have resources
-                int activeDefenders = defBuilding.getUnitManagerComponent().getUnits().size();
-                if (activeDefenders < MAX_DEFENDERS && ((Building)(defBuilding)).getGold() > 50) {
-                    //defBuilding.spawnUnit(); or something
+
+        if (assessment.has(ThreatFact.ENEMY_SCOUT_DETECTED)) {
+            int towerCount = countSubBuildingType(building, ShootingTower.class);
+            if (towerCount < 1) {
+                if (canBuildSubBuilding(building, ShootingTower.class)) {
+                    ai.setSubBuildingToBuildNext(ShootingTower.class);
+                    return;
                 }
-                break;
-                
-            case IDLE:
-                // Could regenerate resources, rest, etc.
-                break;
-                
-            default:
-                break;
+            }
         }
-    }
-    
-    @Override
-    public void onStateEnter(Building building, BuildingAIState enteringState) {
-        if (enteringState == BuildingAIState.DEFENDING) {
-            // Could trigger an alert sound, visual effect, etc.
+
+        if (assessment.has(ThreatFact.LOSING_UNITS)
+                || assessment.has(ThreatFact.ENEMIES_WITHIN_SHOOTING_DISTANCE)
+                || assessment.has(ThreatFact.UNDER_DIRECT_ATTACK)) {
+            int towerCount = countSubBuildingType(building, ShootingTower.class);
+            if (towerCount < 3) {
+                if (canBuildSubBuilding(building, ShootingTower.class)) {
+                    ai.setSubBuildingToBuildNext(ShootingTower.class);
+                    return;
+                }
+            }
+        }
+
+        if (countSubBuildingType(building, Barracks.class) == 0) {
+            if (canBuildSubBuilding(building, Barracks.class)) {
+                ai.setSubBuildingToBuildNext(Barracks.class);
+                return;
+            }
+        }
+
+        if (countSubBuildingType(building, ElvenArcheryRange.class) == 0) {
+            if (canBuildSubBuilding(building, ElvenArcheryRange.class)) {
+                ai.setSubBuildingToBuildNext(ElvenArcheryRange.class);
+                return;
+            }
+        }
+
+        // default
+        // Build more ElvenArcheryRanges if there's gold
+        if (canBuildSubBuilding(building, ElvenArcheryRange.class)) {
+            ai.setSubBuildingToBuildNext(ElvenArcheryRange.class);
         }
     }
 }

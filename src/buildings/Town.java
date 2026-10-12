@@ -19,11 +19,11 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
 
     private final int TOWN_ATTACK_COOLDOWN = 60;
     private final int TOWN_ATTACK_DAMAGE = 8;
-    private final double TOWN_ATTACK_RANGE = 15;
-    private final int TOWN_ARROW_DISTANCE = 35;
+    private final double TOWN_ATTACK_RANGE = 8;
+    private final int TOWN_ARROW_DISTANCE = 10;
 
     private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
-    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
+    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent(this);
     private final AttackCapableBuildingComponent attackCapableBuildingComponent =
             new AttackCapableBuildingComponent(this, TOWN_ATTACK_DAMAGE, TOWN_ATTACK_RANGE, TOWN_ARROW_DISTANCE, TOWN_ATTACK_COOLDOWN);
 
@@ -32,6 +32,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
         farms = new LinkedList();
         food = 0;
         townAreaPoints = new HashSet();
+        initBuildingAI();
     }
 
     @Override
@@ -64,8 +65,13 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
 
     @Override
     public void tick(Game game) {
-        getUnitManagerComponent().handleDefenses(game);
-        attemptToSpawnAnimal(game);
+        defensiveTroopComponent.tick();
+        tickBuildingAI(game);
+        tickAreaBuildingSubBuildings(game);
+    }
+
+    private void tickAreaBuildingSubBuildings(Game game) {
+        tickAreaBuildingsWithMaintenance(townAreaPoints, game);
     }
 
     public void setCity(City city){
@@ -127,6 +133,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
 
     @Override
     public String getInfo() {
+        double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
         return "{Town: " + getId() +
                 ", health: " + getHealth() + "/" + DEFAULT_BUILDING_HEALTH +
                 ", isAlive=" + isAlive() +
@@ -136,6 +143,7 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
                 ", amount of farms controlled: " + getFarms().size() +
                 "/" + (getControlledLand().size()-1) + // excluding center point
                 ", wealth=" + String.format("%.2f", getWealth()) +
+                ", subBuilding maintenance cost=" + String.format("%.2f", totalMaintenanceCost) +
                 ", villages=" + getVillages().size() +
                 ", currentTaxIncome=" + String.format("%.2f", getLastIterationFoodTaxIncome()) +
                 (getCity()!=null ? " (" + String.format("%.2f",(TOWN_TAXATION_RATE*getLastIterationFoodTaxIncome())) + " taxed)" : "") +
@@ -143,4 +151,5 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
                 ", is aware of danger: " + getDefensiveTroopComponent().hasDanger() +
                  ".} ";
     }
+
 }

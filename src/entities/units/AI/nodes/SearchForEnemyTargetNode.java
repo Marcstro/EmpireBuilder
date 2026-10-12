@@ -1,6 +1,7 @@
 package entities.units.AI.nodes;
 
 import buildings.Building;
+import buildings.UnitOwner;
 import empirebuilder.Game;
 import entities.Entity;
 import entities.units.AI.GoalStatus;
@@ -23,6 +24,9 @@ public class SearchForEnemyTargetNode implements Node {
                 target = (Building)game.getNearestAttackCapableBuilding(unit, unit.getSearchForBuildingsDistance());
                 if (target == null){
                     target = game.getNearestLargeBuilding(unit, unit.getSearchForBuildingsDistance());
+                }
+                if (target != null && (Building)target instanceof UnitOwner unitOwner){
+                    unitOwner.getUnitManagerComponent().reportHostileUnit();
                 }
             }
             if (target != null){

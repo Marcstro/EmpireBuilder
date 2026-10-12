@@ -2,6 +2,7 @@ package empirebuilder;
 
 import LandTypes.LandType;
 import buildings.*;
+import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import entities.Entity;
 import entities.effects.Arrow;
 import entities.effects.BloodSpark;
@@ -46,7 +47,6 @@ public class Game{
     Set<Village> villagesToRemove;
     Set<Town> townsToRemove;
     Set<City> citiesToRemove;
-
 
     LinkedList<Farm> inactiveFarms;
     
@@ -200,7 +200,8 @@ public class Game{
     }
 
     public void eventsTick(){
-        darkside.tick(this);
+        tickEvilSide();
+        // TODO scripted events. Maybe remove?
     }
 
     public void attackingBuildingsTick(){
@@ -228,7 +229,7 @@ public class Game{
                 Point newFarmPoint = gm.getMap().getRandomEmptyWalkablePointAdjecantToTarget(farm.getPoint());
                 if (newFarmPoint == null){
                     if (farm.timeToSearchForNewOwner()){
-                        Point newNeighbourPoint = gm.getMap().getOwnedAdjecantFarm(farm.getPoint());
+                        Point newNeighbourPoint = gm.getMap().getOwnedAdjacentFarm(farm.getPoint());
                         farm.resetSearchForNewOwnerCoolDown();
                         if (newNeighbourPoint == null){
                             continue;
@@ -335,10 +336,28 @@ public class Game{
             city.tick(this);
         }
 
+        for (EvilSideBase evilSideBase: evilSideBases){
+            if (!evilSideBase.isAlive()){
+                evilSideBases.remove(evilSideBase);
+                continue;
+            }
+            evilSideBase.tick(this);
+        }
+
         farmToConvertToVillage.forEach(farmToConvert -> convertFarmToVillageCenter(farmToConvert));
 
         farmsToAdd.clear();
         farmToConvertToVillage.clear();
+    }
+
+    public void tickEvilSide(){
+        darkside.tick(this);
+        for (EvilSideBase evilSideBase: evilSideBases){
+            if (!evilSideBase.isAlive()){
+                evilSideBases.remove(evilSideBase);
+                continue;
+            }
+        }
     }
 
     public Farm getFarmFromPool(){
@@ -597,11 +616,17 @@ public class Game{
         return mapCellGrid[x][y];
     }
 
-    /**
-     * Direct access to the raw cell grid — use only for read-only iteration
-     * (e.g. ORCA neighbour gathering) where avoiding lambda dispatch matters.
-     */
-    public MapCell[][] getMapCellGrid() { return mapCellGrid; }
+    public MapCell[][] getMapCellGrid() {
+        return mapCellGrid;
+    }
+
+    public void addAttackCapableBuilding(AttackCapableBuilding building) {
+        attackCapableBuildings.add(building);
+    }
+
+    public void removeAttackCapableBuilding(AttackCapableBuilding building) {
+        attackCapableBuildings.remove(building);
+    }
 
     private int getCellCoord(int mapCoord) {
         return mapCoord / MAP_CELL_SIZE;
@@ -706,7 +731,7 @@ public class Game{
         mapCell.addBuilding(newTown);
         mapCell.removeBuilding(village);
         attackCapableBuildings.add(newTown);
-        getMapCellByPoint(newTown.getPoint()).addAttackCapableBuildings(newTown);
+        mapCell.addAttackCapableBuildings(newTown);
         newTown.setControlledLand(village.getControlledLand());
 
         for (Point point: newTown.getControlledLand()){
@@ -750,6 +775,15 @@ public class Game{
     // the order of things happening is important and might cause bugs if changed
     public void createCity(Town town, List<Town> nearbyTowns){
 
+        List<buildings.subBuildings.subBuildingFunctions.SubBuilding> subBuildingsToPreserve = new ArrayList<>();
+        for (TownArea ta : town.getTownAreaPoints()) {
+            if (ta.getSubBuilding() != null) {
+                SubBuilding subBuilding = ta.getSubBuilding();
+                subBuildingsToPreserve.add(subBuilding);
+                town.removeSubBuilding(subBuilding);
+            }
+        }
+
         attackCapableBuildings.remove(town);
         getMapCellByPoint(town.getPoint()).removeAttackCapableBuilding(town);
         Point midPoint = town.getPoint();
@@ -772,6 +806,7 @@ public class Game{
         }
 
         List<Point> cityAreaPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY());
+        List<CityArea> newCityAreas = new ArrayList<>();
         for (Point cityAreaPoint: cityAreaPoints){
             cityAreaPoint.getPointOwner().removePointFromEmptyPointList(cityAreaPoint);
             cityAreaPoint.setOwnerBuilding(town);
@@ -796,11 +831,25 @@ public class Game{
 
             // TODO add else if farmBuilding isnt farm but something else, that building should be properly removed from all lists etc
             CityArea ca = new CityArea(cityAreaPoint, newCity);
+            newCityAreas.add(ca);
             newCity.addCityArea(ca);
             if (!cityAreaPoint.isEmpty()){
                 gm.getMap().replaceBuilding(cityAreaPoint, ca);
             } else {
                 gm.getMap().setBuildingOnPoint(cityAreaPoint, ca);
+            }
+        }
+
+        int cityAreaIndex = 0;
+        for (buildings.subBuildings.subBuildingFunctions.SubBuilding subBuilding : subBuildingsToPreserve) {
+            // Find next empty CityArea slot
+            while (cityAreaIndex < newCityAreas.size() && newCityAreas.get(cityAreaIndex).getSubBuilding() != null) {
+                cityAreaIndex++;
+            }
+            if (cityAreaIndex < newCityAreas.size()) {
+                CityArea emptySlot = newCityAreas.get(cityAreaIndex);
+                emptySlot.setSubBuilding(subBuilding, this);
+                cityAreaIndex++;
             }
         }
 
@@ -851,6 +900,8 @@ public class Game{
                 oldCell.removeUnit(unit);
                 newCell.addUnit(unit);
                 unit.setSearchForBuildingCooldown(false);
+                // TODO alert nearest hostile units of this units entrance into the area
+
                 if (unit.getFactionId()==2){
                     newCell.attemptToPlunder(this, tickCounter, unit);
                 }
@@ -1190,7 +1241,7 @@ public class Game{
 
     private Entity rayCastCheckBuildingsInCell(Arrow arrow, double oldX, double oldY, int cellX, int cellY) {
         if (cellX < 0 || cellX >= mapCellGrid.length || cellY < 0 || cellY >= mapCellGrid[cellX].length) return null;
-        for (FarmOwningBuilding candidate : mapCellGrid[cellX][cellY].getLargeBuildingsList(this)) {
+        for (Building candidate : mapCellGrid[cellX][cellY].getLargeBuildingsList(this)) {
             if (!candidate.isHostileTo(arrow.getFactionId()) || !candidate.isAlive()) continue;
             if (checkRaycastCollision(oldX, oldY, arrow.getX(), arrow.getY(),
                     candidate.getX(), candidate.getY(), candidate.getSize() + arrow.getWidth())) {
@@ -1206,8 +1257,28 @@ public class Game{
             case Village village -> villagesToRemove.add(village);
             case Town town -> townsToRemove.add(town);
             case City city -> citiesToRemove.add(city);
+            case AreaBuilding areaBuilding -> destroySubBuilding(areaBuilding);
             default -> throw new IllegalArgumentException("Unknown building type: " + building.getClass().getName());
         }
+    }
+
+    public void destroySubBuilding(AreaBuilding areaBuilding) {
+        areaBuilding.cleanupDestruction(this);
+        areaBuilding.setHealth(0);
+        areaBuilding.setAlive(false);
+    }
+
+    public void destroySubBuilding(SubBuilding subBuilding) {
+        if (subBuilding == null) {
+            throw new IllegalArgumentException("Sub-building cannot be null");
+        }
+        if (!(subBuilding.getAreaBuilding() instanceof AreaBuilding areaBuilding)) {
+            throw new IllegalStateException("Sub-building is not attached to an AreaBuilding");
+        }
+        if (areaBuilding.getSubBuilding() != subBuilding) {
+            throw new IllegalStateException("Sub-building is not the active sub-building in its area slot");
+        }
+        destroySubBuilding(areaBuilding);
     }
 
     public void wakeAttackCapableBuildings(Unit unit, int distanceOut) {
@@ -1280,7 +1351,11 @@ public class Game{
     private void handleUnitDeath(Unit unit) {
 
         // TODO possible make nearby areas react on death unit?
-         unit.getUnitOwner().getUnitManagerComponent().removeUnit(unit);
+        UnitOwner owner = unit.getUnitOwner();
+        if (owner != null) {
+            owner.getUnitManagerComponent().recordUnitLoss(unit);
+            owner.getUnitManagerComponent().removeUnit(unit);
+        }
          MapCell mapCell = mapCellGrid[unit.getMapCellX()][unit.getMapCellY()];
          mapCell.removeUnit(unit);
     }
@@ -1321,8 +1396,8 @@ public class Game{
         return nearestBuilding;
     }
 
-    public FarmOwningBuilding getNearestLargeBuilding(Unit searcher, int distanceOut){
-        FarmOwningBuilding nearestLargeBuilding = null;
+    public Building getNearestLargeBuilding(Unit searcher, int distanceOut){
+        Building nearestLargeBuilding = null;
         double minDistanceSq = Double.MAX_VALUE;
 
         int startX = searcher.getMapCellX() - distanceOut;
@@ -1335,7 +1410,7 @@ public class Game{
                     if (x >= 0 && x < mapCellGrid.length && y >= 0 && y < mapCellGrid[x].length) {
                     MapCell cell = mapCellGrid[x][y];
 
-                    for (FarmOwningBuilding building : cell.getLargeBuildingsList(this)) {
+                    for (Building building : cell.getLargeBuildingsList(this)) {
                         if (searcher.isHostileTo(building.getFactionId()) && building.isAlive()) {
 
                             double bX = building.getX();
@@ -1418,7 +1493,9 @@ public class Game{
                 divideLootFromBuilding(city);
                 List<CityArea> snapshot = new ArrayList<>(city.getCityAreaPoints());
                 snapshot.forEach(cityArea -> destroyBuilding(cityArea));
-                getMapCellByPoint(city.getPoint()).removeBuilding(city);
+                MapCell mapCell = getMapCellByPoint(city.getPoint());
+                mapCell.removeBuilding(city);
+                mapCell.removeAttackCapableBuilding(city);
                 gm.getMap().removeBuildingFromPoint(city.getPoint());
                 for(Town town: city.getTowns()){
                     town.removeCity();
@@ -1433,7 +1510,9 @@ public class Game{
                 divideLootFromBuilding(town);
                 List<TownArea> snapshot = new ArrayList<>(town.getTownAreaPoints());
                 snapshot.forEach(townArea -> destroyBuilding(townArea));
-                getMapCellByPoint(town.getPoint()).removeBuilding(town);
+                MapCell mapCell = getMapCellByPoint(town.getPoint());
+                mapCell.removeBuilding(town);
+                mapCell.removeAttackCapableBuilding(town);
                 gm.getMap().removeBuildingFromPoint(town.getPoint());
                 if (town.hasCity()){
                     town.getCity().releaseTown(town);
@@ -1444,6 +1523,7 @@ public class Game{
                 gm.getMap().removeBuildingFromPoint(village.getPoint());
                 divideLootFromBuilding(village);
                 village.unmarkCenter();
+                getMapCellByPoint(village.getPoint()).removeBuilding(village);
                 villages.remove(village);
                 if (village.hasOwner()){
                     village.getVillageOwningBuilding().removeVillage(village);
@@ -1460,14 +1540,21 @@ public class Game{
                 inactiveFarms.add(farm);
             }
             case TownArea townArea -> {
+                townArea.cleanupDestruction(this);
                 gm.getMap().removeBuildingFromPoint(townArea.getPoint());
                 townArea.getTownCenter().removeTownArea(townArea);
                 townArea.setTownCenter(null);
             }
             case CityArea cityArea -> {
+                cityArea.cleanupDestruction(this);
                 gm.getMap().removeBuildingFromPoint(cityArea.getPoint());
                 cityArea.getCityCenter().removeCityArea(cityArea);
                 cityArea.setCityCenter(null);
+            }
+            case EvilSideBaseArea evilSideBaseArea -> {
+                evilSideBaseArea.cleanupDestruction(this);
+                gm.getMap().removeBuildingFromPoint(evilSideBaseArea.getPoint());
+                ((EvilSideBase) evilSideBaseArea.getMainOwner()).removeEvilSideBaseArea(evilSideBaseArea);
             }
             case null, default -> throw new RuntimeException("x196 what kind of building was destroyed???");
         }
@@ -1670,6 +1757,8 @@ public class Game{
     }
 
     public EvilSideBase createEvilSideBase(Point point, TheDarkSide theDarkSide){
+
+        // TODO scorch the earth around this location. destroy all nearby farms and other buildings
         EvilSideBase evilSideBase = new EvilSideBase(point, theDarkSide);
         // TODO make evilside base attackCapable
         //getMapCellByPoint(point).addAttackCapableBuildings(evilSideBase);
@@ -1690,7 +1779,10 @@ public class Game{
             EvilSideBaseArea area = new EvilSideBaseArea(p, evilSideBase);
             evilSideBase.addEvilSideBaseArea(area);
             gm.getMap().setBuildingOnPoint(p, area);
+            // TODO set point ownership to the EvilSideBase. Will require some development
+            // p.setOwnerBuilding(evilSideBase);
         }
+        evilSideBase.bootstrapWithScoutHut(this);
         return evilSideBase;
     }
 
@@ -1699,24 +1791,11 @@ public class Game{
         return unit;
     }
 
-    public Point getEvilSideTarget(){
-        if (!cities.isEmpty()){
-            return cities.getFirst().getPoint();
-        }
-        else if (!towns.isEmpty()){
-            return towns.getFirst().getPoint();
-        }
-        else if (!villages.isEmpty()){
-            return villages.getFirst().getPoint();
-        }
-        else return null;
-    }
-
     public void plunderMapCell(MapCell mapCell, Unit unit){
         for (int x = mapCell.getCellX()*MAP_CELL_SIZE; x<(mapCell.getCellX()+1)*MAP_CELL_SIZE; x++){
             for (int y=mapCell.getCellY()*MAP_CELL_SIZE; y<(mapCell.getCellY()+1)*MAP_CELL_SIZE; y++){
                 Point point = gm.getMap().getPoint(x,y);
-                if (point.getBuilding() instanceof Farm farm && farm.isAlive()){
+                if (point.getBuilding() instanceof Farm farm && farm.isAlive() && !farm.isPartOfVillageCenter()){
                     unit.addLoot(farm.getPeople()*10);
                     farm.setAlive(false);
                     farmsToRemove.add(farm);

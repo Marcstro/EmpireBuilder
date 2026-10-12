@@ -14,6 +14,8 @@ public class TheDarkSide {
     boolean isDarkSideActivated;
     CivilizationDevelopmentLevel civilizationDevelopmentLevel;
 
+    int evilSideBaseCreationCooldown = 20;
+
     public TheDarkSide(Game game) {
         this.game = game;
         isDarkSideActivated = false;
@@ -29,12 +31,17 @@ public class TheDarkSide {
         // this spawns a single troop that can be used to see if pathfinding around terrain works
         //game.spawnOneTroopForPathFinding();
 
-        if (isDarkSideActivated && evilSideBases.isEmpty()) {
-            createNewEviLSideBase(game);
+        // TODO implement for more than 1 evilsidebase to be spawned, after x time
+        // should have a limit tho.
+        if (evilSideBases.isEmpty() && isDarkSideActivated) {
+            if (evilSideBaseCreationCooldown <= 0) {
+                createNewEviLSideBase(game);
+                evilSideBaseCreationCooldown = 200;
+            } else {
+                evilSideBaseCreationCooldown--;
+            }
         }
-        for(EvilSideBase evilSideBase : evilSideBases){
-            evilSideBase.tick(game);
-        }
+
     }
 
     public void updateActiveStatus(CivilizationDevelopmentLevel civilizationDevelopmentLevel){
@@ -52,11 +59,6 @@ public class TheDarkSide {
         EvilSideBase evilSideBase = game.createEvilSideBase(point, this);
         evilSideBases.add(evilSideBase);
         System.out.println("Created evil side lair at " + point.getPositionString());
-    }
-
-    // TODO make an evil lair save target for future raiding, change target if raiding isnt going well
-    public Point getTargetLocation(){
-       return game.getEvilSideTarget();
     }
 
     public void activate(){

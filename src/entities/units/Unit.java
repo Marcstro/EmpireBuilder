@@ -1,5 +1,6 @@
 package entities.units;
 
+import buildings.Building;
 import buildings.UnitOwner;
 import empirebuilder.Game;
 import empirebuilder.Point;
@@ -9,9 +10,12 @@ import entities.units.AI.Node;
 import entities.units.AI.UnitOrder;
 import pathfinding.Path;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class Unit extends MovingEntity {
 
-    // early version of ai control. to be replaced
+    // TODO might want to remove this, is it ever used?
     public enum CombatStyle {
         MELEE,
         RANGED,
@@ -38,6 +42,10 @@ public abstract class Unit extends MovingEntity {
 
     int loot;
     UnitOwner unitOwner = null;
+    buildings.subBuildings.UnitProducingSubBuilding subBuildingOwner = null;
+
+    /** Hostile buildings spotted by scout units, info not yet brught to main owning building */
+    List<Building> scoutedBuildings = new ArrayList<>();
 
     UnitOrder unitorder;
     private Node logicMotor;
@@ -71,13 +79,13 @@ public abstract class Unit extends MovingEntity {
 
     public Unit(double x, double y, double speed, double health, double damage, int factionId, double size, int attackCooldownBase) {
         super(x, y, health, size, factionId, speed);
+        setUnitOrder(UnitOrder.NONE);
         this.logicMotor = createAISystem();
         this.speed = speed;
         this.damage = damage;
         this.attackCooldownBase = attackCooldownBase;
         attackCooldown = 0;
         loot = 0;
-        setUnitOrder(UnitOrder.NONE);
     }
 
     public boolean attemptMeleeAttack(Entity target, Game game){
@@ -135,6 +143,16 @@ public abstract class Unit extends MovingEntity {
     public UnitOwner getUnitOwner() {
         return unitOwner;
     }
+
+    public List<Building> getScoutedBuildings() { return scoutedBuildings; }
+
+    public void addScoutedBuilding(Building building) {
+        if (!scoutedBuildings.contains(building)) {
+            scoutedBuildings.add(building);
+        }
+    }
+
+    public void clearScoutedBuildings() { scoutedBuildings.clear(); }
 
     public double getMeleeRange() {
         return this.getSize() + DEFAULT_MELEE_BUFFER;
@@ -256,6 +274,9 @@ public abstract class Unit extends MovingEntity {
 
     public int  getPriorityTier()           { return priorityTier; }
     public void setPriorityTier(int tier)   { this.priorityTier = tier; }
+
+    public buildings.subBuildings.UnitProducingSubBuilding getSubBuildingOwner() { return subBuildingOwner; }
+    public void setSubBuildingOwner(buildings.subBuildings.UnitProducingSubBuilding owner) { this.subBuildingOwner = owner; }
 
     public Path getPathB()                 { return pathB; }
 

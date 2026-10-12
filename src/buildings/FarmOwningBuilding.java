@@ -29,13 +29,13 @@ public abstract class FarmOwningBuilding extends Building{
         resetCurrentFoodTaxIncome();
         int foodCost = getPeople();
         if (foodCost > food){
-            int deaths = (int)((food-foodCost)/FOOD_NEEDED_FOR_NEW_PERSON); //this will be a negative number
+            int deaths = (int)((food-foodCost)/ FOOD_NEEDED_FOR_NEW_CITIZEN); //this will be a negative number
             setPeople(getPeople() + deaths);
             food = 0;
         }
         else {
             food -= foodCost;
-            int births = (int)(food/FOOD_NEEDED_FOR_NEW_PERSON);
+            int births = (int)(food/ FOOD_NEEDED_FOR_NEW_CITIZEN);
             setPeople(getPeople() + births);
         }
 
@@ -47,11 +47,14 @@ public abstract class FarmOwningBuilding extends Building{
 
         int goldIncome = getPeople();
 
+        setWealth(getPeople());
+        // TODO shall wealth increase gradually? if so change an uncomment below
+        /*
         if (goldIncome > getWealth()) {
             increaseWealth();
         } else if (goldIncome < getWealth()) {
-            decrease();
-        }
+            decreaseWealth();
+        }*/
         gold += goldIncome;
     }
 

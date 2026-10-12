@@ -17,13 +17,13 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     int timeSinceLastShot;
 
     static final int INITIAL_FOOD_NEEDED_TO_GROW = 50;
-    final int CITY_ATTACK_RANGE = 25;
+    final int CITY_ATTACK_RANGE = 10;
     final int CITY_ATTACK_DAMAGE = 12;
-    final int CITY_ARROW_DISTANCE = 35;
-    final int CITY_ATTACK_COOLDOWN = 20;
+    final int CITY_ARROW_DISTANCE = 14;
+    final int CITY_ATTACK_COOLDOWN = 50;
 
     private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
-    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent();
+    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent(this);
     private final AttackCapableBuildingComponent attackCapableBuildingComponent =
             new AttackCapableBuildingComponent(this, CITY_ATTACK_DAMAGE, CITY_ATTACK_RANGE, CITY_ARROW_DISTANCE, CITY_ATTACK_COOLDOWN);
 
@@ -33,13 +33,18 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
         cityAreaPoints = new HashSet();
         isAttackReady=false;
         timeSinceLastShot=0;
+        initBuildingAI();
     }
 
     @Override
     public void tick(Game game) {
-        //unitManager.getUnits().removeIf(u -> !u.isAlive());
-        getUnitManagerComponent().handleDefenses(game);
-        attemptToSpawnAnimal(game);
+        defensiveTroopComponent.tick();
+        tickBuildingAI(game);
+        tickAreaBuildingSubBuildings(game);
+    }
+
+    private void tickAreaBuildingSubBuildings(Game game) {
+        tickAreaBuildingsWithMaintenance(cityAreaPoints, game);
     }
 
     @Override
@@ -118,6 +123,7 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
 
     @Override
     public String getInfo() {
+        double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
         return "{City: " + getId() +
                 ", health: " + getHealth() + "/" + DEFAULT_BUILDING_HEALTH +
                 ", isAlive=" + isAlive() +
@@ -125,6 +131,7 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
                 ", people=" + getPeople() +
                 ", gold=" + String.format("%.2f", getGold()) +
                 ", wealth=" + String.format("%.2f", getWealth()) +
+                ", subBuilding maintenance cost=" + String.format("%.2f", totalMaintenanceCost) +
                 ", towns=" + getTowns().size() +
                 ", villages=" + getVillages().size() +
                 ", indirect villages=" + (getTowns().stream().mapToInt(town -> town.getVillages().size()).sum()) +

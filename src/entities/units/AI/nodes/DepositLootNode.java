@@ -17,8 +17,7 @@ public class DepositLootNode implements Node {
             unit.getUnitOwner().getUnitManagerComponent().getOwnerBuilding().addGold((int)unit.getLoot());
             unit.clearLoot();
             unit.clearPointTarget();
-            //below line should come from getInstructions()
-            unit.setUnitOrder(UnitOrder.RAIDING);
+            unit.setUnitOrder(UnitOrder.NONE);
             return GoalStatus.SUCCESS;
         }
         else {

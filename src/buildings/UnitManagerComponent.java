@@ -1,9 +1,10 @@
 package buildings;
 
+import buildings.ai.GoodSideThreatAssessment;
+import buildings.subBuildings.UnitProducingSubBuilding;
 import empirebuilder.Game;
 import empirebuilder.Point;
-import entities.units.ElfArcher;
-import entities.units.Knight;
+import entities.units.FarmerMilitia;
 import entities.units.Unit;
 
 import java.util.ArrayList;
@@ -13,8 +14,18 @@ public class UnitManagerComponent {
 
     private final List<Unit> units = new ArrayList<>();
     private final Building ownerBuilding;
-    private int unitCost = 50000;
     List<Building> knownHostileBuildings = new ArrayList<>();
+
+    private int enemySightingMemory = 0;
+    private static final int ENEMY_SIGHTING_MEMORY_EVALUATIONS = 20;
+
+    private int recentUnitLosses = 0;
+
+    private static final int MAX_MILITIA_PER_WAVE = 8;
+
+    private static final int MILITIA_COOLDOWN_EVALUATIONS = 6;
+
+    private int militiaCooldown = 0;
 
     public UnitManagerComponent(Building ownerBuilding) {
         this.ownerBuilding = ownerBuilding;
@@ -36,41 +47,99 @@ public class UnitManagerComponent {
         return ownerBuilding;
     }
 
-    public void handleDefenses(Game game){
-        if (ownerBuilding instanceof DefensiveTroopBuilding def
-                && def.getDefensiveTroopComponent().hasDanger()
-        ){
-            if (ownerBuilding.getGold() > unitCost){
-                ownerBuilding.addGold(-unitCost);
-                List<Point> points = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(), ownerBuilding.getPoint().getY(), 4 );
-
-                Knight knight1 = new Knight(points.getFirst().getX(), points.getFirst().getY());
-                knight1.setUnitOwner(def);
-                game.spawnUnitAt(knight1, points.getFirst());
-                def.getUnitManagerComponent().addUnit(knight1);
-
-                Knight knight2 = new Knight(points.get(1).getX(), points.get(1).getY());
-                knight2.setUnitOwner(def);
-                game.spawnUnitAt(knight2, points.get(1));
-                def.getUnitManagerComponent().addUnit(knight2);
-
-                ElfArcher elfArcher1 = new ElfArcher(points.get(2).getX(), points.get(2).getY());
-                elfArcher1.setUnitOwner(def);
-                game.spawnUnitAt(elfArcher1, points.get(2));
-                def.getUnitManagerComponent().addUnit(elfArcher1);
-
-                ElfArcher elfArcher2 = new ElfArcher(points.get(3).getX(), points.get(3).getY());
-                elfArcher2.setUnitOwner(def);
-                game.spawnUnitAt(elfArcher2, points.get(3));
-                def.getUnitManagerComponent().addUnit(elfArcher2);
-            }
+    // TODO adjust according to threatassessment level
+    // TODO implement a minimum: a farm with 10 people shouldnt be able to spawn any units at all
+        public void spawnMilitia(Game game, GoodSideThreatAssessment assessment){
+        if (!(ownerBuilding instanceof DefensiveTroopBuilding def)){
+            return;
         }
+        if (militiaCooldown > 0){
+            return;
+        }
+
+        DefensiveTroopComponent defensiveComponent = def.getDefensiveTroopComponent();
+        int amountOfMilitia = Math.min(defensiveComponent.getMaxAvailableMilitia(), MAX_MILITIA_PER_WAVE);
+        if (amountOfMilitia <= 0){
+            return;
+        }
+
+        List<Point> points = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(),
+                ownerBuilding.getPoint().getY(), amountOfMilitia);
+        if (points.isEmpty()){
+            return;
+        }
+
+        for (Point point : points){
+            FarmerMilitia militia = new FarmerMilitia(point.getX(), point.getY());
+            militia.setUnitOwner(def);
+            game.spawnUnitAt(militia, point);
+            addUnit(militia);
+        }
+
+        // actual amount of militia spawned, regardless of requested amount
+        defensiveComponent.reserveMilitiaSlots(points.size());
+        militiaCooldown = MILITIA_COOLDOWN_EVALUATIONS;
     }
 
     public void reportHostileBuilding(Building building){
         if (!knownHostileBuildings.contains(building)){
             knownHostileBuildings.add(building);
         }
+    }
+
+    public List<Building> getKnownHostileBuildings() {
+        return knownHostileBuildings;
+    }
+
+    // subbuilding sends units to this function so its added to hte main owner
+    public void receiveUnit(Unit unit, Game game) {
+        List<Point> spawnPoints = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(),
+                ownerBuilding.getPoint().getY(), 1);
+        if (spawnPoints.isEmpty()) {
+            return;
+            // TODO add unit to "unenlisted list"
+        }
+        Point spawnAt = spawnPoints.getFirst();
+        unit.setX(spawnAt.getX());
+        unit.setY(spawnAt.getY());
+        unit.setUnitOwner((UnitOwner) ownerBuilding);
+        game.spawnUnitAt(unit, spawnAt);
+        addUnit(unit);
+    }
+
+    public void reportHostileUnit(){
+        enemySightingMemory = ENEMY_SIGHTING_MEMORY_EVALUATIONS;
+    }
+
+    public void recordUnitLoss(Unit unit){
+        recentUnitLosses++;
+        if (unit instanceof FarmerMilitia && ownerBuilding instanceof DefensiveTroopBuilding def){
+            def.getDefensiveTroopComponent().notifyMilitiaDeath();
+        }
+        UnitProducingSubBuilding subBuildingOwner = unit.getSubBuildingOwner();
+        if (subBuildingOwner != null) {
+            subBuildingOwner.releaseSpot(unit);
+        }
+    }
+
+    public void decayThreatMemory(){
+        if (enemySightingMemory > 0){
+            enemySightingMemory--;
+        }
+        if (recentUnitLosses > 0){
+            recentUnitLosses--;
+        }
+        if (militiaCooldown > 0){
+            militiaCooldown--;
+        }
+    }
+
+    public boolean hasRecentlySightedEnemy(){
+        return enemySightingMemory > 0;
+    }
+
+    public int getRecentUnitLosses(){
+        return recentUnitLosses;
     }
 
 }

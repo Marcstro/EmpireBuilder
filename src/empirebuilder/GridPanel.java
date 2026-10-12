@@ -1,6 +1,7 @@
 package empirebuilder;
 
 import buildings.*;
+import buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot;
 import entities.effects.Effect;
 import entities.effects.Missile;
 import entities.units.Unit;
@@ -257,6 +258,16 @@ public class GridPanel extends JPanel {
                     // Only draw bottom and right edges to reduce line density
                     g.drawLine(screenX, screenY + pixelSize - 1, screenX + pixelSize - 1, screenY + pixelSize - 1); // bottom
                     g.drawLine(screenX + pixelSize - 1, screenY, screenX + pixelSize - 1, screenY + pixelSize - 1); // right
+                }
+
+                // Draw indicator dot for occupied area-buildings
+                Building building = point.getBuilding();
+                if (building instanceof AreaBuildingSlot abs && abs.getSubBuilding() != null) {
+                    g.setColor(Color.WHITE);
+                    int dotRadius = Math.max(1, pixelSize / 4);
+                    int dotX = screenX + (pixelSize / 2) - dotRadius;
+                    int dotY = screenY + (pixelSize / 2) - dotRadius;
+                    g.fillOval(dotX, dotY, dotRadius * 2, dotRadius * 2);
                 }
             }
         }

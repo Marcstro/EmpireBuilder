@@ -5,7 +5,6 @@ import empirebuilder.Point;
 import entities.Entity;
 import entities.units.AI.AIProfileFactory;
 import entities.units.AI.Node;
-import entities.units.AI.UnitOrder;
 
 public class GoblinArcher extends Unit{
 
@@ -24,7 +23,6 @@ public class GoblinArcher extends Unit{
 
     @Override
     public Node createAISystem() {
-        unitorder= UnitOrder.RAIDING;
         return AIProfileFactory.createRangedAttackerAI();
     }
 
@@ -59,5 +57,4 @@ public class GoblinArcher extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-
 

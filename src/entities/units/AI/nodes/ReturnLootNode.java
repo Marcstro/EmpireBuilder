@@ -9,7 +9,7 @@ import entities.units.Unit;
 
 public class ReturnLootNode implements Node{
 
-    int lootToReturnHome = 1000;
+    int lootToReturnHome = 4000;
     @Override
     public GoalStatus tick(Unit unit, Game game) {
         if (unit.getUnitOrder().equals(UnitOrder.RETURN_LOOT)){

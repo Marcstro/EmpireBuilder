@@ -55,6 +55,12 @@ public class ScoutForDangerNode implements Node {
             return GoalStatus.REJECTED;
         }
 
+        // Scouts exist to bring information home: a sighting is worth reporting even
+        // though this unit's own reaction is to run away from it.
+        if (unit.getUnitOwner() != null) {
+            unit.getUnitOwner().getUnitManagerComponent().reportHostileUnit();
+        }
+
         if (isCurrentEscapeStillValid(unit, threatScan.repulsionX, threatScan.repulsionY)) {
             return GoalStatus.REJECTED;
         }

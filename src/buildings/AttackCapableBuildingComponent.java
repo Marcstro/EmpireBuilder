@@ -100,6 +100,10 @@ public class AttackCapableBuildingComponent {
         this.attackTarget = null;
     }
 
+    public boolean hasAttackTarget(){
+        return attackTarget != null && attackTarget.isAlive();
+    }
+
     public Building getBuilding() {
         return building;
     }

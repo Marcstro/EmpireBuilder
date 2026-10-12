@@ -34,6 +34,7 @@ public class AIProfileFactory {
                 new ReturnLootNode(),
                 new SearchForEnemyTargetNode(),
                 combatNode,
+                new AskOwnerForInstructionsNode(),
                 new StatefulSelector(60,
                     new RaidAreaNode(),
                     new WalkTowardsPointTargetNode(),
@@ -69,9 +70,11 @@ public class AIProfileFactory {
         return new ReactiveSelector(
                 new ScoutForDangerNode(),
                 new FleeNode(),
-                new ScoutForEnemyBuildingNode(),
+                new LookForEnemyBuildingNode(),
+                new ReportEnemyBuildingNode(),
                 new StatefulSelector(60,
                     new WalkTowardsPointTargetNode(),
+                    new WanderToRandomPointNode(),
                     new IdleNode()
                 )
         );

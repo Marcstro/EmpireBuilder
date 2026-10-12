@@ -1,56 +1,52 @@
 package buildings.ai;
 
 import buildings.Building;
+import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import empirebuilder.Game;
 
 /**
- * Component that manages a building's AI state and execution.
- * Ticks every N game ticks (e.g., 10), not every tick.
+ * BuildingAI links to a custom created AI for a building and handles the
+ * evaluation and ticking, but actual AI lies in the aiProfile
  */
 public class BuildingAI {
-    
-    private BuildingAIProfile profile;
-    private BuildingAIState currentState;
-    private int ticksSinceLastEvaluation;
-    private final int evaluationInterval; // e.g., 10 ticks = ~167ms at 60 TPS
-    
+
+    private final BuildingAIProfile profile;
+    // how often the building re-evaluates what to do, this is in building ticks (1/10 normal ticks)
+    public final int evaluationInterval;
+    public int ticksSinceLastEvaluation;
+
+    private Class<? extends SubBuilding> subBuildingToBuildNext = null;
+
     public BuildingAI(BuildingAIProfile profile, int evaluationInterval) {
         this.profile = profile;
-        this.currentState = BuildingAIState.IDLE;
-        this.ticksSinceLastEvaluation = 0;
         this.evaluationInterval = evaluationInterval;
+        this.ticksSinceLastEvaluation = (int) (Math.random() * evaluationInterval);
     }
-    
-    /**
-     * Called every game tick. Only evaluates/executes every N ticks.
-     */
+
     public void tick(Building building, Game game) {
         ticksSinceLastEvaluation++;
-        
+
         if (ticksSinceLastEvaluation >= evaluationInterval) {
             ticksSinceLastEvaluation = 0;
-            
-            // Evaluate: what state should we be in?
-            BuildingAIState newState = profile.evaluate(building, game);
-            
-            // State transition hooks
-            if (newState != currentState) {
-                profile.onStateExit(building, currentState);
-                profile.onStateEnter(building, newState);
-                currentState = newState;
-            }
+            profile.evaluate(building, game);
         }
-        
-        // Execute: perform actions for current state every tick
-        // (or you could gate this too if actions are expensive)
-        profile.execute(building, game, currentState);
+
+        profile.execute(building, game);
     }
-    
-    public BuildingAIState getCurrentState() {
-        return currentState;
+
+    public Class<? extends SubBuilding> getSubBuildingToBuildNext() {
+        return subBuildingToBuildNext;
     }
-    
-    public void setCurrentState(BuildingAIState state) {
-        this.currentState = state;
+
+    public void setSubBuildingToBuildNext(Class<? extends SubBuilding> subBuildingClass) {
+        this.subBuildingToBuildNext = subBuildingClass;
+    }
+
+    public void clearSubBuildingToBuildNext() {
+        this.subBuildingToBuildNext = null;
+    }
+
+    public BuildingAIProfile getProfile() {
+        return profile;
     }
 }

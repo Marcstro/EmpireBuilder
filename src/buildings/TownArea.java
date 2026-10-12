@@ -1,12 +1,10 @@
 package buildings;
 
 import LandTypes.LandType;
-import empirebuilder.Game;
+import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import empirebuilder.Point;
 
-import java.awt.*;
-
-public class TownArea extends Building{
+public class TownArea extends AreaBuilding {
     
     Town townCenter;
 
@@ -21,21 +19,38 @@ public class TownArea extends Building{
     }
 
     @Override
-    public void tick(Game game) {
-
-    }
-
-    public String getImageName(){
+    public String getImageName() {
         return "town";
     }
 
     @Override
     public String getInfo() {
-        return "TownArea{ TownCenter=" + townCenter.getPoint().getPositionString()
-                + "}";
+        StringBuilder info = new StringBuilder("TownArea{ TownCenter=")
+                .append(townCenter.getPoint().getPositionString())
+                .append(", isAlive=").append(isAlive())
+                .append(", health=").append(String.format("%.1f", getHealth()))
+                .append(", healthMax=").append(DEFAULT_BUILDING_HEALTH);
+        appendSubBuildingInfo(info);
+        info.append(" }");
+        return info.toString();
     }
 
     public Town getTownCenter() {
+        return townCenter;
+    }
+
+    @Override
+    protected void registerSubBuilding(SubBuilding subBuilding) {
+        townCenter.addSubBuilding(subBuilding);
+    }
+
+    @Override
+    protected void unregisterSubBuilding(SubBuilding subBuilding) {
+        townCenter.removeSubBuilding(subBuilding);
+    }
+
+    @Override
+    public Building getMainOwner() {
         return townCenter;
     }
 

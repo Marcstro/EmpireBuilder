@@ -1,95 +1,53 @@
 package buildings;
 
 import LandTypes.LandType;
+import buildings.ai.profiles.EvilSideBaseAI;
+import buildings.subBuildings.SimpleGoblinScoutHut;
 import empirebuilder.Game;
 import empirebuilder.Point;
 import empirebuilder.TheDarkSide;
 import entities.units.*;
-import entities.units.AI.UnitOrder;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class EvilSideBase extends Building implements UnitOwner {
 
-    int respawnBaseCooldown = 5; // TODO change
-    int respawnCooldownRemaining;
-    int unitsToSpawn;
+    public static final int EVIL_FACTION_ID = 2;
     final static int startingHealth = 300;
     TheDarkSide theDarkSide;
-    final int dragonCost = 10000;
     List<EvilSideBaseArea> evilSideBaseAreas;
-
-    final static int MAX_AMOUNT_OF_SCOUTS = 10;
 
     private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
 
     public EvilSideBase(Point point, TheDarkSide theDarkSide) {
         super(point, LandType.getBaseColor(LandType.RUINED), startingHealth);
-        respawnCooldownRemaining = respawnBaseCooldown;
-        unitsToSpawn = 6;
         this.theDarkSide = theDarkSide;
         evilSideBaseAreas = new ArrayList<>();
+        setFactionId(EVIL_FACTION_ID);
+        initBuildingAI();
+        setGold(10000);
     }
 
-
-    public void spawnUnits(Game game){
-        //calculate suitable amount of units
-
-        if (getGold() > dragonCost){
-            List<Point> dragonPoint = game.findGroupSpawnPoints(getPoint().getX(), getPoint().getY(), 1);
-            Dragon dragon = new Dragon(dragonPoint.getFirst().getX(), dragonPoint.getFirst().getY());
-            dragon.setUnitOwner(this);
-            unitManager.addUnit(dragon);
-            game.spawnUnitAt(dragon, dragonPoint.getFirst());
-            dragon.setLongtermTarget(theDarkSide.getTargetLocation());
-            dragon.setUnitOrder(UnitOrder.RAIDING);
-            addGold(-dragonCost);
-        }
-
-        int amountOfOrcs = 1;//ThreadLocalRandom.current().nextInt(2, 5);
-        int amountOfGoblins = 1;//ThreadLocalRandom.current().nextInt(2, 5);
-
-        List<Point> orcPoints = game.findGroupSpawnPoints(getPoint().getX(), getPoint().getY(), amountOfOrcs);
-        List<Point> goblinPoints = game.findGroupSpawnPoints(getPoint().getX(), getPoint().getY(), amountOfGoblins);
-
-        for (Point point: orcPoints){
-            Orc orc = new Orc(point.getX(), point.getY());
-            orc.setUnitOwner(this);
-            unitManager.addUnit(orc);
-            game.spawnUnitAt(orc, point);
-            orc.setLongtermTarget(theDarkSide.getTargetLocation());
-            orc.setUnitOrder(UnitOrder.RAIDING);
-        }
-        for (Point point: goblinPoints){
-            GoblinArcher goblinArcher = new GoblinArcher(point.getX(), point.getY());
-            goblinArcher.setUnitOwner(this);
-            unitManager.addUnit(goblinArcher);
-            game.spawnUnitAt(goblinArcher, point);
-            goblinArcher.setLongtermTarget(theDarkSide.getTargetLocation());
-            goblinArcher.setUnitOrder(UnitOrder.RAIDING);
+    /** Call this after all areas have been added to bootstrap with a free SimpleGoblinScoutHut. */
+    public void bootstrapWithScoutHut(empirebuilder.Game game) {
+        if (!evilSideBaseAreas.isEmpty()) {
+            int randomIndex = (int) (Math.random() * evilSideBaseAreas.size());
+            EvilSideBaseArea bootstrapArea = evilSideBaseAreas.get(randomIndex);
+            if (bootstrapArea.getSubBuilding() == null) {
+                bootstrapArea.setSubBuilding(new SimpleGoblinScoutHut(bootstrapArea), game);
+            }
         }
     }
 
     @Override
     public void tick(Game game) {
-        if (respawnCooldownRemaining > 0) {
-            respawnCooldownRemaining--;
-        } else {
-            if (theDarkSide.isDarkSideActivated() && getUnitManagerComponent().getUnits().size() < 
-                    MAX_AMOUNT_OF_SCOUTS
-            ) {
-                spawnUnits(game);
-                respawnCooldownRemaining = respawnBaseCooldown;
-            }
-        }
+        tickBuildingAI(game);
+        tickAreaBuildingSubBuildings(game);
+    }
 
-        //future site for changing the instructions for owned units
-        /*for (Unit unit: unitManager.getUnits()){
-            // nothing here for now, could do
-            //unit.tick(game);
-        }*/
+    private void tickAreaBuildingSubBuildings(Game game) {
+        tickAreaBuildingsWithMaintenance(evilSideBaseAreas, game);
     }
 
     @Override
@@ -99,12 +57,8 @@ public class EvilSideBase extends Building implements UnitOwner {
 
     @Override
     public Point getInstructions(Unit unit, Game game) {
-        if (unit.getLoot() > 1000){
-            unit.setUnitOrder(UnitOrder.RETURN_LOOT);
-            return getPoint();
-        }
-        unit.setUnitOrder(UnitOrder.RAIDING);
-        return theDarkSide.getTargetLocation();
+        var ai = (EvilSideBaseAI) getBuildingAI().getProfile();
+        return ai.getUnitInstructions(this, unit);
     }
 
     public List<EvilSideBaseArea> getEvilSideBaseAreas() {
@@ -130,18 +84,19 @@ public class EvilSideBase extends Building implements UnitOwner {
 
     @Override
     public String getInfo() {
+        long scouts = unitManager.getUnits().stream().filter(u -> u instanceof GoblinScout).count();
         long orcs = unitManager.getUnits().stream().filter(u -> u instanceof Orc).count();
         long goblins = unitManager.getUnits().stream().filter(u -> u instanceof GoblinArcher).count();
         long dragons = unitManager.getUnits().stream().filter(u -> u instanceof Dragon).count();
+        double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
         return "{EvilSideBase: " + getId() +
                 ", health: " + getHealth() + "/" + startingHealth +
                 ", isAlive=" + isAlive() +
                 ", gold=" + String.format("%.0f", getGold()) +
-                ", units=" + unitManager.getUnits().size() + "/" + MAX_AMOUNT_OF_SCOUTS +
-                " (orcs=" + orcs + ", goblins=" + goblins + ", dragons=" + dragons + ")" +
-                ", spawnCooldown=" + respawnCooldownRemaining + "/" + respawnBaseCooldown +
+                ", units=" + unitManager.getUnits().size() +
+                " (scouts=" + scouts + ", orcs=" + orcs + ", goblins=" + goblins + ", dragons=" + dragons + ")" +
+                ", subBuilding maintenance cost=" + String.format("%.2f", totalMaintenanceCost) +
                 ", darkSideActive=" + theDarkSide.isDarkSideActivated() +
-                ", target=" + (theDarkSide.getTargetLocation() != null ? theDarkSide.getTargetLocation().getPositionString() : "none") +
                 "}";
     }
 }

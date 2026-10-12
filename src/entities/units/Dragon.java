@@ -5,7 +5,6 @@ import empirebuilder.Point;
 import entities.Entity;
 import entities.units.AI.AIProfileFactory;
 import entities.units.AI.Node;
-import entities.units.AI.UnitOrder;
 
 public class Dragon extends Unit{
 
@@ -24,7 +23,6 @@ public class Dragon extends Unit{
 
     @Override
     public Node createAISystem() {
-        unitorder= UnitOrder.RAIDING;
         return AIProfileFactory.createDestructiveAttackerAI();
     }
 
@@ -59,4 +57,3 @@ public class Dragon extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-

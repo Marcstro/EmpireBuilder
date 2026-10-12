@@ -8,12 +8,10 @@ import java.util.LinkedList;
 
 public abstract class VillageOwningBuilding extends FarmOwningBuilding{
 
-    static int animalCost = 100000;
-
     LinkedList<Village> villages;
 
     public void attemptToSpawnAnimal(Game game){
-        while (gold >= animalCost && !villages.isEmpty()){
+        while (!villages.isEmpty()){
             Village villageWithRoom = null;
             for (Village village : villages){
                 if (village.hasRoomForAdditionalAnimals()){
@@ -21,17 +19,10 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
                     break;
                 }
             }
-
             if (villageWithRoom == null){
                 break;
             }
-
-            int animalsToAdd = Village.MAX_ANIMAL_POPULATION - villageWithRoom.animalPopulation;
-            for (int animal = 0; animal < animalsToAdd; animal++){
-                villageWithRoom.addAnimal(game);
-            }
-
-            setGold(getGold()-animalCost);
+            villageWithRoom.addAnimals(game);
         }
     }
 
