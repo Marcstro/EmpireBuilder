@@ -1,7 +1,7 @@
 package empirebuilder;
 
-import buildings.EvilSideBase;
-import buildings.EvilSideBaseArea;
+import buildings.EvilBase;
+import buildings.EvilBaseArea;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,36 +9,37 @@ import java.util.List;
 public class TheDarkSide {
 
     Game game;
-    List<EvilSideBase> evilSideBases;
+    List<EvilBase> evilBases;
 
     boolean isDarkSideActivated;
+    private boolean evilSideSpawningEnabled = true;
     CivilizationDevelopmentLevel civilizationDevelopmentLevel;
 
-    int evilSideBaseCreationCooldown = 20;
+    int evilBaseCreationCooldown = 20;
 
     public TheDarkSide(Game game) {
         this.game = game;
         isDarkSideActivated = false;
-        evilSideBases =  new ArrayList<EvilSideBase>();
+        evilBases =  new ArrayList<EvilBase>();
     }
 
     public void tick(Game game){
 
         //test methods
         // this is purely for testing combat. it continously spawns troops on opposites sides that target and fight eachother
-        //game.spawnTwoOppositeFightingGroups();
+        //game.getTestFunctions().spawnTwoOppositeFightingGroups();
 
         // this spawns a single troop that can be used to see if pathfinding around terrain works
-        //game.spawnOneTroopForPathFinding();
+        //game.getTestFunctions().spawnOneTroopForPathFinding();
 
-        // TODO implement for more than 1 evilsidebase to be spawned, after x time
+        // TODO implement for more than 1 evilbase to be spawned, after x time
         // should have a limit tho.
-        if (evilSideBases.isEmpty() && isDarkSideActivated) {
-            if (evilSideBaseCreationCooldown <= 0) {
-                createNewEviLSideBase(game);
-                evilSideBaseCreationCooldown = 200;
+        if (evilSideSpawningEnabled && evilBases.isEmpty() && isDarkSideActivated) {
+            if (evilBaseCreationCooldown <= 0) {
+                createNewEvilBase(game);
+                evilBaseCreationCooldown = 200;
             } else {
-                evilSideBaseCreationCooldown--;
+                evilBaseCreationCooldown--;
             }
         }
 
@@ -54,10 +55,10 @@ public class TheDarkSide {
         }
     }
 
-    public void createNewEviLSideBase(Game game){
+    public void createNewEvilBase(Game game){
         Point point = game.findPositionForEvilBase();
-        EvilSideBase evilSideBase = game.createEvilSideBase(point, this);
-        evilSideBases.add(evilSideBase);
+        EvilBase evilBase = game.createEvilBase(point, this);
+        evilBases.add(evilBase);
         System.out.println("Created evil side lair at " + point.getPositionString());
     }
 
@@ -71,5 +72,13 @@ public class TheDarkSide {
 
     public boolean isDarkSideActivated(){
         return isDarkSideActivated;
+    }
+
+    public boolean isEvilSideSpawningEnabled() {
+        return evilSideSpawningEnabled;
+    }
+
+    public void setEvilSideSpawningEnabled(boolean enabled) {
+        evilSideSpawningEnabled = enabled;
     }
 }

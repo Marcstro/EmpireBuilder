@@ -2,10 +2,10 @@ package buildings.ai;
 
 import buildings.Building;
 import buildings.City;
-import buildings.EvilSideBase;
+import buildings.EvilBase;
 import buildings.Town;
 import buildings.ai.profiles.CityAI;
-import buildings.ai.profiles.EvilSideBaseAI;
+import buildings.ai.profiles.EvilBaseAI;
 import buildings.ai.profiles.TownAI;
 
 public class BuildingAIFactory {
@@ -19,8 +19,8 @@ public class BuildingAIFactory {
         if (building instanceof City) {
             return new BuildingAI(new CityAI(), DEFAULT_BUILDINGAI_INTERVAL);
         }
-        if (building instanceof EvilSideBase) {
-            return new BuildingAI(new EvilSideBaseAI(), DEFAULT_BUILDINGAI_INTERVAL);
+        if (building instanceof EvilBase) {
+            return new BuildingAI(new EvilBaseAI(), DEFAULT_BUILDINGAI_INTERVAL);
         }
         System.out.println("this shouldnt happen, building: " + building.getClass().getSimpleName() + " has no AI");
         // Villages, Farms and area-buildings have no AI

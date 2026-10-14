@@ -4,11 +4,13 @@ public class Engine {
     private volatile boolean running = false;
     private Thread gameThread;
     private javax.swing.Timer renderTimer;
+    private volatile Runnable afterTickAction;
     GameManager gameManager;
     private int tickCounter;
     
-    public static double REFRESH_RATE = 0.05;
-    private static final double MIN_REFRESH_RATE = 0.001;
+    public static volatile double REFRESH_RATE = 0.05;
+    public static final double MIN_REFRESH_RATE = 0.001;
+    public static final double QUICKSTART_REFRESH_RATE = 0.0001;
     private static final double MAX_REFRESH_RATE = 5.0;
 
     Engine(GameManager gameManager) {
@@ -27,7 +29,10 @@ public class Engine {
             while (running) {
                 tick();
                 try {
-                    Thread.sleep((int)(REFRESH_RATE * 1000));
+                    long refreshNanos = (long) (REFRESH_RATE * 1_000_000_000L);
+                    long refreshMillis = refreshNanos / 1_000_000L;
+                    int remainingNanos = (int) (refreshNanos % 1_000_000L);
+                    Thread.sleep(refreshMillis, remainingNanos);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -43,6 +48,7 @@ public class Engine {
     }
 
     public void stop() {
+        afterTickAction = null;
         if (!running) {
             System.out.println("Engine is already stopped!");
             return;
@@ -96,6 +102,11 @@ public class Engine {
                 gameManager.getGame().getDarkside().updateActiveStatus(civilizationDevelopmentLevel);
             }
         }
+
+        Runnable action = afterTickAction;
+        if (action != null) {
+            action.run();
+        }
     }
 
     public boolean isRunning() {
@@ -116,6 +127,18 @@ public class Engine {
 
     public double getTickRate() {
         return REFRESH_RATE;
+    }
+
+    public void setTickRate(double refreshRate) {
+        if (refreshRate <= 0 || refreshRate > MAX_REFRESH_RATE) {
+            throw new IllegalArgumentException("Tick rate must be between "
+                    + "0 and " + MAX_REFRESH_RATE + " seconds.");
+        }
+        REFRESH_RATE = refreshRate;
+    }
+
+    public void setAfterTickAction(Runnable action) {
+        afterTickAction = action;
     }
 
     public int getTickCounter() {

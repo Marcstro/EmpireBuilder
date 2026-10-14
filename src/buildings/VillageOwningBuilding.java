@@ -11,18 +11,11 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
     LinkedList<Village> villages;
 
     public void attemptToSpawnAnimal(Game game){
-        while (!villages.isEmpty()){
-            Village villageWithRoom = null;
-            for (Village village : villages){
-                if (village.hasRoomForAdditionalAnimals()){
-                    villageWithRoom = village;
-                    break;
-                }
+        for (Village village : villages){
+            if (village.hasRoomForAdditionalAnimals()){
+                village.addAnimals(game);
+                return;
             }
-            if (villageWithRoom == null){
-                break;
-            }
-            villageWithRoom.addAnimals(game);
         }
     }
 

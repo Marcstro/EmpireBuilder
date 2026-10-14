@@ -1,8 +1,8 @@
 package buildings.ai.profiles;
 
 import buildings.Building;
-import buildings.EvilSideBase;
-import buildings.EvilSideBaseArea;
+import buildings.EvilBase;
+import buildings.EvilBaseArea;
 import buildings.ai.BuildingAI;
 import buildings.ai.BuildingAIProfile;
 import buildings.ai.EvilSideBuildingState;
@@ -14,15 +14,15 @@ import empirebuilder.Point;
 import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 
-/** AI for EvilSideBase (raider bases). Owns state and building tech tree independently. */
-public class EvilSideBaseAI extends SubBuildingAIProfile {
+/** AI for EvilBase (raider bases). Owns state and building tech tree independently. */
+public class EvilBaseAI extends SubBuildingAIProfile {
 
     private EvilSideBuildingState state = EvilSideBuildingState.SCOUTING;
     private empirebuilder.Point currentRaidingTarget = null;
 
     @Override
     public void evaluate(Building building, Game game) {
-        if (!(building instanceof EvilSideBase base)) {
+        if (!(building instanceof EvilBase base)) {
             return;
         }
         updateRaidingTarget(base);
@@ -31,7 +31,7 @@ public class EvilSideBaseAI extends SubBuildingAIProfile {
 
     @Override
     public void determineWhatToBuildNext(Building building, Game game, BuildingAI ai) {
-        if (!(building instanceof EvilSideBase base)) {
+        if (!(building instanceof EvilBase base)) {
             return;
         }
 
@@ -71,7 +71,7 @@ public class EvilSideBaseAI extends SubBuildingAIProfile {
 
     @Override
     public void execute(Building building, Game game) {
-        if (!(building instanceof EvilSideBase base)) {
+        if (!(building instanceof EvilBase base)) {
             return;
         }
 
@@ -82,8 +82,8 @@ public class EvilSideBaseAI extends SubBuildingAIProfile {
             return;
         }
 
-        EvilSideBaseArea emptySlot = null;
-        for (EvilSideBaseArea area : base.getEvilSideBaseAreas()) {
+        EvilBaseArea emptySlot = null;
+        for (EvilBaseArea area : base.getEvilBaseAreas()) {
             if (area.isAlive() && area.getSubBuilding() == null) {
                 emptySlot = area;
                 break;
@@ -95,18 +95,22 @@ public class EvilSideBaseAI extends SubBuildingAIProfile {
         }
 
         SubBuilding newBuilding = SubBuildingFactory.create(nextBuilding, emptySlot);
-        if (newBuilding == null || base.getGold() < newBuilding.getUpfrontCost()) {
+        if (newBuilding == null) {
+            return;
+        }
+        double upfrontCost = newBuilding.getUpfrontCost();
+        if (base.getGold() < upfrontCost) {
             return;
         }
 
         emptySlot.setSubBuilding(newBuilding, game);
-        base.addGold(-newBuilding.getUpfrontCost());
+        base.addGold(-upfrontCost);
 
         ai.clearSubBuildingToBuildNext();
         ai.ticksSinceLastEvaluation = ai.evaluationInterval;
     }
 
-    private void updateRaidingTarget(EvilSideBase base) {
+    private void updateRaidingTarget(EvilBase base) {
         Point previousTarget = currentRaidingTarget;
         currentRaidingTarget = null;
 
@@ -137,7 +141,7 @@ public class EvilSideBaseAI extends SubBuildingAIProfile {
         }
     }
 
-    private void awakenWaitingUnits(EvilSideBase base) {
+    private void awakenWaitingUnits(EvilBase base) {
         for (Unit unit : base.getUnitManagerComponent().getUnits()) {
             if (!unit.isAlive()) {
                 continue;
@@ -154,7 +158,7 @@ public class EvilSideBaseAI extends SubBuildingAIProfile {
         return currentRaidingTarget;
     }
 
-    public Point getUnitInstructions(EvilSideBase base, Unit unit) {
+    public Point getUnitInstructions(EvilBase base, Unit unit) {
         if (currentRaidingTarget != null) {
             unit.setUnitOrder(UnitOrder.RAIDING);
             return currentRaidingTarget;

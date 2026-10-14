@@ -130,12 +130,16 @@ public class SettlementAI extends SubBuildingAIProfile {
         }
 
         SubBuilding newBuilding = SubBuildingFactory.create(nextBuilding, emptySlot);
-        if (newBuilding == null || building.getGold() < newBuilding.getUpfrontCost()) {
+        if (newBuilding == null) {
+            return;
+        }
+        double upfrontCost = newBuilding.getUpfrontCost();
+        if (building.getGold() < upfrontCost) {
             return;
         }
 
         emptySlot.setSubBuilding(newBuilding, game);
-        building.addGold(-newBuilding.getUpfrontCost());
+        building.addGold(-upfrontCost);
 
         ai.clearSubBuildingToBuildNext();
         ai.ticksSinceLastEvaluation = ai.evaluationInterval;

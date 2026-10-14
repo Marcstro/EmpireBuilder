@@ -58,8 +58,8 @@ public class SubBuildingRequirement {
                     count++;
                 }
             }
-        } else if (building instanceof buildings.EvilSideBase base) {
-            for (var area : base.getEvilSideBaseAreas()) {
+        } else if (building instanceof buildings.EvilBase base) {
+            for (var area : base.getEvilBaseAreas()) {
                 SubBuilding sub = area.getSubBuilding();
                 if (sub != null && type.isInstance(sub)) {
                     count++;

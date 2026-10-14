@@ -98,8 +98,8 @@ public abstract class Building extends Entity {
             buildings.subBuildings.subBuildingFunctions.SubBuilding subBuilding = area.getSubBuilding();
             if (subBuilding != null) {
                 double maintenanceCost = subBuilding.getMaintenanceCost();
-                if (this.getGold() < maintenanceCost) {
-                    break;
+                if (maintenanceCost > 0 && this.getGold() < maintenanceCost) {
+                    continue;
                 }
                 subBuilding.tick(game);
                 this.addGold(-maintenanceCost);

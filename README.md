@@ -11,12 +11,12 @@ Todo:
 - Make farmAnimal-owning villages get the possibility to handle farm animals, instead of just giving them the animals
 - UnitOwningTroops need a "can units reach a Point from my location"? that is checked before sending troops somewhere, also handle what to do if its a non possible destination
 - change plundercooldown in mapcell to be a number ticking down instead of a boolean
-- EvilSideBase can't be informed of nearby units, since only FarmOwningBuildings are informed
+- EvilBase can't be informed of nearby units, since only FarmOwningBuildings are informed
 - function detectAllyNeedsHelp() needs developing, buildings should call other buildings asking for help when possible
 - only up to 3 units should be idling outside of a UnitOwner, rest should jump into "garrison" where they away deployment
 - Regarding garrison, have some sort of "visualisation" how many units a building have in garrison. like 10^x, display x stars
-- evilSideBase should own all of its points
-- make destruction of evilSideBase safe, current will bug if more than 1 exist
+- evilBase should own all of its points
+- make destruction of evilBase safe, current will bug if more than 1 exist
 - Shooting towers (subbuildings) should not fetch stats from owning building, also new types of shooting towers
 
 Nearest TODOs:

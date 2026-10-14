@@ -2,8 +2,8 @@ package empirebuilder;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import buildingsTools.TerrainGeneratorType;
 
 public class ButtonPanel extends JPanel {
@@ -38,6 +38,8 @@ public class ButtonPanel extends JPanel {
 
         JCheckBox displayOwnershipLines = new JCheckBox("Display lines",
                 gameManager.getGridPanel().isShowLines());
+        JCheckBox enableDarksideCheck = new JCheckBox("Enable darkside",
+                gameManager.getGame().getDarkside().isEvilSideSpawningEnabled());
 
         // Camera movements
         JPanel cameraControlPanel = new JPanel();
@@ -67,50 +69,82 @@ public class ButtonPanel extends JPanel {
         zoomDisplayPanel.setLayout(new BorderLayout());
         zoomDisplayPanel.setBorder(BorderFactory.createTitledBorder("Zoom"));
         zoomDisplayPanel.add(zoomValueLabel, BorderLayout.CENTER);
+        Dimension zoomPanelSize = new Dimension(180, 45);
+        zoomDisplayPanel.setPreferredSize(zoomPanelSize);
+        zoomDisplayPanel.setMaximumSize(zoomPanelSize);
+        zoomDisplayPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         JPanel cameraWrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         cameraWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
         cameraWrapper.add(cameraControlPanel);
-        cameraWrapper.add(zoomDisplayPanel);
+        cameraWrapper.setMaximumSize(new Dimension(180, cameraWrapper.getPreferredSize().height));
 
-        JButton button1 = new JButton("Start");
-        JButton button2 = new JButton("Stop");
-        JButton button3 = new JButton("Create random farm");
-        JButton button4 = new JButton("create 20 random farms");
-        JButton button5 = new JButton("experiment 2");
-        JButton button6 = new JButton("calculate amount of farms");
-        JButton button7 = new JButton("test function time"); // currently has no usage
-        JButton button8 = new JButton("create 6 farms");
-        JButton button9 = new JButton("Create farm at point");
-        JButton button10 = new JButton("Create complete village at point");
-        JButton button15 = new JButton("add ALL farms");
-        JButton button11 = new JButton("Print Map info");
-        JButton button12 = new JButton("check village domains");
-        JButton button13 = new JButton("Create path of water");
-        JButton button14 = new JButton("Recreate the map");
-        JButton button16 = new JButton("Current test");
-        JButton button17 = new JButton("Timing test");
-        JButton button18 = new JButton("SpawnOrc");
-        JButton button19 = new JButton("current test2");
+        JButton startButton = new JButton("Start");
+        JButton stopButton = new JButton("Stop");
+        JButton quickstartButton = new JButton("Quickstart");
+        JButton printMapInfoButton = new JButton("Print Map info");
+        JButton recreateMapButton = new JButton("Recreate the map");
 
+        Map<String, Runnable> testActions = new LinkedHashMap<>();
+        testActions.put("NONE", () -> {});
+        testActions.put("Create random farm", () -> gameManager.getGame().getTestFunctions().createFarmAtRandomPoint());
+        testActions.put("Create 20 random farms", () -> gameManager.getGame().getTestFunctions().create20FarmAtRandomPoint());
+        testActions.put("Experiment 2", () -> gameManager.getGame().getTestFunctions().experiment2());
+        testActions.put("Calculate amount of farms", () -> gameManager.getGame().getTestFunctions().experiment3());
+        testActions.put("Test function time", () -> gameManager.getGame().getTestFunctions().experiment3());
+        testActions.put("Create 6 farms", () -> gameManager.getGame().getTestFunctions().experiment5());
+        testActions.put("Create 13 farms in a circle", () ->
+                gameManager.getGame().getTestFunctions().create13FarmsInCircleAtRandomPoint());
+        testActions.put("Create farm at point", () -> {
+            Point point = getSelectedPointOrNotify();
+            if (point != null) {
+                gameManager.getGame().getTestFunctions().createFarmAtPoint(point.getX(), point.getY());
+            }
+        });
+        testActions.put("Create complete village at point", () -> {
+            Point point = getSelectedPointOrNotify();
+            if (point != null) {
+                gameManager.getGame().getTestFunctions().createCompleteVillageAt(point.getX(), point.getY());
+            }
+        });
+        testActions.put("Add ALL farms", () -> gameManager.getGame().getTestFunctions().experiment15());
+        testActions.put("Check village domains", () -> gameManager.getGame().getTestFunctions().checkVillageDomain());
+        testActions.put("Create path of water", () -> gameManager.getGame().getTestFunctions().createWaterPath());
+        testActions.put("Current test", () -> gameManager.getGame().getTestFunctions().currentExperiment());
+        testActions.put("Timing test", () -> gameManager.getGame().getTestFunctions().experimentTimeMethod());
+        testActions.put("Spawn Orc", () -> gameManager.getGame().getTestFunctions().spawnOrcRandomlyTest());
+        testActions.put("Current test 2", () -> gameManager.getGame().getTestFunctions().currentExperiment2());
 
-        //set sizes and dimensions
+        JComboBox<String> testDropdown =
+                new JComboBox<>(testActions.keySet().toArray(new String[0]));
+        JButton runTestButton = new JButton("Run test");
 
-        ArrayList<JButton> buttons = new ArrayList<>(Arrays.asList(button1, button2, button3, button4, button5, button6,
-                button7, button8, button9, button10,button15, button11, button12, button13, button14, button16, button17, button18, button19));
-        buttons.forEach(button -> {
+        // Set sizes and dimensions.
+        JButton[] controlButtons = {
+                startButton, stopButton, quickstartButton, printMapInfoButton, recreateMapButton, runTestButton
+        };
+        for (JButton button : controlButtons) {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
             button.setAlignmentX(Component.LEFT_ALIGNMENT);
-        });
+        }
 
         displayBuildingImagesCheck.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
-
         generateTerrainCheck.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
         displayOwnershipLines.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
-
+        enableDarksideCheck.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
         terrainTypeDropdown.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
         terrainTypeDropdown.setMaximumSize(new Dimension(180, BUTTONHEIGHT));
         terrainTypeDropdown.setAlignmentX(Component.LEFT_ALIGNMENT);
+        testDropdown.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
+        testDropdown.setMaximumSize(new Dimension(180, BUTTONHEIGHT));
+        testDropdown.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JPanel testPanel = new JPanel();
+        testPanel.setLayout(new BoxLayout(testPanel, BoxLayout.Y_AXIS));
+        testPanel.setBorder(BorderFactory.createTitledBorder("Tests"));
+        testPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        testPanel.add(testDropdown);
+        testPanel.add(runTestButton);
 
         //add things
         
@@ -120,29 +154,18 @@ public class ButtonPanel extends JPanel {
         JScrollPane scrollPane = new JScrollPane(buttonArea);
         add(scrollPane, BorderLayout.CENTER);
 
-        buttonArea.add(button1);
-        buttonArea.add(button2);
-        buttonArea.add(button3);
-        buttonArea.add(button4);
-        buttonArea.add(button5);
-        buttonArea.add(button6);
-        buttonArea.add(button7);
-        buttonArea.add(button8);
-        buttonArea.add(button9);  
-        buttonArea.add(button10);
-        buttonArea.add(button15);
-        buttonArea.add(button11);
-        buttonArea.add(button12);
-        buttonArea.add(button13);
-        buttonArea.add(button14);
-        buttonArea.add(button16);
-        buttonArea.add(button17);
-        buttonArea.add(button18);
-        buttonArea.add(button19);
+        buttonArea.add(startButton);
+        buttonArea.add(stopButton);
+        buttonArea.add(quickstartButton);
+        buttonArea.add(printMapInfoButton);
+        buttonArea.add(recreateMapButton);
+        buttonArea.add(testPanel);
         buttonArea.add(displayOwnershipLines);
+        buttonArea.add(enableDarksideCheck);
         buttonArea.add(displayBuildingImagesCheck);
         buttonArea.add(generateTerrainCheck);
         buttonArea.add(terrainTypeDropdown);
+        buttonArea.add(zoomDisplayPanel);
         buttonArea.add(cameraWrapper);
 
         // TODO move these to appropriete parts
@@ -158,7 +181,10 @@ public class ButtonPanel extends JPanel {
         tickCounterLabel = new TextField(String.valueOf(gameManager.getEngine().getTickCounter()));
         tickCounterLabel.setFocusable(false);
 
-        tickCounterTimer = new Timer(250, e -> updateTickCounterDisplay());
+        tickCounterTimer = new Timer(250, e -> {
+            updateTickCounterDisplay();
+            updateTickRateDisplay();
+        });
         tickCounterTimer.start();
 
         JPanel speedControlPanel = new JPanel(new FlowLayout());
@@ -174,32 +200,22 @@ public class ButtonPanel extends JPanel {
         tickRatePanel.add(tickCounterLabel);
         tickRatePanel.add(speedControlPanel);
 
-        add(buttonArea, BorderLayout.CENTER);
         add(tickRatePanel, BorderLayout.SOUTH);
 
         // listeners
 
-        button1.addActionListener(e -> gameManager.getEngine().start());
-        button2.addActionListener(e -> gameManager.getEngine().stop());
-        button3.addActionListener(e -> gameManager.getGame().createFarmAtRandomPoint());
-        button4.addActionListener(e -> gameManager.getGame().create20FarmAtRandomPoint());
-        button5.addActionListener(e -> gameManager.getGame().experiment2());
-        button6.addActionListener(e -> gameManager.getGame().experiment3());
-        button7.addActionListener(e -> gameManager.getGame().experiment3()); // can r
-        button8.addActionListener(e -> gameManager.getGame().experiment5());
-        button9.addActionListener(e -> gameManager.getGame().createFarmAtPoint(
-                gameManager.getGridPanel().getSelectedPoint().getX(), gameManager.getGridPanel().getSelectedPoint().getY()));
-        button10.addActionListener(e -> gameManager.getGame().createCompleteVillageAt(
-            gameManager.getGridPanel().getSelectedPoint().getX(), gameManager.getGridPanel().getSelectedPoint().getY()));
-        button15.addActionListener(e -> gameManager.getGame().experiment15());
-        button11.addActionListener(e -> gameManager.getGame().printMapInfo());
-        button12.addActionListener(e -> gameManager.getGame().checkVillageDomain());
-        button13.addActionListener(e -> gameManager.getGame().createWaterPath());
-        button14.addActionListener(e -> gameManager.recreateWorld());
-        button16.addActionListener(e -> gameManager.getGame().currentExperiment());
-        button17.addActionListener(e -> gameManager.getGame().experimentTimeMethod());
-        button18.addActionListener(e -> gameManager.getGame().spawnOrcRandomlyTest());
-        button19.addActionListener(e -> gameManager.getGame().currentExperiment2());
+        startButton.addActionListener(e -> gameManager.getEngine().start());
+        stopButton.addActionListener(e -> gameManager.getEngine().stop());
+        quickstartButton.addActionListener(e -> gameManager.getGame().getTestFunctions().quickstart());
+        printMapInfoButton.addActionListener(e -> gameManager.getGame().getTestFunctions().printMapInfo());
+        recreateMapButton.addActionListener(e -> gameManager.recreateWorld());
+        runTestButton.addActionListener(e -> {
+            String selectedTest = (String) testDropdown.getSelectedItem();
+            Runnable testAction = testActions.get(selectedTest);
+            if (testAction != null) {
+            testAction.run();
+            }
+        });
 
         zoomInBtn.addActionListener(e -> {
             gameManager.getGridPanel().zoomIn();
@@ -221,6 +237,10 @@ public class ButtonPanel extends JPanel {
             gameManager.getGridPanel().changeShowLines();
             gameManager.getGridPanel().updateUI();
         });
+
+        enableDarksideCheck.addActionListener(e ->
+                gameManager.getGame().getDarkside()
+                        .setEvilSideSpawningEnabled(enableDarksideCheck.isSelected()));
 
         displayBuildingImagesCheck.addActionListener(e -> {
             boolean enabled = displayBuildingImagesCheck.isSelected();
@@ -259,4 +279,15 @@ public class ButtonPanel extends JPanel {
 
     public void updateZoomDisplay() {
         zoomValueLabel.setText(String.format(String.valueOf(gameManager.getGridPanel().getPixelSize())));    }
+
+    private Point getSelectedPointOrNotify() {
+        Point selectedPoint = gameManager.getGridPanel().getSelectedPoint();
+        if (selectedPoint == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Select a point on the map first.",
+                    "No map point selected",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+        return selectedPoint;
+    }
 }

@@ -42,8 +42,8 @@ public class GoblinHut extends UnitProducingSubBuilding {
                     count++;
                 }
             }
-        } else if (mainOwner instanceof buildings.EvilSideBase base) {
-            for (var area : base.getEvilSideBaseAreas()) {
+        } else if (mainOwner instanceof buildings.EvilBase base) {
+            for (var area : base.getEvilBaseAreas()) {
                 SubBuilding sub = area.getSubBuilding();
                 if (sub instanceof GoblinHut) {
                     count++;

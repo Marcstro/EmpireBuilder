@@ -1,7 +1,7 @@
 package buildings;
 
 import LandTypes.LandType;
-import buildings.ai.profiles.EvilSideBaseAI;
+import buildings.ai.profiles.EvilBaseAI;
 import buildings.subBuildings.SimpleGoblinScoutHut;
 import empirebuilder.Game;
 import empirebuilder.Point;
@@ -11,29 +11,29 @@ import entities.units.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EvilSideBase extends Building implements UnitOwner {
+public class EvilBase extends Building implements UnitOwner {
 
     public static final int EVIL_FACTION_ID = 2;
     final static int startingHealth = 300;
+    private static final double INITIAL_GOLD = 12000;
     TheDarkSide theDarkSide;
-    List<EvilSideBaseArea> evilSideBaseAreas;
+    List<EvilBaseArea> evilBaseAreas;
 
     private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
 
-    public EvilSideBase(Point point, TheDarkSide theDarkSide) {
+    public EvilBase(Point point, TheDarkSide theDarkSide) {
         super(point, LandType.getBaseColor(LandType.RUINED), startingHealth);
         this.theDarkSide = theDarkSide;
-        evilSideBaseAreas = new ArrayList<>();
+        evilBaseAreas = new ArrayList<>();
         setFactionId(EVIL_FACTION_ID);
         initBuildingAI();
-        setGold(10000);
+        setGold(INITIAL_GOLD);
     }
 
-    /** Call this after all areas have been added to bootstrap with a free SimpleGoblinScoutHut. */
     public void bootstrapWithScoutHut(empirebuilder.Game game) {
-        if (!evilSideBaseAreas.isEmpty()) {
-            int randomIndex = (int) (Math.random() * evilSideBaseAreas.size());
-            EvilSideBaseArea bootstrapArea = evilSideBaseAreas.get(randomIndex);
+        if (!evilBaseAreas.isEmpty()) {
+            int randomIndex = (int) (Math.random() * evilBaseAreas.size());
+            EvilBaseArea bootstrapArea = evilBaseAreas.get(randomIndex);
             if (bootstrapArea.getSubBuilding() == null) {
                 bootstrapArea.setSubBuilding(new SimpleGoblinScoutHut(bootstrapArea), game);
             }
@@ -47,7 +47,7 @@ public class EvilSideBase extends Building implements UnitOwner {
     }
 
     private void tickAreaBuildingSubBuildings(Game game) {
-        tickAreaBuildingsWithMaintenance(evilSideBaseAreas, game);
+        tickAreaBuildingsWithMaintenance(evilBaseAreas, game);
     }
 
     @Override
@@ -57,24 +57,24 @@ public class EvilSideBase extends Building implements UnitOwner {
 
     @Override
     public Point getInstructions(Unit unit, Game game) {
-        var ai = (EvilSideBaseAI) getBuildingAI().getProfile();
+        var ai = (EvilBaseAI) getBuildingAI().getProfile();
         return ai.getUnitInstructions(this, unit);
     }
 
-    public List<EvilSideBaseArea> getEvilSideBaseAreas() {
-        return evilSideBaseAreas;
+    public List<EvilBaseArea> getEvilBaseAreas() {
+        return evilBaseAreas;
     }
 
-    public void setEvilSideBaseAreas(List<EvilSideBaseArea> evilSideBaseAreas) {
-        this.evilSideBaseAreas = evilSideBaseAreas;
+    public void setEvilBaseAreas(List<EvilBaseArea> evilBaseAreas) {
+        this.evilBaseAreas = evilBaseAreas;
     }
 
-    public void addEvilSideBaseArea(EvilSideBaseArea area) {
-        this.evilSideBaseAreas.add(area);
+    public void addEvilBaseArea(EvilBaseArea area) {
+        this.evilBaseAreas.add(area);
     }
 
-    public void removeEvilSideBaseArea(EvilSideBaseArea area) {
-        this.evilSideBaseAreas.remove(area);
+    public void removeEvilBaseArea(EvilBaseArea area) {
+        this.evilBaseAreas.remove(area);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class EvilSideBase extends Building implements UnitOwner {
         long goblins = unitManager.getUnits().stream().filter(u -> u instanceof GoblinArcher).count();
         long dragons = unitManager.getUnits().stream().filter(u -> u instanceof Dragon).count();
         double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
-        return "{EvilSideBase: " + getId() +
+        return "{EvilBase: " + getId() +
                 ", health: " + getHealth() + "/" + startingHealth +
                 ", isAlive=" + isAlive() +
                 ", gold=" + String.format("%.0f", getGold()) +
