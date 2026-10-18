@@ -3,6 +3,7 @@ package entities.units.AI.nodes;
 import empirebuilder.Game;
 import entities.units.AI.GoalStatus;
 import entities.units.AI.Node;
+import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 
 public class EngagedEnemyRangedNode implements Node {
@@ -21,6 +22,9 @@ public class EngagedEnemyRangedNode implements Node {
             return GoalStatus.REJECTED;
         }
 
+        if (unit.getUnitOrder() == UnitOrder.IDLING) {
+            unit.setUnitOrder(UnitOrder.NONE);
+        }
         ticksSinceLastDistanceCheck++;
         if (ticksSinceLastDistanceCheck >= DISTANCE_CHECK_INTERVAL) {
             ticksSinceLastDistanceCheck = 0;

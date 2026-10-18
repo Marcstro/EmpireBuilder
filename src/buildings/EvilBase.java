@@ -84,17 +84,12 @@ public class EvilBase extends Building implements UnitOwner {
 
     @Override
     public String getInfo() {
-        long scouts = unitManager.getUnits().stream().filter(u -> u instanceof GoblinScout).count();
-        long orcs = unitManager.getUnits().stream().filter(u -> u instanceof Orc).count();
-        long goblins = unitManager.getUnits().stream().filter(u -> u instanceof GoblinArcher).count();
-        long dragons = unitManager.getUnits().stream().filter(u -> u instanceof Dragon).count();
         double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
         return "{EvilBase: " + getId() +
                 ", health: " + getHealth() + "/" + startingHealth +
                 ", isAlive=" + isAlive() +
                 ", gold=" + String.format("%.0f", getGold()) +
-                ", units=" + unitManager.getUnits().size() +
-                " (scouts=" + scouts + ", orcs=" + orcs + ", goblins=" + goblins + ", dragons=" + dragons + ")" +
+                ", " + unitManager.getInfo() +
                 ", subBuilding maintenance cost=" + String.format("%.2f", totalMaintenanceCost) +
                 ", darkSideActive=" + theDarkSide.isDarkSideActivated() +
                 "}";

@@ -10,6 +10,7 @@ public class AIProfileFactory {
                 // Tier 1: Combat emergencies (always checked, highest priority)
                 new SearchForEnemyTargetNode(),
                 combatNode,
+                new AskOwnerForInstructionsNode(),
                 // Tier 2: Committed work (remembers choice, re-evals every 60 ticks)
                 new StatefulSelector(60,
                     new ClearInvestigatedAreaNode(),

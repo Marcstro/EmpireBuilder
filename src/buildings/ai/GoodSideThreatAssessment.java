@@ -48,6 +48,10 @@ public class GoodSideThreatAssessment {
         return activeFacts;
     }
 
+    public boolean shouldDeployGarrisonedUnits() {
+        return activeFacts.stream().anyMatch(fact -> fact != ThreatFact.ENEMY_SCOUT_DETECTED);
+    }
+
     public GoodSideBuildingStates update() {
         double target = 0;
         for (ThreatFact fact : activeFacts) {

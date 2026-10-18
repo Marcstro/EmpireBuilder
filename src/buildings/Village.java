@@ -247,6 +247,7 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
                 ", food=" + String.format("%.2f", getFood()) +
                 ", gold=" + String.format("%.2f", getGold()) +
                 ", animalPopulation=" + animalPopulation +
+                ", " + unitManager.getInfo() +
                 ", communalFood=" + String.format("%.2f", getCommunalFoodForNewFarms()) +
                 "/" + calculateFoodToCreateNewFarm() +
                 ", amount of farms controlled: " + getFarms().size() +

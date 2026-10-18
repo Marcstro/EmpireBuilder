@@ -37,10 +37,8 @@ public class MountedKnightSchool extends UnitProducingSubBuilding {
         }
 
         MountedKnight knight = new MountedKnight(mainOwner.getPoint().getX(), mainOwner.getPoint().getY());
-        knight.setUnitOwner(unitOwner);
         knight.setSubBuildingOwner(this);
-        game.spawnUnitAt(knight, mainOwner.getPoint());
-        unitOwner.getUnitManagerComponent().addUnit(knight);
+        unitOwner.getUnitManagerComponent().receiveUnit(knight, game);
         currentUnitCount++;
     }
 

@@ -77,6 +77,11 @@ public class SettlementAI extends SubBuildingAIProfile {
     public void execute(Building building, Game game) {
         assessment.tick();
 
+        if (assessment.shouldDeployGarrisonedUnits()){
+            if (building instanceof UnitOwner owner) {
+                owner.getUnitManagerComponent().spawnUnitsFromGarrison(game);
+            }
+        }
         if (assessment.has(ThreatFact.UNDER_DIRECT_ATTACK)) {
             spawnMilitiaWave(building, game);
         }

@@ -5,6 +5,7 @@ import buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot;
 import entities.effects.Effect;
 import entities.effects.Missile;
 import entities.units.Unit;
+import graphics.GarrisonIndicator;
 import graphics.ImageManager;
 
 import javax.swing.*;
@@ -87,6 +88,24 @@ public class GridPanel extends JPanel {
 
         renderUnitsView2(g2d, pixelSize);
         renderEffectsView(g2d, pixelSize);
+        renderGarrisonIndicators(g2d, pixelSize);
+    }
+
+    private void renderGarrisonIndicators(Graphics2D g, int pixelSize) {
+        int indicatorSize = Math.max(GarrisonIndicator.MAX_WIDTH, GarrisonIndicator.MAX_HEIGHT);
+        int margin = (indicatorSize + pixelSize - 1) / pixelSize;
+        int startX = Math.max(0, cameraX - margin);
+        int startY = Math.max(0, cameraY - margin);
+        int endX = Math.min(mapWidth - 1, cameraX + getWidth() / pixelSize + margin);
+        int endY = Math.min(mapHeight - 1, cameraY + getHeight() / pixelSize + margin);
+        for (int x = startX; x <= endX; x++) {
+            for (int y = startY; y <= endY; y++) {
+                if (map.getPoint(x, y).getBuilding() instanceof UnitOwner owner) {
+                    GarrisonIndicator.draw(g, (x - cameraX) * pixelSize, (y - cameraY) * pixelSize,
+                            pixelSize, owner.getUnitManagerComponent().getGarrisonCount());
+                }
+            }
+        }
     }
 
     private void renderUnitsView2(Graphics2D g, int pixelSize) {

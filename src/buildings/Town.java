@@ -1,6 +1,7 @@
 package buildings;
 
 import LandTypes.LandType;
+import buildings.ai.profiles.SettlementAI;
 import empirebuilder.Game;
 import empirebuilder.Point;
 import entities.units.Unit;
@@ -134,6 +135,8 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
     @Override
     public String getInfo() {
         double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
+        String activeThreats = getBuildingAI().getProfile() instanceof SettlementAI ai
+                ? ai.getAssessment().getActiveFacts().toString() : "unavailable";
         return "{Town: " + getId() +
                 ", health: " + getHealth() + "/" + DEFAULT_BUILDING_HEALTH +
                 ", isAlive=" + isAlive() +
@@ -149,6 +152,8 @@ public class Town extends VillageOwningBuilding implements AttackCapableBuilding
                 (getCity()!=null ? " (" + String.format("%.2f",(TOWN_TAXATION_RATE*getLastIterationFoodTaxIncome())) + " taxed)" : "") +
                 (this.hasCity() ? ", City: " + getCity().getPoint().getPositionString() : ", Has city: None") +
                 ", is aware of danger: " + getDefensiveTroopComponent().hasDanger() +
+                ", active threats: " + activeThreats +
+                ", " + unitManager.getInfo() +
                  ".} ";
     }
 

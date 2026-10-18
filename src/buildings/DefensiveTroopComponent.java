@@ -7,6 +7,7 @@ import entities.units.AI.UnitOrder;
 import entities.units.Unit;
 
 import java.util.LinkedList;
+import java.util.Objects;
 
 public class DefensiveTroopComponent {
 
@@ -19,7 +20,7 @@ public class DefensiveTroopComponent {
     /** How long (in building ticks) a building remembers being damaged. */
     private static final int DAMAGE_MEMORY_TICKS = 50;
 
-    private final Building ownerBuilding;
+    private Building ownerBuilding;
     private final LinkedList<MapCell> dangerList = new LinkedList<>();
 
     private int occupiedMilitiaSlots = 0;
@@ -32,6 +33,10 @@ public class DefensiveTroopComponent {
 
     public DefensiveTroopComponent(Building ownerBuilding) {
         this.ownerBuilding = ownerBuilding;
+    }
+
+    public void setOwnerBuilding(Building ownerBuilding) {
+        this.ownerBuilding = Objects.requireNonNull(ownerBuilding);
     }
 
     public void addToDangerList(MapCell mapCell) {

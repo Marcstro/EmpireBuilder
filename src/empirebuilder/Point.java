@@ -114,16 +114,15 @@ public class Point {
     }
     
     public String getInfo(){
-        String buildingInfo = "Building=Null";
-        if (getBuilding() != null){
-            buildingInfo = getBuilding().getInfo();
+        String ownerInfo = "NONE";
+        if (isOwnedByBuilding()) {
+            Building owner = getPointOwner();
+            ownerInfo = "{" + owner.getClass().getSimpleName() + ": " + owner.getId()
+                    + ", X=" + owner.getPoint().getX() + ", Y=" + owner.getPoint().getY() + "}";
         }
-
-        return "Point{" + x
-        + "," + y
-        + ", land=" + land.getLandType()
-        + ", " + buildingInfo
-        + ", point belongs to building: " + (isOwnedByBuilding() ? getPointOwner().getInfo() : "NONE");
+        return "Point{X=" + x + ", Y=" + y + ", land=" + land.getLandType() + "}"
+                + "\nBuilding: " + (getBuilding() != null ? getBuilding().getInfo() : "NONE")
+                + "\npoint belongs to building: " + ownerInfo;
     }
     
     public String getPositionString(){

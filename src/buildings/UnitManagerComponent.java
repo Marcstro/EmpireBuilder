@@ -1,23 +1,29 @@
 package buildings;
 
 import buildings.ai.GoodSideThreatAssessment;
+import buildings.ai.profiles.SettlementAI;
 import buildings.subBuildings.UnitProducingSubBuilding;
 import empirebuilder.Game;
 import empirebuilder.Point;
+import entities.units.AI.UnitOrder;
 import entities.units.FarmerMilitia;
 import entities.units.Unit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 public class UnitManagerComponent {
 
     private final List<Unit> units = new ArrayList<>();
-    private final Building ownerBuilding;
+    final List<Unit> garrison = new ArrayList<>();
+    private Building ownerBuilding;
     List<Building> knownHostileBuildings = new ArrayList<>();
 
     private int enemySightingMemory = 0;
     private static final int ENEMY_SIGHTING_MEMORY_EVALUATIONS = 20;
+    private static final int SPAWNED_AT_ONCE = 3;
 
     private int recentUnitLosses = 0;
 
@@ -43,13 +49,61 @@ public class UnitManagerComponent {
         return units;
     }
 
+    public int getGarrisonCount() {
+        return garrison.size();
+    }
+
+    public String getInfo() {
+        String garrisonInfo = garrison.stream()
+                .collect(Collectors.groupingBy(unit -> unit.getClass().getSimpleName(),
+                        TreeMap::new, Collectors.counting()))
+                .entrySet().stream()
+                .map(entry -> entry.getKey() + ": " + entry.getValue())
+                .collect(Collectors.joining(", "));
+        return "units=" + (units.size() + garrison.size())
+                + " (deployed=" + units.size() + "), garrison={" + garrisonInfo + "}";
+    }
+
     public Building getOwnerBuilding() {
         return ownerBuilding;
     }
 
+    public void setOwnerBuilding(Building ownerBuilding) {
+        if (!(ownerBuilding instanceof UnitOwner owner)) {
+            throw new IllegalArgumentException("Unit manager owner must implement UnitOwner");
+        }
+        this.ownerBuilding = ownerBuilding;
+        for (Unit unit : units) {
+            unit.setUnitOwner(owner);
+        }
+        for (Unit unit : garrison) {
+            unit.setUnitOwner(owner);
+        }
+    }
+
+    public void spawnUnitsFromGarrison(Game game) {
+        if (garrison.isEmpty()) {
+            return;
+        }
+        int unitsToSpawn = Math.min(SPAWNED_AT_ONCE, garrison.size());
+        List<Point> spawnPoints = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(),
+                ownerBuilding.getPoint().getY(), unitsToSpawn);
+        if (spawnPoints.isEmpty()) {
+            return;
+        }
+        for (Point spawnAt : spawnPoints) {
+            Unit unit = garrison.get(0);
+            unit.setX(spawnAt.getX());
+            unit.setY(spawnAt.getY());
+            units.add(unit);
+            game.spawnUnitAt(unit, spawnAt);
+            garrison.remove(unit);
+        }
+    }
+
     // TODO adjust according to threatassessment level
     // TODO implement a minimum: a farm with 10 people shouldnt be able to spawn any units at all
-        public void spawnMilitia(Game game, GoodSideThreatAssessment assessment){
+    public void spawnMilitia(Game game, GoodSideThreatAssessment assessment){
         if (!(ownerBuilding instanceof DefensiveTroopBuilding def)){
             return;
         }
@@ -93,18 +147,36 @@ public class UnitManagerComponent {
 
     // subbuilding sends units to this function so its added to hte main owner
     public void receiveUnit(Unit unit, Game game) {
+        unit.setUnitOwner((UnitOwner) ownerBuilding);
+        boolean supportsGarrison = ownerBuilding instanceof Town || ownerBuilding instanceof City;
+        boolean safe = supportsGarrison
+                && ownerBuilding.getBuildingAI().getProfile() instanceof SettlementAI ai
+                && !ai.getAssessment().shouldDeployGarrisonedUnits();
+        if (safe && units.stream().anyMatch(existing ->
+                existing.isAlive() && existing.getClass() == unit.getClass())) {
+            garrisonUnit(unit);
+            return;
+        }
         List<Point> spawnPoints = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(),
                 ownerBuilding.getPoint().getY(), 1);
         if (spawnPoints.isEmpty()) {
+            if (supportsGarrison) {
+                garrisonUnit(unit);
+            }
             return;
-            // TODO add unit to "unenlisted list"
         }
         Point spawnAt = spawnPoints.getFirst();
         unit.setX(spawnAt.getX());
         unit.setY(spawnAt.getY());
-        unit.setUnitOwner((UnitOwner) ownerBuilding);
         game.spawnUnitAt(unit, spawnAt);
         addUnit(unit);
+    }
+
+    private void garrisonUnit(Unit unit) {
+        unit.clearAllTargets();
+        unit.clearPathB();
+        unit.setUnitOrder(UnitOrder.AWAITING_INSTUCTIONS);
+        garrison.add(unit);
     }
 
     public void reportHostileUnit(){

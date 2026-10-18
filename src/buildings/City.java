@@ -1,6 +1,7 @@
 package buildings;
 
 import LandTypes.LandType;
+import buildings.ai.profiles.SettlementAI;
 import empirebuilder.Game;
 import empirebuilder.Point;
 import entities.units.Unit;
@@ -22,18 +23,35 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     final int CITY_ARROW_DISTANCE = 14;
     final int CITY_ATTACK_COOLDOWN = 50;
 
-    private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
-    private final DefensiveTroopComponent defensiveTroopComponent = new DefensiveTroopComponent(this);
+    private final UnitManagerComponent unitManager;
+    private final DefensiveTroopComponent defensiveTroopComponent;
     private final AttackCapableBuildingComponent attackCapableBuildingComponent =
             new AttackCapableBuildingComponent(this, CITY_ATTACK_DAMAGE, CITY_ATTACK_RANGE, CITY_ARROW_DISTANCE, CITY_ATTACK_COOLDOWN);
 
     public City(Point point) {
+        this(point, null);
+    }
+
+    public City(Town previousTown) {
+        this(previousTown.getPoint(), previousTown);
+    }
+
+    private City(Point point, Town previousTown) {
         super(point, INITIAL_FOOD_NEEDED_TO_GROW, LandType.getBaseColor(LandType.CITY), DEFAULT_BUILDING_HEALTH);
+        unitManager = previousTown != null
+                ? previousTown.getUnitManagerComponent() : new UnitManagerComponent(this);
+        defensiveTroopComponent = previousTown != null
+                ? previousTown.getDefensiveTroopComponent() : new DefensiveTroopComponent(this);
+        unitManager.setOwnerBuilding(this);
+        defensiveTroopComponent.setOwnerBuilding(this);
         towns = new LinkedList<>();
         cityAreaPoints = new HashSet();
         isAttackReady=false;
         timeSinceLastShot=0;
         initBuildingAI();
+        if (previousTown != null) {
+            getBuildingAI().ticksSinceLastEvaluation = getBuildingAI().evaluationInterval;
+        }
     }
 
     @Override
@@ -124,6 +142,8 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     @Override
     public String getInfo() {
         double totalMaintenanceCost = calculateTotalSubBuildingMaintenance();
+        String activeThreats = getBuildingAI().getProfile() instanceof SettlementAI ai
+                ? ai.getAssessment().getActiveFacts().toString() : "unavailable";
         return "{City: " + getId() +
                 ", health: " + getHealth() + "/" + DEFAULT_BUILDING_HEALTH +
                 ", isAlive=" + isAlive() +
@@ -136,6 +156,8 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
                 ", villages=" + getVillages().size() +
                 ", indirect villages=" + (getTowns().stream().mapToInt(town -> town.getVillages().size()).sum()) +
                 ", currentTaxIncome=" + String.format("%.2f", getLastIterationFoodTaxIncome()) +
+                ", active threats: " + activeThreats +
+                ", " + unitManager.getInfo() +
                 ".} ";
     }
 }

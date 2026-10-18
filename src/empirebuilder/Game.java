@@ -9,6 +9,7 @@ import entities.effects.Effect;
 import entities.effects.LingeringFallenArrow;
 import entities.units.*;
 import entities.units.AI.ThreatScan;
+import entities.units.AI.UnitOrder;
 import pathfinding.PathfindingSystem;
 
 import java.util.*;
@@ -790,7 +791,7 @@ public class Game{
         attackCapableBuildings.remove(town);
         getMapCellByPoint(town.getPoint()).removeAttackCapableBuilding(town);
         Point midPoint = town.getPoint();
-        City newCity = new City(midPoint);
+        City newCity = new City(town);
         attackCapableBuildings.add(newCity);
         getMapCellByPoint(newCity.getPoint()).addAttackCapableBuildings(newCity);
         newCity.setPeople(town.getPeople());
@@ -905,7 +906,8 @@ public class Game{
                 unit.setSearchForBuildingCooldown(false);
                 // TODO alert nearest hostile units of this units entrance into the area
 
-                if (unit.getFactionId()==2){
+                if (unit.getFactionId()==2
+                    && unit.getUnitOrder() == UnitOrder.RAIDING){
                     newCell.attemptToPlunder(this, tickCounter, unit);
                 }
 
@@ -1792,6 +1794,11 @@ public class Game{
     public Unit spawnUnitAt(Unit unit, Point point){
         unitsToBeAdded.add(unit);
         return unit;
+    }
+
+    public void despawnUnit(Unit unit){
+        units.remove(unit);
+        mapCellGrid[unit.getMapCellX()][unit.getMapCellY()].removeUnit(unit);
     }
 
     public void plunderMapCell(MapCell mapCell, Unit unit){

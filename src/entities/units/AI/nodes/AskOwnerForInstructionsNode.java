@@ -42,6 +42,10 @@ public class AskOwnerForInstructionsNode implements Node {
             return GoalStatus.REJECTED;
         }
 
+        if (unit.getUnitOrder() == UnitOrder.IDLING
+                || unit.getUnitOrder() == UnitOrder.AWAITING_INSTUCTIONS) {
+            unit.setUnitOrder(UnitOrder.NONE);
+        }
         unit.setPointTarget(destination);
         return GoalStatus.SUCCESS;
     }

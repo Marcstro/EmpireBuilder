@@ -31,8 +31,9 @@ public class SearchForEnemyTargetNode implements Node {
             }
             if (target != null){
                 unit.setCombatTarget(target);
-                // TODO check that the below line isnt needed
-                //unit.setUnitOrder(UnitOrder.DEFEND_EXTERNAL_AREA);
+                if (unit.getUnitOrder() == UnitOrder.IDLING) {
+                    unit.setUnitOrder(UnitOrder.NONE);
+                }
                 return GoalStatus.SUCCESS;
             }
             else {

@@ -1,4 +1,4 @@
-Todo:
+TODOs in no specific order:
 
 - balance units
 - fix bug where units overlapse when they just stand around at arrived spot
@@ -13,7 +13,6 @@ Todo:
 - change plundercooldown in mapcell to be a number ticking down instead of a boolean
 - EvilBase can't be informed of nearby units, since only FarmOwningBuildings are informed
 - function detectAllyNeedsHelp() needs developing, buildings should call other buildings asking for help when possible
-- only up to 3 units should be idling outside of a UnitOwner, rest should jump into "garrison" where they away deployment
 - Regarding garrison, have some sort of "visualisation" how many units a building have in garrison. like 10^x, display x stars
 - evilBase should own all of its points
 - make destruction of evilBase safe, current will bug if more than 1 exist

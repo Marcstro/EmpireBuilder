@@ -37,10 +37,8 @@ public class ElvenArcheryRange extends UnitProducingSubBuilding {
         }
 
         ElfArcher archer = new ElfArcher(mainOwner.getPoint().getX(), mainOwner.getPoint().getY());
-        archer.setUnitOwner(unitOwner);
         archer.setSubBuildingOwner(this);
-        game.spawnUnitAt(archer, mainOwner.getPoint());
-        unitOwner.getUnitManagerComponent().addUnit(archer);
+        unitOwner.getUnitManagerComponent().receiveUnit(archer, game);
         currentUnitCount++;
     }
 
