@@ -111,7 +111,7 @@ public class MapCell {
                 Building current = building;
                 while (current != null) {
                     if (current instanceof DefensiveTroopBuilding def){
-                        def.getDefensiveTroopComponent().addToDangerList(this);
+                        def.getDefensiveTroopComponent().addToDangerList(this, game);
                         System.out.println(current.getInfo() + " has been notified of the raid");
                     }
                     current = current.getOwner();

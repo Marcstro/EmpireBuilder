@@ -9,7 +9,6 @@ TODOs in no specific order:
 - Add all removeUnit/effect/building etc in their own tick that gets ticked the fastest of all
 - Add "SeldomTick" in the building class, for non every tick things.
 - Make farmAnimal-owning villages get the possibility to handle farm animals, instead of just giving them the animals
-- UnitOwningTroops need a "can units reach a Point from my location"? that is checked before sending troops somewhere, also handle what to do if its a non possible destination
 - change plundercooldown in mapcell to be a number ticking down instead of a boolean
 - EvilBase can't be informed of nearby units, since only FarmOwningBuildings are informed
 - function detectAllyNeedsHelp() needs developing, buildings should call other buildings asking for help when possible

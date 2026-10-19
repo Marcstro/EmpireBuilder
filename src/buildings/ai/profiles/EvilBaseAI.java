@@ -25,7 +25,7 @@ public class EvilBaseAI extends SubBuildingAIProfile {
         if (!(building instanceof EvilBase base)) {
             return;
         }
-        updateRaidingTarget(base);
+        updateRaidingTarget(base, game);
         determineWhatToBuildNext(building, game, building.getBuildingAI());
     }
 
@@ -110,7 +110,7 @@ public class EvilBaseAI extends SubBuildingAIProfile {
         ai.ticksSinceLastEvaluation = ai.evaluationInterval;
     }
 
-    private void updateRaidingTarget(EvilBase base) {
+    private void updateRaidingTarget(EvilBase base, Game game) {
         Point previousTarget = currentRaidingTarget;
         currentRaidingTarget = null;
 
@@ -129,7 +129,7 @@ public class EvilBaseAI extends SubBuildingAIProfile {
                 value += ((buildings.FarmOwningBuilding) hostile).getFood();
             }
 
-            if (value > maxValue) {
+            if (value > maxValue && game.canReachPoint(base.getPoint(), hostile.getPoint())) {
                 maxValue = value;
                 richestTarget = hostile;
             }

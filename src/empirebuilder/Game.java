@@ -640,6 +640,10 @@ public class Game{
     public Point getPoint(double x, double y){
         return (gm.getMap().getPoint((int)x, (int)y));
     }
+
+    public boolean canReachPoint(Point start, Point target) {
+        return !gm.getPathfinder().getPathBetween(start, target).isEmpty();
+    }
     
     public double calculateDistance(Point p1, Point p2) {
         int dx = p1.getX() - p2.getX();

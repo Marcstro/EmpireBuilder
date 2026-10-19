@@ -39,8 +39,9 @@ public class DefensiveTroopComponent {
         this.ownerBuilding = Objects.requireNonNull(ownerBuilding);
     }
 
-    public void addToDangerList(MapCell mapCell) {
-        if (!dangerList.contains(mapCell)) {
+    public void addToDangerList(MapCell mapCell, Game game) {
+        if (!dangerList.contains(mapCell)
+                && game.canReachPoint(ownerBuilding.getPoint(), game.getPointByMapCell(mapCell))) {
             dangerList.add(mapCell);
         }
     }

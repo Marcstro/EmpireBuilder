@@ -3,6 +3,7 @@ package entities.units.AI.nodes;
 import buildings.DefensiveTroopBuilding;
 import empirebuilder.Game;
 import empirebuilder.MapCell;
+import empirebuilder.Point;
 import entities.units.AI.GoalStatus;
 import entities.units.AI.Node;
 import entities.units.AI.UnitOrder;
@@ -22,7 +23,11 @@ public class ClearInvestigatedAreaNode implements Node {
         }
         if (unit.getPointTarget() == null){
             if (unit.getUnitOwner() instanceof DefensiveTroopBuilding def){
-                unit.setPointTarget(def.getInstructions(unit, game));
+                Point target = def.getInstructions(unit, game);
+                if (target == null) {
+                    return GoalStatus.REJECTED;
+                }
+                unit.setPointTarget(target);
                 return GoalStatus.SUCCESS;
             }
             else {
