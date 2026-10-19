@@ -16,9 +16,11 @@ public class ElfArcher extends Unit{
     static int elfArcherFactionId = 1;
     static double attackRange = 2.4;
     static int elfArcherAttackCooldown = 12;
+    private static final int VALUE = 600;
 
     public ElfArcher(double x, double y) {
         super(x, y, elfArcherSpeed, elfArcherHealth, elfArcherDamage, elfArcherFactionId, size, elfArcherAttackCooldown);
+        value = VALUE;
     }
 
     @Override
@@ -57,5 +59,4 @@ public class ElfArcher extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-
 

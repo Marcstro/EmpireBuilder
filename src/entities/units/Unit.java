@@ -41,6 +41,7 @@ public abstract class Unit extends MovingEntity {
     int fleeTicksRemaining = 0;
 
     int loot;
+    protected int value;
     UnitOwner unitOwner = null;
     buildings.subBuildings.UnitProducingSubBuilding subBuildingOwner = null;
 
@@ -126,6 +127,10 @@ public abstract class Unit extends MovingEntity {
 
     public int getLoot(){
         return loot;
+    }
+
+    public int getValue() {
+        return value;
     }
 
     public void removeLoot(int loot){

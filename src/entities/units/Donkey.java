@@ -14,9 +14,11 @@ public class Donkey extends FarmAnimal {
     static double size = DEFAULT_UNIT_SIZE;
     static int donkeyFactionId = 1;
     static double donkeyAttackCooldown = 50;
+    private static final int VALUE = 75;
 
     public Donkey(double x, double y) {
         super(x, y, donkeySpeed, donkeyHealth, donkeyDamage, donkeyFactionId, size, (int)donkeyAttackCooldown);
+        value = VALUE;
         setPriorityTier(0);
     }
 

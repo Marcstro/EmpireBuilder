@@ -15,9 +15,11 @@ public class TradingCart extends Unit{
     static double size = DEFAULT_UNIT_SIZE;
     static int tradingCartFactionId = 1;
     static int tradingCartAttackCooldown = 6;
+    private static final int VALUE = 300;
 
     public TradingCart(double x, double y) {
         super(x, y, tradingCartSpeed, tradingCartHealth, tradingCartDamage, tradingCartFactionId, size, tradingCartAttackCooldown);
+        value = VALUE;
         setPriorityTier(1);
     }
 

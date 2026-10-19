@@ -14,10 +14,12 @@ public class MountedKnight extends Unit {
     static double size = DEFAULT_UNIT_SIZE;
     static int mountedKnightFactionId = 1;
     static int mountedKnightAttackCooldown = 6;
+    private static final int VALUE = 2500;
 
     public MountedKnight(double x, double y) {
         super(x, y, mountedKnightSpeed, mountedKnightHealth, mountedKnightDamage,
                 mountedKnightFactionId, size, mountedKnightAttackCooldown);
+        value = VALUE;
         setPriorityTier(1);
     }
 

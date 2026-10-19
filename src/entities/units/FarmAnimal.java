@@ -9,9 +9,11 @@ public abstract class FarmAnimal extends Unit{
     Point idleBasePoint;
     int lifeRemaining;
     final static int lifeSpan = 3600;
+    private static final int VALUE = 200;
 
     public FarmAnimal(double x, double y, double speed, double health, double damage, int factionId, double size, int attackCooldownBase) {
         super(x, y, speed, health, damage, factionId, size, attackCooldownBase);
+        value = VALUE;
         lifeRemaining = lifeSpan;
     }
 

@@ -14,9 +14,11 @@ public class Capybara extends FarmAnimal {
     static double size = DEFAULT_UNIT_SIZE;
     static int capybaraFactionId = 1;
     static int attackCooldownBase = 50;
+    private static final int VALUE = 25;
 
     public Capybara(double x, double y) {
         super(x, y, capybaraSpeed, capybaraHealth, capybaraDamage, capybaraFactionId, size, attackCooldownBase);
+        value = VALUE;
         setPriorityTier(0);
     }
 

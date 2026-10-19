@@ -15,10 +15,12 @@ public class Knight extends Unit{
     static double size = DEFAULT_UNIT_SIZE;
     static int knightFactionId = 1;
     static int knightAttackCooldown = 6;
+    private static final int VALUE = 500;
 
     public Knight(double x, double y) {
 
         super(x, y, knightSpeed, knightHealth, knightDamage, knightFactionId, size, knightAttackCooldown);
+        value = VALUE;
         setPriorityTier(1);
     }
 
@@ -58,4 +60,3 @@ public class Knight extends Unit{
         this.pointTarget = pointTarget;
     }
 }
-

@@ -6,7 +6,6 @@ TODOs in no specific order:
 - land/point/mapCell value
 - possible "mapsections", like 50x50 points. will hold threatlevle instead of mapcells
 - give raiding units good defenseless targets if possible
-- Add all removeUnit/effect/building etc in their own tick that gets ticked the fastest of all
 - Add "SeldomTick" in the building class, for non every tick things.
 - Make farmAnimal-owning villages get the possibility to handle farm animals, instead of just giving them the animals
 - change plundercooldown in mapcell to be a number ticking down instead of a boolean

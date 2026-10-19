@@ -14,10 +14,12 @@ public class FarmerMilitia extends Unit {
     static double size = DEFAULT_UNIT_SIZE;
     static int farmerMilitiaFactionId = 1;
     static int farmerMilitiaAttackCooldown = 8;
+    private static final int VALUE = 100;
 
     public FarmerMilitia(double x, double y) {
         super(x, y, farmerMilitiaSpeed, farmerMilitiaHealth, farmerMilitiaDamage,
                 farmerMilitiaFactionId, size, farmerMilitiaAttackCooldown);
+        value = VALUE;
         setPriorityTier(1);
     }
 

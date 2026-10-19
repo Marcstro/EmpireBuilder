@@ -14,10 +14,12 @@ public class HumanScout extends Unit {
     static double size = DEFAULT_UNIT_SIZE;
     static int humanScoutFactionId = 1;
     static int humanScoutAttackCooldown = 6;
+    private static final int VALUE = 200;
 
     public HumanScout(double x, double y) {
         super(x, y, humanScoutSpeed, humanScoutHealth, humanScoutDamage,
                 humanScoutFactionId, size, humanScoutAttackCooldown);
+        value = VALUE;
         setPriorityTier(1);
     }
 

@@ -1360,6 +1360,9 @@ public class Game{
 
     private void handleUnitDeath(Unit unit) {
 
+        if (unit.getFactionId() == 1) {
+            divideLootFromUnit(unit);
+        }
         // TODO possible make nearby areas react on death unit?
         UnitOwner owner = unit.getUnitOwner();
         if (owner != null) {
@@ -1481,10 +1484,25 @@ public class Game{
                 }
             }
         }
+        divideLoot(building.getGold(), unitsToGetLoot);
+    }
+
+    private void divideLootFromUnit(Unit fallenUnit) {
+        List<Unit> unitsToGetLoot = new ArrayList<>();
+        searchOtherLocalUnits(fallenUnit, 1, unit -> {
+            if (unit.isAlive() && unit.getFactionId() == EvilBase.EVIL_FACTION_ID) {
+                unitsToGetLoot.add(unit);
+            }
+            return false;
+        });
+        divideLoot(fallenUnit.getValue(), unitsToGetLoot);
+    }
+
+    private void divideLoot(double value, List<Unit> unitsToGetLoot) {
         if (unitsToGetLoot.isEmpty()){
             return;
         }
-        double individualLoot = building.getGold()/unitsToGetLoot.size();
+        double individualLoot = value / unitsToGetLoot.size();
         for(Unit unit:  unitsToGetLoot){
             unit.addLoot((int)individualLoot);
         }
