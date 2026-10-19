@@ -3,7 +3,6 @@
 /build/
 build/
 *.class
-*.properties
 *.xml 
 MANIFEST.MF 
 

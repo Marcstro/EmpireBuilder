@@ -6,6 +6,7 @@ import entities.Entity;
 import entities.effects.Arrow;
 import entities.effects.BloodSpark;
 import entities.effects.Effect;
+import entities.effects.Grave;
 import entities.effects.LingeringFallenArrow;
 import entities.units.*;
 import entities.units.AI.ThreatScan;
@@ -1363,6 +1364,7 @@ public class Game{
         }
          MapCell mapCell = mapCellGrid[unit.getMapCellX()][unit.getMapCellY()];
          mapCell.removeUnit(unit);
+        createEffect(new Grave(unit.getX(), unit.getY()));
     }
 
     public AttackCapableBuilding getNearestAttackCapableBuilding(Unit searcher, int distanceOut) {
@@ -1797,8 +1799,15 @@ public class Game{
     }
 
     public void despawnUnit(Unit unit){
-        units.remove(unit);
-        mapCellGrid[unit.getMapCellX()][unit.getMapCellY()].removeUnit(unit);
+        synchronized (units) {
+            if (unitsToBeAdded.remove(unit)) {
+                return;
+            }
+            if (!units.remove(unit)) {
+                throw new IllegalStateException("Cannot despawn a unit that is not active or awaiting spawn");
+            }
+            mapCellGrid[unit.getMapCellX()][unit.getMapCellY()].removeUnit(unit);
+        }
     }
 
     public void plunderMapCell(MapCell mapCell, Unit unit){

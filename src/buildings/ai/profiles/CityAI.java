@@ -100,8 +100,7 @@ public class CityAI extends SettlementAI {
             }
         }
 
-        if (assessment.has(ThreatFact.ENEMY_SCOUT_DETECTED) ||
-            assessment.has(ThreatFact.ALLY_NEEDS_HELP)) {
+        if ( barracksCount > 2 && archerCount > 2 ) {
             if (countSubBuildingType(building, Stable.class) == 0) {
                 if (canBuildSubBuilding(building, Stable.class)) {
                     ai.setSubBuildingToBuildNext(Stable.class);

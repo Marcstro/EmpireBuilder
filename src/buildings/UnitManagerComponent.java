@@ -10,7 +10,10 @@ import entities.units.FarmerMilitia;
 import entities.units.Unit;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,8 @@ public class UnitManagerComponent {
     private int enemySightingMemory = 0;
     private static final int ENEMY_SIGHTING_MEMORY_EVALUATIONS = 20;
     private static final int SPAWNED_AT_ONCE = 3;
+    private static final int GARRISON_CHECK_INTERVAL = 20;
+    private int garrisonCheckTimer = 0;
 
     private int recentUnitLosses = 0;
 
@@ -51,6 +56,28 @@ public class UnitManagerComponent {
 
     public int getGarrisonCount() {
         return garrison.size();
+    }
+
+    public void garrisonIdleUnits(Game game) {
+        if (!shouldGarrisonUnits() || ++garrisonCheckTimer < GARRISON_CHECK_INTERVAL) {
+            return;
+        }
+        garrisonCheckTimer = 0;
+        Set<Class<? extends Unit>> idleTypesOutside = new HashSet<>();
+        Iterator<Unit> iterator = units.iterator();
+        while (iterator.hasNext()) {
+            Unit unit = iterator.next();
+            if (!unit.isAlive() || unit.getUnitOrder() != UnitOrder.IDLING
+                    || unit.getCombatTarget() != null || unit.getPointTarget() != null || unit.isFleeing()) {
+                continue;
+            }
+            if (idleTypesOutside.add(unit.getClass())) {
+                continue;
+            }
+            game.despawnUnit(unit);
+            iterator.remove();
+            garrisonUnit(unit);
+        }
     }
 
     public String getInfo() {
@@ -149,10 +176,7 @@ public class UnitManagerComponent {
     public void receiveUnit(Unit unit, Game game) {
         unit.setUnitOwner((UnitOwner) ownerBuilding);
         boolean supportsGarrison = ownerBuilding instanceof Town || ownerBuilding instanceof City;
-        boolean safe = supportsGarrison
-                && ownerBuilding.getBuildingAI().getProfile() instanceof SettlementAI ai
-                && !ai.getAssessment().shouldDeployGarrisonedUnits();
-        if (safe && units.stream().anyMatch(existing ->
+        if (shouldGarrisonUnits() && units.stream().anyMatch(existing ->
                 existing.isAlive() && existing.getClass() == unit.getClass())) {
             garrisonUnit(unit);
             return;
@@ -170,6 +194,12 @@ public class UnitManagerComponent {
         unit.setY(spawnAt.getY());
         game.spawnUnitAt(unit, spawnAt);
         addUnit(unit);
+    }
+
+    private boolean shouldGarrisonUnits() {
+        return (ownerBuilding instanceof Town || ownerBuilding instanceof City)
+                && ownerBuilding.getBuildingAI().getProfile() instanceof SettlementAI ai
+                && !ai.getAssessment().shouldDeployGarrisonedUnits();
     }
 
     private void garrisonUnit(Unit unit) {

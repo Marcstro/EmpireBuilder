@@ -81,6 +81,10 @@ public class SettlementAI extends SubBuildingAIProfile {
             if (building instanceof UnitOwner owner) {
                 owner.getUnitManagerComponent().spawnUnitsFromGarrison(game);
             }
+        } else {
+            if (building instanceof UnitOwner owner) {
+                owner.getUnitManagerComponent().garrisonIdleUnits(game);
+            }
         }
         if (assessment.has(ThreatFact.UNDER_DIRECT_ATTACK)) {
             spawnMilitiaWave(building, game);

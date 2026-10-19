@@ -229,7 +229,7 @@ public class TestFunctions {
     }
 
     private void checkQuickstartProgress() {
-        if (!quickstartActive || game().towns.size() < 2) {
+        if (!quickstartActive || game().evilBases.isEmpty()) {
             return;
         }
 
