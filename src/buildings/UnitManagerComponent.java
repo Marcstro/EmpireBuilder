@@ -1,6 +1,5 @@
 package buildings;
 
-import buildings.ai.GoodSideThreatAssessment;
 import buildings.ai.profiles.SettlementAI;
 import buildings.subBuildings.UnitProducingSubBuilding;
 import empirebuilder.Game;
@@ -31,12 +30,6 @@ public class UnitManagerComponent {
     private int garrisonCheckTimer = 0;
 
     private int recentUnitLosses = 0;
-
-    private static final int MAX_MILITIA_PER_WAVE = 8;
-
-    private static final int MILITIA_COOLDOWN_EVALUATIONS = 6;
-
-    private int militiaCooldown = 0;
 
     public UnitManagerComponent(Building ownerBuilding) {
         this.ownerBuilding = ownerBuilding;
@@ -128,40 +121,6 @@ public class UnitManagerComponent {
         }
     }
 
-    // TODO adjust according to threatassessment level
-    // TODO implement a minimum: a farm with 10 people shouldnt be able to spawn any units at all
-    public void spawnMilitia(Game game, GoodSideThreatAssessment assessment){
-        if (!(ownerBuilding instanceof DefensiveTroopBuilding def)){
-            return;
-        }
-        if (militiaCooldown > 0){
-            return;
-        }
-
-        DefensiveTroopComponent defensiveComponent = def.getDefensiveTroopComponent();
-        int amountOfMilitia = Math.min(defensiveComponent.getMaxAvailableMilitia(), MAX_MILITIA_PER_WAVE);
-        if (amountOfMilitia <= 0){
-            return;
-        }
-
-        List<Point> points = game.findGroupSpawnPoints(ownerBuilding.getPoint().getX(),
-                ownerBuilding.getPoint().getY(), amountOfMilitia);
-        if (points.isEmpty()){
-            return;
-        }
-
-        for (Point point : points){
-            FarmerMilitia militia = new FarmerMilitia(point.getX(), point.getY());
-            militia.setUnitOwner(def);
-            game.spawnUnitAt(militia, point);
-            addUnit(militia);
-        }
-
-        // actual amount of militia spawned, regardless of requested amount
-        defensiveComponent.reserveMilitiaSlots(points.size());
-        militiaCooldown = MILITIA_COOLDOWN_EVALUATIONS;
-    }
-
     public void reportHostileBuilding(Building building){
         if (!knownHostileBuildings.contains(building)){
             knownHostileBuildings.add(building);
@@ -230,9 +189,6 @@ public class UnitManagerComponent {
         }
         if (recentUnitLosses > 0){
             recentUnitLosses--;
-        }
-        if (militiaCooldown > 0){
-            militiaCooldown--;
         }
     }
 

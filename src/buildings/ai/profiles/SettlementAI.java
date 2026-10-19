@@ -4,7 +4,6 @@ import buildings.Building;
 import buildings.AttackCapableBuilding;
 import buildings.City;
 import buildings.DefensiveTroopBuilding;
-import buildings.DefensiveTroopComponent;
 import buildings.Town;
 import buildings.UnitOwner;
 import buildings.VillageOwningBuilding;
@@ -22,7 +21,6 @@ import empirebuilder.Game;
 public class SettlementAI extends SubBuildingAIProfile {
 
     private static final int LOSSES_BEFORE_ALARM = 3;
-    private static final double MILITIA_COST = 1000.0;
 
     protected final GoodSideThreatAssessment assessment = new GoodSideThreatAssessment();
 
@@ -86,42 +84,12 @@ public class SettlementAI extends SubBuildingAIProfile {
                 owner.getUnitManagerComponent().garrisonIdleUnits(game);
             }
         }
-        if (assessment.has(ThreatFact.UNDER_DIRECT_ATTACK)) {
-            spawnMilitiaWave(building, game);
+        if (assessment.has(ThreatFact.UNDER_DIRECT_ATTACK)
+                && building instanceof DefensiveTroopBuilding def) {
+            def.getDefensiveTroopComponent().spawnMilitia(game);
         }
 
         buildFocusedBuilding(building, game);
-    }
-
-    private void spawnMilitiaWave(Building building, Game game) {
-        if (!(building instanceof DefensiveTroopBuilding def)) {
-            return;
-        }
-
-        DefensiveTroopComponent defensiveComponent = def.getDefensiveTroopComponent();
-        int availableMilitiaSlots = defensiveComponent.getMaxAvailableMilitia();
-
-        if (availableMilitiaSlots <= 0) {
-            return;
-        }
-
-        int militiaToSpawn = Math.min(availableMilitiaSlots, 10);
-        int cost = (int)(militiaToSpawn * MILITIA_COST);
-
-        if (building.getGold() < cost) {
-            return;
-        }
-
-        for (int i = 0; i < militiaToSpawn; i++) {
-            if (building.getGold() < MILITIA_COST) {
-                break;
-            }
-
-            // TODO: Actually spawn the militia unit (requires Point finding logic)
-            // For now, reserve the slot and deduct gold
-            defensiveComponent.reserveMilitiaSlots(1);
-            building.addGold(-MILITIA_COST);
-        }
     }
 
     private void buildFocusedBuilding(Building building, Game game) {
