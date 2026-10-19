@@ -93,9 +93,8 @@ public abstract class Building extends Entity {
         return total;
     }
 
-    protected void tickAreaBuildingsWithMaintenance(java.util.Collection<? extends buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot> areas, empirebuilder.Game game) {
-        for (buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot area : areas) {
-            buildings.subBuildings.subBuildingFunctions.SubBuilding subBuilding = area.getSubBuilding();
+    protected void tickSubBuildingsWithMaintenance(empirebuilder.Game game) {
+        for (SubBuilding subBuilding : new ArrayList<>(subBuildings)) {
             if (subBuilding != null) {
                 double maintenanceCost = subBuilding.getMaintenanceCost();
                 if (maintenanceCost > 0 && this.getGold() < maintenanceCost) {

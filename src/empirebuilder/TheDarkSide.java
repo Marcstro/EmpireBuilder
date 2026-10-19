@@ -66,6 +66,10 @@ public class TheDarkSide {
         isDarkSideActivated = true;
     }
 
+    public void removeEvilBase(EvilBase evilBase) {
+        evilBases.remove(evilBase);
+    }
+
     public void deactivate(){
         isDarkSideActivated = false;
     }

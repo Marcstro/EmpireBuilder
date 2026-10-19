@@ -58,11 +58,7 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
     public void tick(Game game) {
         defensiveTroopComponent.tick();
         tickBuildingAI(game);
-        tickAreaBuildingSubBuildings(game);
-    }
-
-    private void tickAreaBuildingSubBuildings(Game game) {
-        tickAreaBuildingsWithMaintenance(cityAreaPoints, game);
+        tickSubBuildingsWithMaintenance(game);
     }
 
     @Override

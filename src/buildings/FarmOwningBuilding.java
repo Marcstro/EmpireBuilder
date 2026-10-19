@@ -5,10 +5,9 @@ import empirebuilder.Point;
 import java.awt.*;
 import java.util.*;
 
-public abstract class FarmOwningBuilding extends Building{
+public abstract class FarmOwningBuilding extends LandOwningBuilding{
     
     LinkedList<Farm> farms;
-    Set<Point> controlledLand;
     LinkedList<Point> emptyLand;
     double food;
     int foodNeededToCreateNewFarm;
@@ -18,7 +17,6 @@ public abstract class FarmOwningBuilding extends Building{
     public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
         super(point, color, health);
         farms = new LinkedList();
-        controlledLand = new HashSet<>();
         emptyLand = new LinkedList();
         this.foodNeededToCreateNewFarm = foodNeededToCreateNewFarm;
         foodIncomeThisRound = 0;
@@ -76,8 +74,7 @@ public abstract class FarmOwningBuilding extends Building{
         
     public void removeFromFarmList(Farm farm){
         farms.remove(farm);
-        emptyLand.add(farm.getPoint());
-        Collections.shuffle(emptyLand);
+        addEmptyPoint(farm.getPoint());
     }
     
     public void addFood(int foodAdd){
@@ -93,8 +90,10 @@ public abstract class FarmOwningBuilding extends Building{
     }
     
     public void addEmptyPoint(Point point){
-        emptyLand.add(point);
-        Collections.shuffle(emptyLand);
+        if (point.getPointOwner() == this && !emptyLand.contains(point)) {
+            emptyLand.add(point);
+            Collections.shuffle(emptyLand);
+        }
     }
 
     public LinkedList<Farm> getFarms() {
@@ -114,20 +113,10 @@ public abstract class FarmOwningBuilding extends Building{
         increasePeople();
     }
 
-    public Set<Point> getControlledLand() {
-        return controlledLand;
-    }
-
-    public void setControlledLand(Set<Point> controlledLand) {
-        this.controlledLand = controlledLand;
-    }
-
+    @Override
     public void removeFromControlledLand(Point point){
-        controlledLand.remove(point);
-    }
-
-    public void addToControlledLand(Point point){
-        controlledLand.add(point);
+        super.removeFromControlledLand(point);
+        removePointFromEmptyPointList(point);
     }
 
     public LinkedList<Point> getEmptyLand() {
@@ -139,10 +128,16 @@ public abstract class FarmOwningBuilding extends Building{
     }
     
     public Point getRandomEmptySpotWithinDomain(){
-        return emptyLand.pollFirst();
+        while (!emptyLand.isEmpty()) {
+            Point point = emptyLand.pollFirst();
+            if (point.getPointOwner() == this && point.canSpawnFarm()) {
+                return point;
+            }
+        }
+        return null;
     }
 
     public void removePointFromEmptyPointList(Point point){
-        emptyLand.remove(point);
+        emptyLand.removeIf(candidate -> candidate == point);
     }
 }

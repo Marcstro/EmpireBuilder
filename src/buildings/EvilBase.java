@@ -11,7 +11,7 @@ import entities.units.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EvilBase extends Building implements UnitOwner {
+public class EvilBase extends LandOwningBuilding implements UnitOwner {
 
     public static final int EVIL_FACTION_ID = 2;
     final static int startingHealth = 300;
@@ -43,11 +43,7 @@ public class EvilBase extends Building implements UnitOwner {
     @Override
     public void tick(Game game) {
         tickBuildingAI(game);
-        tickAreaBuildingSubBuildings(game);
-    }
-
-    private void tickAreaBuildingSubBuildings(Game game) {
-        tickAreaBuildingsWithMaintenance(evilBaseAreas, game);
+        tickSubBuildingsWithMaintenance(game);
     }
 
     @Override
@@ -63,6 +59,10 @@ public class EvilBase extends Building implements UnitOwner {
 
     public List<EvilBaseArea> getEvilBaseAreas() {
         return evilBaseAreas;
+    }
+
+    public TheDarkSide getDarkSide() {
+        return theDarkSide;
     }
 
     public void setEvilBaseAreas(List<EvilBaseArea> evilBaseAreas) {

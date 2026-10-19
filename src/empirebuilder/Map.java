@@ -3,6 +3,7 @@ package empirebuilder;
 import LandTypes.*;
 import buildings.Building;
 import buildings.Farm;
+import buildings.FarmOwningBuilding;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -80,11 +81,13 @@ public class Map {
     }
 
     public void replaceBuilding(Point point, Building building){
+        validateFarmPlacement(point, building);
         removeBuildingFromPoint(point);
         setBuildingOnPoint(point, building);
     }
     
     public void setBuildingOnPoint(Point point, Building building){
+        validateFarmPlacement(point, building);
         if (point.getBuilding() != null){
             if (point.getBuilding() instanceof Farm farm){
                 if (farm.belongsToFarmOwningBuilding()) {
@@ -94,6 +97,13 @@ public class Map {
             removeBuildingFromPoint(point);
         }
         point.setBuilding(building);
+    }
+
+    private void validateFarmPlacement(Point point, Building building) {
+        if (building instanceof Farm && point.isOwnedByBuilding()
+                && !(point.getPointOwner() instanceof FarmOwningBuilding)) {
+            throw new IllegalStateException("Cannot place a farm on non-farming territory at " + point.getPositionString());
+        }
     }
 
     public void removeBuildingFromPoint(Point point){
@@ -108,7 +118,7 @@ public class Map {
         for (int radius = 1; radius <= FARM_EXTEND_DISTANCE; radius++) {
             ArrayList<int[]> possiblePoints = new ArrayList<>(circleSearch.getSingleLinePositionsAroundTargetInCircle(x, y, radius));
 
-            possiblePoints.removeIf(p -> !grid[p[0]][p[1]].isEmpty());
+            possiblePoints.removeIf(p -> !grid[p[0]][p[1]].canSpawnFarm());
 
             if (!possiblePoints.isEmpty()) {
                 Collections.shuffle(possiblePoints, random);
@@ -214,7 +224,7 @@ public class Map {
 
     public Point getRandomEmptyWalkablePointAdjecantToTarget(Point originalPoint){
         LinkedList<int[]> emptyPoints = circleSearch.getValidAdjacentPoints(originalPoint.getX(), originalPoint.getY()).stream()
-            .filter(p -> grid[p[0]][p[1]].isEmpty())
+            .filter(p -> grid[p[0]][p[1]].canSpawnFarm())
             .filter(p -> grid[p[0]][p[1]].isTerrainWalkable())
             .collect(Collectors.toCollection(LinkedList::new));
 

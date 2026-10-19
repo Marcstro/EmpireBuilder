@@ -41,6 +41,7 @@ public class Game{
     List<AttackCapableBuilding> attackCapableBuildings;
 
     List<EvilBase> evilBases;
+    private final Set<EvilBase> evilBasesToRemove = new HashSet<>();
 
     List<Farm> farmsToAdd;
     List<Farm> farmToConvertToVillage;
@@ -120,6 +121,9 @@ public class Game{
     }
 
     public void removeDeadOrExpired(){
+        List<EvilBase> evilBasesSnapshot = new ArrayList<>(evilBasesToRemove);
+        evilBasesToRemove.clear();
+        evilBasesSnapshot.forEach(this::destroyBuilding);
         List<Farm> farmsSnapshot = new ArrayList<>(farmsToRemove);
         farmsToRemove.clear();
         for (Farm farm : farmsSnapshot) {
@@ -239,7 +243,9 @@ public class Game{
                         if (newNeighbourPoint == null){
                             continue;
                         }
-                        FarmOwningBuilding newOwner = newNeighbourPoint.getPointOwner();
+                        if (!(newNeighbourPoint.getPointOwner() instanceof FarmOwningBuilding newOwner)) {
+                            throw new IllegalStateException("Adjacent owned farm has no farming land owner");
+                        }
                         farm.setFarmOwningBuilding(newOwner);
                         newOwner.addFarm(farm);
                         newOwner.addToControlledLand(farm.getPoint());
@@ -281,13 +287,11 @@ public class Game{
                 continue;
             }
             if (village.hasCommunalFoodToCreateNewFarm()){
-                Point newFarmPoint = null;
-                if (!village.getEmptyLand().isEmpty()){
-                    newFarmPoint = village.getRandomEmptySpotWithinDomain();
-                }
-                else {
+                Point newFarmPoint = village.getRandomEmptySpotWithinDomain();
+                if (newFarmPoint == null) {
                     List<Point> availableSpots = gm.getMap().getAllEmptyAndWalkablePointsInCircleAroundTarget(
-                            village.getPoint(), villageSpreadingFarmsDistance);
+                            village.getPoint(), villageSpreadingFarmsDistance).stream()
+                            .filter(Point::canSpawnFarm).toList();
                     if (!availableSpots.isEmpty()){
                         newFarmPoint = availableSpots.get(ThreadLocalRandom.current().nextInt(availableSpots.size()));
                     }
@@ -343,7 +347,7 @@ public class Game{
 
         for (EvilBase evilBase: evilBases){
             if (!evilBase.isAlive()){
-                evilBases.remove(evilBase);
+                evilBasesToRemove.add(evilBase);
                 continue;
             }
             evilBase.tick(this);
@@ -359,7 +363,7 @@ public class Game{
         darkside.tick(this);
         for (EvilBase evilBase: evilBases){
             if (!evilBase.isAlive()){
-                evilBases.remove(evilBase);
+                evilBasesToRemove.add(evilBase);
                 continue;
             }
         }
@@ -726,6 +730,8 @@ public class Game{
     public void createTown(Village village, List<Village> nearbyVillages){
 
         Point midPoint = village.getPoint();
+        Set<Point> inheritedLand = new HashSet<>(village.getControlledLand());
+        inheritedLand.add(midPoint);
         List<Point> townAreaPoints = gm.getMap().getTownShapePointList(midPoint.getX(), midPoint.getY());
 
         villages.remove(village);
@@ -741,7 +747,7 @@ public class Game{
         mapCell.removeBuilding(village);
         attackCapableBuildings.add(newTown);
         mapCell.addAttackCapableBuildings(newTown);
-        newTown.setControlledLand(village.getControlledLand());
+        newTown.setControlledLand(inheritedLand);
 
         for (Point point: newTown.getControlledLand()){
             if (point.equals(midPoint)){
@@ -784,13 +790,9 @@ public class Game{
     // the order of things happening is important and might cause bugs if changed
     public void createCity(Town town, List<Town> nearbyTowns){
 
-        List<buildings.subBuildings.subBuildingFunctions.SubBuilding> subBuildingsToPreserve = new ArrayList<>();
-        for (TownArea ta : town.getTownAreaPoints()) {
-            if (ta.getSubBuilding() != null) {
-                SubBuilding subBuilding = ta.getSubBuilding();
-                subBuildingsToPreserve.add(subBuilding);
-                town.removeSubBuilding(subBuilding);
-            }
+        List<SubBuilding> subBuildingsToPreserve = new ArrayList<>(town.getSubBuildings());
+        for (SubBuilding subBuilding : subBuildingsToPreserve) {
+            town.removeSubBuilding(subBuilding);
         }
 
         attackCapableBuildings.remove(town);
@@ -814,10 +816,14 @@ public class Game{
             gm.getMap().removeBuildingFromPoint(point);
         }
 
-        List<Point> cityAreaPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY());
+        List<Point> cityAreaPoints = gm.getMap().getCityShapePointList(midPoint.getX(), midPoint.getY()).stream()
+                .filter(p -> !p.isOwnedByBuilding() || p.getPointOwner() instanceof FarmOwningBuilding)
+                .toList();
         List<CityArea> newCityAreas = new ArrayList<>();
         for (Point cityAreaPoint: cityAreaPoints){
-            cityAreaPoint.getPointOwner().removePointFromEmptyPointList(cityAreaPoint);
+            if (cityAreaPoint.getPointOwner() instanceof FarmOwningBuilding previousOwner) {
+                previousOwner.removePointFromEmptyPointList(cityAreaPoint);
+            }
             cityAreaPoint.setOwnerBuilding(town);
             town.addToControlledLand(cityAreaPoint);
             if (cityAreaPoint == midPoint){
@@ -1267,6 +1273,7 @@ public class Game{
             case Village village -> villagesToRemove.add(village);
             case Town town -> townsToRemove.add(town);
             case City city -> citiesToRemove.add(city);
+            case EvilBase evilBase -> evilBasesToRemove.add(evilBase);
             case AreaBuilding areaBuilding -> destroySubBuilding(areaBuilding);
             default -> throw new IllegalArgumentException("Unknown building type: " + building.getClass().getName());
         }
@@ -1371,7 +1378,9 @@ public class Game{
         }
          MapCell mapCell = mapCellGrid[unit.getMapCellX()][unit.getMapCellY()];
          mapCell.removeUnit(unit);
-        createEffect(new Grave(unit.getX(), unit.getY()));
+        if (!(unit instanceof FarmAnimal animal && animal.hasExpired())) {
+            createEffect(new Grave(unit.getX(), unit.getY()));
+        }
     }
 
     public AttackCapableBuilding getNearestAttackCapableBuilding(Unit searcher, int distanceOut) {
@@ -1585,6 +1594,16 @@ public class Game{
                 gm.getMap().removeBuildingFromPoint(evilBaseArea.getPoint());
                 ((EvilBase) evilBaseArea.getMainOwner()).removeEvilBaseArea(evilBaseArea);
             }
+            case EvilBase evilBase -> {
+                evilBases.remove(evilBase);
+                evilBase.getDarkSide().removeEvilBase(evilBase);
+                evilBasesToRemove.remove(evilBase);
+                for (EvilBaseArea area : new ArrayList<>(evilBase.getEvilBaseAreas())) {
+                    destroyBuilding(area);
+                }
+                getMapCellByPoint(evilBase.getPoint()).removeBuilding(evilBase);
+                gm.getMap().removeBuildingFromPoint(evilBase.getPoint());
+            }
             case null, default -> throw new RuntimeException("x196 what kind of building was destroyed???");
         }
 
@@ -1598,11 +1617,11 @@ public class Game{
             villageOwningBuilding.setVillages(null);
         }
 
+        if (building instanceof LandOwningBuilding landOwningBuilding) {
+            landOwningBuilding.setControlledLand(Set.of());
+        }
+
         if (building instanceof FarmOwningBuilding farmOwningBuilding){
-            for (Point point: farmOwningBuilding.getControlledLand()){
-                point.setOwnerBuilding(null);
-            }
-            farmOwningBuilding.setControlledLand(null);
             List<Farm> snapshot = new ArrayList<>(farmOwningBuilding.getFarms());
             snapshot.forEach(farm -> destroyBuilding(farm));
         }
@@ -1622,11 +1641,12 @@ public class Game{
                         .filter(Point::isTerrainWalkable)
                         .toList());
         for(Point point: pointToBeGivenToVillage){
+            point.setOwnerBuilding(village);
             if (point.getBuilding() instanceof Farm farm){
                 village.addFarm(farm);
                 farm.setFarmOwningBuilding(village);
             }
-            else {
+            else if (point.isEmpty()) {
                 village.addEmptyPoint(point);
             }
             village.addToControlledLand(point);
@@ -1787,29 +1807,35 @@ public class Game{
 
     public EvilBase createEvilBase(Point point, TheDarkSide theDarkSide){
 
-        // TODO scorch the earth around this location. destroy all nearby farms and other buildings
+        List<Point> areaPoints = gm.getMap().getAllPointsInCircleAroundTarget(point, evilLairSize);
+        for (Point p : areaPoints) {
+            if (p.getBuilding() != null && !(p.getBuilding() instanceof Farm)) {
+                throw new IllegalStateException("Evil base footprint overlaps a building at " + p.getPositionString());
+            }
+        }
+        for (Point p : areaPoints) {
+            if (p.getBuilding() instanceof Farm farm) {
+                destroyBuilding(farm);
+                farmsToRemove.remove(farm);
+                farmsToAdd.remove(farm);
+                farmToConvertToVillage.remove(farm);
+            }
+        }
         EvilBase evilBase = new EvilBase(point, theDarkSide);
         // TODO make evilside base attackCapable
         //getMapCellByPoint(point).addAttackCapableBuildings(evilBase);
         //attackCapableBuildings.add(evilBase);
         gm.getMap().setBuildingOnPoint(point, evilBase);
         evilBases.add(evilBase);
-        List<Point> areaPoints = gm.getMap().getAllPointsInCircleAroundTarget(point, evilLairSize);
+        point.setOwnerBuilding(evilBase);
         for(Point p: areaPoints){
+            p.setOwnerBuilding(evilBase);
             if(p.equals(point)){
                 continue;
-            }
-            if (p.getBuilding() instanceof Farm farm){
-                destroyBuilding(farm);
-                if (farmsToRemove.contains(farm)) {
-                    farmsToRemove.remove(farm);
-                }
             }
             EvilBaseArea area = new EvilBaseArea(p, evilBase);
             evilBase.addEvilBaseArea(area);
             gm.getMap().setBuildingOnPoint(p, area);
-            // TODO set point ownership to the EvilBase. Will require some development
-            // p.setOwnerBuilding(evilBase);
         }
         evilBase.bootstrapWithScoutHut(this);
         return evilBase;

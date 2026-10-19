@@ -281,12 +281,12 @@ public class TestFunctions {
         for (int x = 0; x < gm.getMap().width; x++) {
             for (int y = 0; y < gm.getMap().height; y++) {
                 Point point = gm.getMap().getPoint(x, y);
-                if (point.getBuilding() instanceof FarmOwningBuilding farmOwningBuilding) {
-                    for (Point controlledPoint : farmOwningBuilding.getControlledLand()) {
-                        if (controlledPoint.getPointOwner() != farmOwningBuilding) {
+                if (point.getBuilding() instanceof LandOwningBuilding landOwningBuilding) {
+                    for (Point controlledPoint : landOwningBuilding.getControlledLand()) {
+                        if (controlledPoint.getPointOwner() != landOwningBuilding) {
                             System.out.println("OBS OBS. One of buildings controlled points doesnt recognise owner");
                             System.out.println(controlledPoint.getInfo());
-                            System.out.println(farmOwningBuilding.getControlledLand());
+                            System.out.println(landOwningBuilding.getControlledLand());
                         }
                     }
                 }

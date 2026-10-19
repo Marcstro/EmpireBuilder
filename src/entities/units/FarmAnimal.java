@@ -8,6 +8,7 @@ public abstract class FarmAnimal extends Unit{
 
     Point idleBasePoint;
     int lifeRemaining;
+    private boolean expired = false;
     final static int lifeSpan = 3600;
     private static final int VALUE = 200;
 
@@ -26,11 +27,19 @@ public abstract class FarmAnimal extends Unit{
         this.idleBasePoint = idleBasePoint;
     }
 
+    public boolean hasExpired() {
+        return expired;
+    }
+
     @Override
     public void tick(Game game) {
         super.tick(game);
+        if (!isAlive()) {
+            return;
+        }
         lifeRemaining--;
         if (lifeRemaining <= 0) {
+            expired = true;
             ((Village)getUnitOwner()).animalDied();
             setIsAlive(false);
         }
