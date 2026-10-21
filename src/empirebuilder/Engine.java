@@ -1,69 +1,195 @@
 package empirebuilder;
 
+import javax.swing.SwingUtilities;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 public class Engine {
+    public static final double BASE_TICKS_PER_SECOND = 60;
+    public static final double NORMAL_SPEED_MULTIPLIER = 1;
+    public static final double MAX_SPEED_MULTIPLIER = Double.POSITIVE_INFINITY;
+    public static final List<Double> SPEED_MULTIPLIERS = List.of(
+            1.0 / 1024, 1.0 / 512, 1.0 / 256, 1.0 / 128, 1.0 / 64,
+            1.0 / 32, 1.0 / 16, 1.0 / 8, 1.0 / 4, 1.0 / 2,
+            1.0, 2.0, 3.0, 4.0, 5.0, 10.0, MAX_SPEED_MULTIPLIER);
+
+    private final Object stateLock = new Object();
+    private final TickRateTracker tickRateTracker = new TickRateTracker();
+    private final GameManager gameManager;
     private volatile boolean running = false;
+    private volatile int speedIndex = SPEED_MULTIPLIERS.indexOf(NORMAL_SPEED_MULTIPLIER);
+    private volatile int tickCounter;
     private Thread gameThread;
     private javax.swing.Timer renderTimer;
     private volatile Runnable afterTickAction;
-    GameManager gameManager;
-    private int tickCounter;
-    
-    public static volatile double REFRESH_RATE = 0.05;
-    public static final double MIN_REFRESH_RATE = 0.001;
-    public static final double QUICKSTART_REFRESH_RATE = 0.0001;
-    private static final double MAX_REFRESH_RATE = 5.0;
+    private boolean stopRequested;
+    private boolean tickInProgress;
+    private int pendingSteps;
+    private long timingVersion;
 
     Engine(GameManager gameManager) {
         this.gameManager = gameManager;
-        tickCounter=0;
     }
-    
+
     public void start() {
-        if (running) {
-            System.out.println("Engine is already running!");
-            return;
-        }
-
-        running = true;
-        gameThread = new Thread(() -> {
-            while (running) {
-                tick();
-                try {
-                    long refreshNanos = (long) (REFRESH_RATE * 1_000_000_000L);
-                    long refreshMillis = refreshNanos / 1_000_000L;
-                    int remainingNanos = (int) (refreshNanos % 1_000_000L);
-                    Thread.sleep(refreshMillis, remainingNanos);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+        synchronized (stateLock) {
+            if (running) {
+                return;
             }
-        });
+            ensureGameThread();
+            running = true;
+            pendingSteps = 0;
+            resetTiming();
+        }
+        startRendering();
+    }
 
-        gameThread.start();
+    public void pause() {
+        synchronized (stateLock) {
+            running = false;
+            pendingSteps = 0;
+            resetTiming();
+        }
+    }
 
-        renderTimer = new javax.swing.Timer(16, e -> gameManager.getGridPanel().repaint());
-        renderTimer.start();
-
-        System.out.println("Engine started.");
+    public void advanceOneTick() {
+        synchronized (stateLock) {
+            if (running) {
+                throw new IllegalStateException("Pause the simulation before advancing one tick");
+            }
+            ensureGameThread();
+            pendingSteps++;
+            stateLock.notifyAll();
+        }
+        startRendering();
     }
 
     public void stop() {
-        afterTickAction = null;
-        if (!running) {
-            System.out.println("Engine is already stopped!");
-            return;
+        Thread worker;
+        synchronized (stateLock) {
+            running = false;
+            pendingSteps = 0;
+            stopRequested = true;
+            afterTickAction = null;
+            resetTiming();
+            worker = gameThread;
         }
+        if (worker != null && worker != Thread.currentThread()) {
+            try {
+                worker.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while stopping the simulation", e);
+            }
+        }
+        stopRendering();
+    }
 
-        running = false;
-        if (renderTimer != null) {
-            renderTimer.stop();
+    private void ensureGameThread() {
+        if (gameThread == null) {
+            stopRequested = false;
+            gameThread = new Thread(this::runLoop, "EmpireBuilder-Simulation");
+            gameThread.setDaemon(true);
+            gameThread.start();
+        } else if (stopRequested) {
+            throw new IllegalStateException("The simulation is still stopping");
         }
+    }
+
+    private void runLoop() {
+        TickSchedule schedule = new TickSchedule();
+        long scheduledVersion = -1;
         try {
-            gameThread.join(); // Wait for the thread to finish
+            while (true) {
+                boolean singleStep;
+                long tickVersion;
+                synchronized (stateLock) {
+                    while (!stopRequested && !running && pendingSteps == 0) {
+                        stateLock.wait();
+                    }
+                    if (stopRequested) {
+                        return;
+                    }
+                    singleStep = !running;
+                    tickVersion = timingVersion;
+                    if (singleStep) {
+                        pendingSteps--;
+                    } else {
+                        if (scheduledVersion != timingVersion) {
+                            double targetTps = getTargetTicksPerSecond();
+                            long interval = Double.isInfinite(targetTps)
+                                    ? 0 : Math.round(1_000_000_000.0 / targetTps);
+                            schedule.reset(System.nanoTime(), interval);
+                            scheduledVersion = timingVersion;
+                        }
+                        long delay = schedule.delayNanos(System.nanoTime());
+                        if (delay > 0) {
+                            TimeUnit.NANOSECONDS.timedWait(stateLock, delay);
+                            continue;
+                        }
+                    }
+                    tickInProgress = true;
+                }
+
+                tick();
+
+                synchronized (stateLock) {
+                    tickInProgress = false;
+                    if (!singleStep && running && tickVersion == timingVersion) {
+                        long now = System.nanoTime();
+                        tickRateTracker.recordTick(now);
+                        schedule.tickCompleted(now);
+                    }
+                    stateLock.notifyAll();
+                }
+            }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            throw new IllegalStateException("The simulation thread was interrupted", e);
+        } finally {
+            synchronized (stateLock) {
+                running = false;
+                tickInProgress = false;
+                pendingSteps = 0;
+                afterTickAction = null;
+                tickRateTracker.reset();
+                gameThread = null;
+                stateLock.notifyAll();
+            }
         }
-        System.out.println("Engine stopped at tick: " + tickCounter);
+    }
+
+    private void startRendering() {
+        if (gameManager.getGridPanel() == null) {
+            return;
+        }
+        Runnable start = () -> {
+            if (renderTimer == null) {
+                renderTimer = new javax.swing.Timer(16, e -> gameManager.getGridPanel().repaint());
+            }
+            renderTimer.start();
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            start.run();
+        } else {
+            SwingUtilities.invokeLater(start);
+        }
+    }
+
+    private void stopRendering() {
+        if (gameManager.getGridPanel() == null) {
+            return;
+        }
+        Runnable stop = () -> {
+            if (renderTimer != null) {
+                renderTimer.stop();
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            stop.run();
+        } else {
+            SwingUtilities.invokeLater(stop);
+        }
     }
 
     public void tick() {
@@ -112,29 +238,62 @@ public class Engine {
     public boolean isRunning() {
         return running;
     }
-    
+
     public void increaseSpeed() {
-        if (REFRESH_RATE > MIN_REFRESH_RATE) {
-            REFRESH_RATE /= 2;
+        synchronized (stateLock) {
+            setSpeedIndex(Math.min(speedIndex + 1, SPEED_MULTIPLIERS.size() - 1));
         }
     }
 
     public void decreaseSpeed() {
-        if (REFRESH_RATE < MAX_REFRESH_RATE) {
-            REFRESH_RATE *= 2;
+        synchronized (stateLock) {
+            setSpeedIndex(Math.max(speedIndex - 1, 0));
         }
     }
 
-    public double getTickRate() {
-        return REFRESH_RATE;
+    public int getSpeedIndex() {
+        return speedIndex;
     }
 
-    public void setTickRate(double refreshRate) {
-        if (refreshRate <= 0 || refreshRate > MAX_REFRESH_RATE) {
-            throw new IllegalArgumentException("Tick rate must be between "
-                    + "0 and " + MAX_REFRESH_RATE + " seconds.");
+    public void setSpeedIndex(int index) {
+        if (index < 0 || index >= SPEED_MULTIPLIERS.size()) {
+            throw new IllegalArgumentException("Unknown simulation speed index: " + index);
         }
-        REFRESH_RATE = refreshRate;
+        synchronized (stateLock) {
+            if (speedIndex != index) {
+                speedIndex = index;
+                resetTiming();
+            }
+        }
+    }
+
+    public double getSpeedMultiplier() {
+        return SPEED_MULTIPLIERS.get(speedIndex);
+    }
+
+    public void setSpeedMultiplier(double multiplier) {
+        int index = SPEED_MULTIPLIERS.indexOf(multiplier);
+        if (index < 0) {
+            throw new IllegalArgumentException("Unknown simulation speed multiplier: " + multiplier);
+        }
+        setSpeedIndex(index);
+    }
+
+    public double getTargetTicksPerSecond() {
+        return BASE_TICKS_PER_SECOND * getSpeedMultiplier();
+    }
+
+    /** Average over up to 200 completed tick intervals, excluding pauses and previous speed settings. */
+    public double getActualTicksPerSecond() {
+        synchronized (stateLock) {
+            return running ? tickRateTracker.getTicksPerSecond() : 0;
+        }
+    }
+
+    private void resetTiming() {
+        timingVersion++;
+        tickRateTracker.reset();
+        stateLock.notifyAll();
     }
 
     public void setAfterTickAction(Runnable action) {
@@ -146,6 +305,74 @@ public class Engine {
     }
 
     public void resetTickCounter(){
-        tickCounter=0;
+        synchronized (stateLock) {
+            if (running || tickInProgress || pendingSteps > 0) {
+                throw new IllegalStateException("Stop the simulation before resetting its tick counter");
+            }
+            tickCounter=0;
+            resetTiming();
+        }
+    }
+
+    static final class TickSchedule {
+        private static final int MAX_CATCH_UP_TICKS = 5;
+        private long intervalNanos;
+        private long nextTickNanos;
+        private int catchUpTicks;
+
+        void reset(long now, long interval) {
+            intervalNanos = interval;
+            nextTickNanos = now;
+            catchUpTicks = 0;
+        }
+
+        long delayNanos(long now) {
+            return intervalNanos == 0 ? 0 : Math.max(0, nextTickNanos - now);
+        }
+
+        void tickCompleted(long now) {
+            if (intervalNanos == 0) {
+                return;
+            }
+            nextTickNanos += intervalNanos;
+            if (nextTickNanos <= now) {
+                if (++catchUpTicks >= MAX_CATCH_UP_TICKS) {
+                    // Drop accumulated wall-clock debt, not simulation ticks.
+                    nextTickNanos = now;
+                    catchUpTicks = 0;
+                }
+            } else {
+                catchUpTicks = 0;
+            }
+        }
+    }
+
+    static final class TickRateTracker {
+        private final long[] completionTimes = new long[201];
+        private int nextIndex;
+        private int sampleCount;
+        private double ticksPerSecond;
+
+        void recordTick(long now) {
+            completionTimes[nextIndex] = now;
+            nextIndex = (nextIndex + 1) % completionTimes.length;
+            sampleCount = Math.min(sampleCount + 1, completionTimes.length);
+            if (sampleCount > 1) {
+                int oldestIndex = sampleCount == completionTimes.length ? nextIndex : 0;
+                long elapsed = now - completionTimes[oldestIndex];
+                ticksPerSecond = elapsed > 0
+                        ? (sampleCount - 1) * 1_000_000_000.0 / elapsed : 0;
+            }
+        }
+
+        double getTicksPerSecond() {
+            return ticksPerSecond;
+        }
+
+        void reset() {
+            nextIndex = 0;
+            sampleCount = 0;
+            ticksPerSecond = 0;
+        }
     }
 }

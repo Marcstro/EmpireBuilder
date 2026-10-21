@@ -10,7 +10,7 @@ public class Grassland extends Land {
     ArrayList<Color> fertilityLevelColor;
     Color color;
     boolean isWalkable = true;
-    static final double grassFertilityLevel = 1;
+    static final double grassFertilityLevel = 2;
     
     public Grassland() {
         super(LandType.GRASSLAND, grassFertilityLevel);

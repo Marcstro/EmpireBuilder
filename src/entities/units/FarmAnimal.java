@@ -9,7 +9,7 @@ public abstract class FarmAnimal extends Unit{
     Point idleBasePoint;
     int lifeRemaining;
     private boolean expired = false;
-    final static int lifeSpan = 3600;
+    final static int lifeSpan = 3000;
     private static final int VALUE = 200;
 
     public FarmAnimal(double x, double y, double speed, double health, double damage, int factionId, double size, int attackCooldownBase) {
@@ -32,6 +32,20 @@ public abstract class FarmAnimal extends Unit{
     }
 
     @Override
+    public void setIsAlive(boolean alive) {
+        boolean wasAlive = isAlive();
+        super.setIsAlive(alive);
+        if (wasAlive && !alive && getUnitOwner() instanceof Village village) {
+            village.animalDied();
+        }
+    }
+
+    @Override
+    public void setAlive(boolean alive) {
+        setIsAlive(alive);
+    }
+
+    @Override
     public void tick(Game game) {
         super.tick(game);
         if (!isAlive()) {
@@ -40,7 +54,6 @@ public abstract class FarmAnimal extends Unit{
         lifeRemaining--;
         if (lifeRemaining <= 0) {
             expired = true;
-            ((Village)getUnitOwner()).animalDied();
             setIsAlive(false);
         }
     }

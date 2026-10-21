@@ -217,13 +217,14 @@ public class TestFunctions {
     }
 
     public void quickstart() {
+        Engine engine = gm.getEngine();
+        engine.stop();
         for (int x=0; x<8; x++){
             create13FarmsInCircleAtRandomPoint();
         }
 
-        Engine engine = gm.getEngine();
         quickstartActive = true;
-        engine.setTickRate(Engine.QUICKSTART_REFRESH_RATE);
+        engine.setSpeedMultiplier(Engine.MAX_SPEED_MULTIPLIER);
         engine.setAfterTickAction(this::checkQuickstartProgress);
         engine.start();
     }
@@ -236,7 +237,7 @@ public class TestFunctions {
         quickstartActive = false;
         Engine engine = gm.getEngine();
         engine.setAfterTickAction(null);
-        engine.setTickRate(0.025);
+        engine.setSpeedMultiplier(Engine.NORMAL_SPEED_MULTIPLIER);
     }
 
     public static <T> Set<T> findDuplicatesIterative(List<T> list) {

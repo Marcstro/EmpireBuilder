@@ -11,7 +11,7 @@ class TownLand extends Land{
     LandType landType = LandType.TOWN;
     boolean isWalkable = true;
     int walkingCost = 0;
-    static final double townLandFertilitylevel = 1.0;
+    static final double townLandFertilitylevel = 2;
 
     public TownLand() {
         super(LandType.VILLAGE, townLandFertilitylevel);

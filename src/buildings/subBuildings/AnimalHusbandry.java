@@ -9,7 +9,7 @@ import empirebuilder.Game;
 public class AnimalHusbandry extends SubBuilding {
     private static final double UPFRONT_COST = 20000;
     public static final java.util.List<SubBuildingRequirement> SUB_BUILDING_REQUIREMENTS = java.util.List.of();
-    int animalSpawnCooldownBase = 100;
+    int animalSpawnCooldownBase = 73;
     int animalSpawnCooldown = 0;
 
     public AnimalHusbandry(AreaBuildingSlot areaBuilding) {

@@ -12,7 +12,7 @@ public abstract class VillageOwningBuilding extends FarmOwningBuilding{
 
     public void attemptToSpawnAnimal(Game game){
         for (Village village : villages){
-            if (village.hasRoomForAdditionalAnimals()){
+            if (village.isAlive() && village.hasRoomForAdditionalAnimals()){
                 village.addAnimals(game);
                 return;
             }

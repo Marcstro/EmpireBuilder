@@ -99,9 +99,12 @@ public class GameManager{
     public void recreateWorld(){
         engine.stop();
         engine.resetTickCounter();
+        boolean evilSideSpawningEnabled = game.getDarkside().isEvilSideSpawningEnabled();
         map = new Map(this, MAP_WIDTH, MAP_HEIGHT);
         gridPanel.updateMap(map);
         game = new Game(this);
+        game.getDarkside().setEvilSideSpawningEnabled(evilSideSpawningEnabled);
+        worldState = new WorldState(this, game);
         pathfinder = new AStarPathfinder(map);
         pathfindingSystem = new PathfindingSystem(this);
         pathfindingSystem.reset();

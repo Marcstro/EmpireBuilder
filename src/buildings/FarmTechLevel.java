@@ -1,12 +1,12 @@
 package buildings;
 
 public enum FarmTechLevel {
-    LEVEL_1( 1), // base
-    LEVEL_2( 2), // has at least 4 people
-    LEVEL_3( 3), // belongs to village
-    LEVEL_4( 4), // belongs to town
-    LEVEL_5( 5), // belongs to city
-    LEVEL_6( 6);
+    LEVEL_1( 0), // base
+    LEVEL_2( 1), // has at least 4 people
+    LEVEL_3( 2), // belongs to village
+    LEVEL_4( 3), // belongs to town
+    LEVEL_5( 4), // belongs to city
+    LEVEL_6( 5);
 
     private final int level;
 

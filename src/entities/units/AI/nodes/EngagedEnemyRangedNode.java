@@ -17,7 +17,7 @@ public class EngagedEnemyRangedNode implements Node {
         }
         else if (!unit.getCombatTarget().isAlive()) {
             unit.setCombatTarget(null);
-            unit.resetSearchCooldown();
+            unit.clearSearchCooldown();
             ticksSinceLastDistanceCheck = 0;
             return GoalStatus.REJECTED;
         }

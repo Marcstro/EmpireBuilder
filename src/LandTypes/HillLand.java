@@ -6,7 +6,7 @@ public class HillLand extends Land {
     LandType landType = LandType.HILL;
     boolean isWalkable = true;
     int walkingCost = 3;
-    static final double hillFertilityLevel = 0.6;
+    static final double hillFertilityLevel = 1;
 
     public HillLand() {
         super(LandType.HILL, hillFertilityLevel);

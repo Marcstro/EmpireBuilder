@@ -94,7 +94,7 @@ public abstract class Unit extends MovingEntity {
             game.performMeleeAttack(this, target);
             if (!target.isAlive()){
                 combatTarget = null;
-                searchCooldown = 0;
+                clearSearchCooldown();
             }
             resetAttackCooldown();
             return true;
@@ -111,6 +111,10 @@ public abstract class Unit extends MovingEntity {
         attackCooldown--;
         if (fleeTarget != null && --fleeTicksRemaining <= 0){
             clearFleeTarget();
+        }
+        if (combatTarget != null && !combatTarget.isAlive()){
+            combatTarget = null;
+            clearSearchCooldown();
         }
         logicMotor.tick(this, game);
     }
@@ -179,6 +183,10 @@ public abstract class Unit extends MovingEntity {
         searchCooldown = IDLE_SEARCH_COOLDOWN;
     }
 
+    public void clearSearchCooldown(){
+        searchCooldown = 0;
+    }
+
     public UnitOrder getUnitOrder() {
         return unitorder;
     }
@@ -215,7 +223,7 @@ public abstract class Unit extends MovingEntity {
     @Override
     public double getSpeed(){
         if (getUnitOrder().equals(UnitOrder.IDLING)){
-            return super.getSpeed() * 0.1;
+            return super.getSpeed() * 0.2;
         }
         return speed;
     }

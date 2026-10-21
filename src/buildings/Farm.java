@@ -18,11 +18,11 @@ public class Farm extends Building {
     public boolean active;
     int searchForNewOwnerCoolDown;
 
-    final static int STARTING_FERTILITY_LEVEL = 1;
+    final static int STARTING_FERTILITY_LEVEL = 0;
     final int EXPAND_THRESHOLD = 5;
     final int MAXIMUM_TIME_BEFORE_DEATH = 25;
     final int FOOD_COST_TO_MULTIPLY = 10;
-    final int BASE_FARM_CAPACITY = 5;
+    final int BASE_FARM_CAPACITY = 4;
     final int PEOPLE_REQUIRED_FOR_TECHNOLOGY_LEVEL_2 = 4;
     final double FOOD_TAX_RATE_VILLAGE = 0.3;
     final double FOOD_TAX_RATE_TOWN = 0.4;
@@ -101,7 +101,13 @@ public class Farm extends Building {
 
         //changeSuccessLevel(getSuccessLevelChange());
         //double increasedFood = getSuccessLevel() * (getTechLevel().getLevel() * (getPoint().getLand().getFertilityLevel()));
-        double increasedFood = getTechLevel().getLevel() * (getPoint().getLand().getFertilityLevel());
+        double fertility = getPoint().getLand().getFertilityLevel();
+        double increasedFood = getTechLevel().getLevel() + fertility - 1;
+
+        if (increasedFood < 1 && fertility > 0) {
+            increasedFood = 1;
+        }
+
         setCurrentFoodTaxIncome(increasedFood);
         food += increasedFood;
         timeUntilNextDeath--;
@@ -117,7 +123,12 @@ public class Farm extends Building {
         // TODO determine if to use success level or not
         //changeSuccessLevel(getSuccessLevelChange());
         //double increasedFood = getSuccessLevel() * (getTechLevel().getLevel() * getPoint().getLand().getFertilityLevel());
-        double increasedFood = getTechLevel().getLevel() * getPoint().getLand().getFertilityLevel();
+        double fertility = getPoint().getLand().getFertilityLevel();
+        double increasedFood = getTechLevel().getLevel() + fertility - 1;
+
+        if (increasedFood < 1 && fertility > 0) {
+            increasedFood = 1;
+        }
         setCurrentFoodTaxIncome(increasedFood);
         timeUntilNextDeath--;
         if (increasedFood > 0){
@@ -155,6 +166,10 @@ public class Farm extends Building {
     }
 
     public void activate(Point point, int people){
+        setIsAlive(true);
+        setHealth(DEFAULT_BUILDING_HEALTH);
+        setCurrentFoodTaxIncome(0);
+        setLastIterationFoodTaxIncome(0);
         food=0;
         timeUntilNextDeath = ThreadLocalRandom.current().nextInt(MAXIMUM_TIME_BEFORE_DEATH);
         techLevel = FarmTechLevel.LEVEL_1;
@@ -215,7 +230,7 @@ public class Farm extends Building {
     }
 
     public int calculateMaxPopulation(){
-        return BASE_FARM_CAPACITY + (getTechLevel().getLevel() * (int)getPoint().getLand().getFertilityLevel());
+        return BASE_FARM_CAPACITY + (getTechLevel().getLevel() + (int)getPoint().getLand().getFertilityLevel());
     }
 
     public double calculateTaxRate(){
@@ -315,14 +330,13 @@ public class Farm extends Building {
 
     @Override
     public String toString() {
-        return "Farm{" + "people=" + getPeople() + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + BASE_FARM_CAPACITY + ", food=" + food + ", FarmOwningBuilding=" + getFarmOwningBuilding() + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
+        return "Farm{" + "people=" + getPeople() + ", MAXIMUM_TIME_BEFORE_DEATH=" + MAXIMUM_TIME_BEFORE_DEATH + ", FOOD_COST_TO_MULTIPLY=" + FOOD_COST_TO_MULTIPLY + ", FARM_CAPACITY=" + calculateMaxPopulation() + ", food=" + food + ", FarmOwningBuilding=" + getFarmOwningBuilding() + ", timeUntilNextDeath=" + timeUntilNextDeath + '}';
     }
 
     @Override
     public String getInfo(){
         return "Farm(id:" + getId() + "){" + "people=" + getPeople() + "/" +calculateMaxPopulation()
                 + ",point=" + getPoint().getX() + ","+getPoint().getY()
-                + ", pos=" + getX() + "," + getY()
                 + ", Tech=" + getTechLevel()
                 + ", food=" + String.format("%.2f", food)
                 + ", foodIncome=" + String.format("%.2f",getCurrentFoodTaxIncome())

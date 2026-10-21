@@ -17,10 +17,10 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     final static int INITIAL_FOOD_NEEDED_TO_CREATE_FARM = 30;
     final double TAXATION_VILLAGE_RATE = 0.6;
 
-    final static int FOOD_PER_FARM_ANIMAL = 1;
-    final static int MAX_ANIMAL_POPULATION = 24;
+    final static int FOOD_PER_FARM_ANIMAL = 25;
+    final static int MAX_ANIMAL_POPULATION = 1;
 
-    int animalPopulation = 0;
+    private int animalPopulation = 0;
     AnimalType animalType;
 
     private final UnitManagerComponent unitManager = new UnitManagerComponent(this);
@@ -48,6 +48,9 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
     }
 
     public void spawnAnimal(Game game){
+        if (!hasRoomForAdditionalAnimals()) {
+            return;
+        }
         int random = (int)(Math.random()*AnimalType.values().length);
         FarmAnimal animal;
         if (random==0){
@@ -64,17 +67,19 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
         animal.setIdleBasePoint(villageCenter);
         animal.setUnitOwner(this);
         unitManager.addUnit(animal);
+        animalPopulation = 1;
     }
 
     public void addAnimals(Game game){
-        if (animalPopulation == 0){
-            spawnAnimal(game);
-        }
-        animalPopulation = MAX_ANIMAL_POPULATION;
+        spawnAnimal(game);
     }
 
     public void animalDied(){
-        animalPopulation--;
+        animalPopulation = 0;
+    }
+
+    public int getAnimalPopulation() {
+        return animalPopulation;
     }
 
     public AnimalType getAnimalType() {
@@ -191,9 +196,8 @@ public class Village extends FarmOwningBuilding implements UnitOwner {
 
     @Override
     public void processTotalFoodIncome() {
-        int effectiveAnimalPopulation = Math.min(animalPopulation, MAX_ANIMAL_POPULATION);
         double totalIncome = collectTotalFoodAcquired()
-                + (effectiveAnimalPopulation * FOOD_PER_FARM_ANIMAL);
+                + (animalPopulation * FOOD_PER_FARM_ANIMAL);
         if (hasOwner()){
             getVillageOwningBuilding().payFoodTax(totalIncome*TAXATION_VILLAGE_RATE);
             food += totalIncome*(1-TAXATION_VILLAGE_RATE);

@@ -5,7 +5,7 @@ import java.awt.*;
 public class CityLand extends Land{
 
     LandType landType = LandType.CITY;
-    static final double cityFertilityLevel = 1.0;
+    static final double cityFertilityLevel = 2.0;
 
     public CityLand() {
         super(LandType.CITY, cityFertilityLevel);

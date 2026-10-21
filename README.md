@@ -15,6 +15,7 @@ TODOs in no specific order:
 - evilBase should own all of its points
 - make destruction of evilBase safe, current will bug if more than 1 exist
 - Shooting towers (subbuildings) should not fetch stats from owning building, also new types of shooting towers
+- There is a bug when farms sometimes dont get their proper owners set.
 
 Nearest TODOs:
 - new Farms should not create grassland on their spot

@@ -8,7 +8,7 @@ public class Dirt extends Land {
     
     LandType landType = LandType.DIRT;
     boolean isWalkable = true;
-    static final double dirtFertilityLevel = 0.7;
+    static final double dirtFertilityLevel = 1;
 
     public Dirt() {
         super(LandType.DIRT, dirtFertilityLevel);

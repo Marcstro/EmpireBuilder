@@ -2,6 +2,7 @@ package empirebuilder;
 
 import javax.swing.*;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import buildingsTools.TerrainGeneratorType;
@@ -9,8 +10,14 @@ import buildingsTools.TerrainGeneratorType;
 public class ButtonPanel extends JPanel {
     
     GameManager gameManager;
-    private TextField tickRateLabel;
-    private TextField tickCounterLabel;
+    private JLabel speedLabel;
+    private JLabel targetTickRateLabel;
+    private JLabel actualTickRateLabel;
+    private JLabel tickCounterLabel;
+    private JSlider speedSlider;
+    private JButton startButton;
+    private JButton pauseButton;
+    private JButton stepButton;
     private JLabel zoomValueLabel;
     private Timer tickCounterTimer;
     final int WIDTH = 200;
@@ -79,8 +86,8 @@ public class ButtonPanel extends JPanel {
         cameraWrapper.add(cameraControlPanel);
         cameraWrapper.setMaximumSize(new Dimension(180, cameraWrapper.getPreferredSize().height));
 
-        JButton startButton = new JButton("Start");
-        JButton stopButton = new JButton("Stop");
+        startButton = new JButton("Start / Resume");
+        pauseButton = new JButton("Pause");
         JButton quickstartButton = new JButton("Quickstart");
         JButton printMapInfoButton = new JButton("Print Map info");
         JButton recreateMapButton = new JButton("Recreate the map");
@@ -121,7 +128,7 @@ public class ButtonPanel extends JPanel {
 
         // Set sizes and dimensions.
         JButton[] controlButtons = {
-                startButton, stopButton, quickstartButton, printMapInfoButton, recreateMapButton, runTestButton
+                startButton, pauseButton, quickstartButton, printMapInfoButton, recreateMapButton, runTestButton
         };
         for (JButton button : controlButtons) {
             button.setPreferredSize(new Dimension(180, BUTTONHEIGHT));
@@ -155,7 +162,7 @@ public class ButtonPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
 
         buttonArea.add(startButton);
-        buttonArea.add(stopButton);
+        buttonArea.add(pauseButton);
         buttonArea.add(quickstartButton);
         buttonArea.add(printMapInfoButton);
         buttonArea.add(recreateMapButton);
@@ -171,42 +178,61 @@ public class ButtonPanel extends JPanel {
         // TODO move these to appropriete parts
 
         JPanel tickRatePanel = new JPanel();
-        tickRatePanel.setLayout(new GridLayout(3,1));
-        
-        JLabel tickRateTitle = new JLabel("Tick rate:", SwingConstants.CENTER);
-        tickRateLabel = new TextField(String.format("%.3f ", gameManager.getEngine().getTickRate(), SwingConstants.CENTER));
-        tickRateLabel.setFocusable(false);
+        tickRatePanel.setLayout(new GridLayout(0, 1, 0, 3));
+        speedLabel = new JLabel("", SwingConstants.CENTER);
+        targetTickRateLabel = new JLabel("", SwingConstants.CENTER);
+        actualTickRateLabel = new JLabel("", SwingConstants.CENTER);
+        actualTickRateLabel.setToolTipText("Average over the last 200 tick intervals; resets on pause or speed change");
+        tickCounterLabel = new JLabel("", SwingConstants.CENTER);
 
-        JLabel tickCounterTitle = new JLabel("Tick counter:", SwingConstants.CENTER);
-        tickCounterLabel = new TextField(String.valueOf(gameManager.getEngine().getTickCounter()));
-        tickCounterLabel.setFocusable(false);
+        JPanel speedControlPanel = new JPanel(new BorderLayout());
+        JButton increaseSpeedButton = new JButton("+");
+        JButton decreaseSpeedButton = new JButton("−");
+        increaseSpeedButton.setMargin(new Insets(2, 5, 2, 5));
+        decreaseSpeedButton.setMargin(new Insets(2, 5, 2, 5));
+        speedSlider = new JSlider(0, Engine.SPEED_MULTIPLIERS.size() - 1,
+                gameManager.getEngine().getSpeedIndex());
+        speedSlider.setMinorTickSpacing(1);
+        speedSlider.setPaintTicks(true);
+        speedSlider.setSnapToTicks(true);
+        speedSlider.setToolTipText("Simulation speed: slow motion through 1x (60 TPS) to Max");
 
+        speedControlPanel.add(decreaseSpeedButton, BorderLayout.WEST);
+        speedControlPanel.add(speedSlider, BorderLayout.CENTER);
+        speedControlPanel.add(increaseSpeedButton, BorderLayout.EAST);
+        stepButton = new JButton("Advance one tick");
+
+        tickRatePanel.add(speedLabel);
+        tickRatePanel.add(speedControlPanel);
+        tickRatePanel.add(targetTickRateLabel);
+        tickRatePanel.add(actualTickRateLabel);
+        tickRatePanel.add(tickCounterLabel);
+        tickRatePanel.add(stepButton);
+
+        add(tickRatePanel, BorderLayout.SOUTH);
+        updateTickCounterDisplay();
+        updateTickRateDisplay();
         tickCounterTimer = new Timer(250, e -> {
             updateTickCounterDisplay();
             updateTickRateDisplay();
         });
         tickCounterTimer.start();
 
-        JPanel speedControlPanel = new JPanel(new FlowLayout());
-        JButton increaseSpeedButton = new JButton("+");
-        JButton decreaseSpeedButton = new JButton("−");
-
-        speedControlPanel.add(decreaseSpeedButton);
-        speedControlPanel.add(increaseSpeedButton);
-
-        tickRatePanel.add(tickRateTitle);
-        tickRatePanel.add(tickRateLabel);
-        tickRatePanel.add(tickCounterTitle);
-        tickRatePanel.add(tickCounterLabel);
-        tickRatePanel.add(speedControlPanel);
-
-        add(tickRatePanel, BorderLayout.SOUTH);
-
         // listeners
 
-        startButton.addActionListener(e -> gameManager.getEngine().start());
-        stopButton.addActionListener(e -> gameManager.getEngine().stop());
-        quickstartButton.addActionListener(e -> gameManager.getGame().getTestFunctions().quickstart());
+        startButton.addActionListener(e -> {
+            gameManager.getEngine().start();
+            updateTickRateDisplay();
+        });
+        pauseButton.addActionListener(e -> {
+            gameManager.getEngine().pause();
+            updateTickRateDisplay();
+        });
+        stepButton.addActionListener(e -> gameManager.getEngine().advanceOneTick());
+        quickstartButton.addActionListener(e -> {
+            gameManager.getGame().getTestFunctions().quickstart();
+            updateTickRateDisplay();
+        });
         printMapInfoButton.addActionListener(e -> gameManager.getGame().getTestFunctions().printMapInfo());
         recreateMapButton.addActionListener(e -> gameManager.recreateWorld());
         runTestButton.addActionListener(e -> {
@@ -267,14 +293,42 @@ public class ButtonPanel extends JPanel {
             gameManager.getEngine().decreaseSpeed();
             updateTickRateDisplay();
         });
+        speedSlider.addChangeListener(e -> {
+            gameManager.getEngine().setSpeedIndex(speedSlider.getValue());
+            updateTickRateDisplay();
+        });
     }
     
     private void updateTickRateDisplay() {
-        tickRateLabel.setText(String.format("%.3f s", gameManager.getEngine().getTickRate()));
+        Engine engine = gameManager.getEngine();
+        double multiplier = engine.getSpeedMultiplier();
+        String speed = Double.isInfinite(multiplier) ? "Max"
+                : BigDecimal.valueOf(multiplier).stripTrailingZeros().toPlainString() + "x";
+        speedLabel.setText("Speed: " + speed);
+        double targetTps = engine.getTargetTicksPerSecond();
+        targetTickRateLabel.setText(Double.isInfinite(targetTps) ? "Target: Max"
+                : String.format("Target: %.3f TPS", targetTps));
+        actualTickRateLabel.setText(String.format("Actual: %.3f TPS", engine.getActualTicksPerSecond()));
+        speedSlider.setValue(engine.getSpeedIndex());
+        startButton.setEnabled(!engine.isRunning());
+        pauseButton.setEnabled(engine.isRunning());
+        stepButton.setEnabled(!engine.isRunning());
     }
 
     public void updateTickCounterDisplay() {
-        tickCounterLabel.setText(String.valueOf(gameManager.getEngine().getTickCounter()));
+        tickCounterLabel.setText("Ticks: " + gameManager.getEngine().getTickCounter());
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        tickCounterTimer.start();
+    }
+
+    @Override
+    public void removeNotify() {
+        tickCounterTimer.stop();
+        super.removeNotify();
     }
 
     public void updateZoomDisplay() {

@@ -9,7 +9,7 @@ public class Ruined extends Land {
     LandType landType = LandType.RUINED;
     boolean isWalkable = true;
     int walkingCost = 3;
-    static final double RUINED_FERTILITY = 0;
+    static final double RUINED_FERTILITY = -2;
 
     public Ruined() {
         super(LandType.RUINED, RUINED_FERTILITY);
