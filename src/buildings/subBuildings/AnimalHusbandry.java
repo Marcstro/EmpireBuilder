@@ -1,6 +1,5 @@
 package buildings.subBuildings;
 
-import buildings.VillageOwningBuilding;
 import buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot;
 import buildings.subBuildings.subBuildingFunctions.SubBuildingRequirement;
 import buildings.subBuildings.subBuildingFunctions.SubBuilding;
@@ -8,9 +7,10 @@ import empirebuilder.Game;
 
 public class AnimalHusbandry extends SubBuilding {
     private static final double UPFRONT_COST = 20000;
+    public static final int ANIMAL_PRICE = 8000;
+    public static final int ANIMAL_RENT_PER_TICK = 75;
     public static final java.util.List<SubBuildingRequirement> SUB_BUILDING_REQUIREMENTS = java.util.List.of();
-    int animalSpawnCooldownBase = 73;
-    int animalSpawnCooldown = 0;
+    private static final double MAINTENANCE_COST_PER_TICK = 80;
 
     public AnimalHusbandry(AreaBuildingSlot areaBuilding) {
         super(areaBuilding, SUB_BUILDING_REQUIREMENTS);
@@ -21,18 +21,10 @@ public class AnimalHusbandry extends SubBuilding {
 
     @Override
     public void tick(Game game) {
-
-        animalSpawnCooldown--;
-        if (animalSpawnCooldown <= 0) {
-            animalSpawnCooldown = animalSpawnCooldownBase;
-            if (mainOwner instanceof VillageOwningBuilding){
-                ((VillageOwningBuilding) mainOwner).attemptToSpawnAnimal(game);
-            }
-        }
     }
 
     @Override
     public double getMaintenanceCost() {
-        return 0;
+        return MAINTENANCE_COST_PER_TICK;
     }
 }

@@ -17,7 +17,7 @@ public class AttackCapableBuildingComponent {
     private final int arrowTravelTime;
     private final int ticksToFallAsleep = 60;
 
-    private final Building building;
+    private Building building;
 
     public AttackCapableBuildingComponent(Building building, int damage, double attackRange, int travelTime, int attackCooldown) {
         this.building = building;
@@ -106,6 +106,10 @@ public class AttackCapableBuildingComponent {
 
     public Building getBuilding() {
         return building;
+    }
+
+    public void setBuilding(Building building) {
+        this.building = java.util.Objects.requireNonNull(building);
     }
 
     public void setDamage(int damage) {

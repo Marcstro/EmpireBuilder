@@ -1,6 +1,7 @@
 package buildings.subBuildings.subBuildingFunctions;
 
 import buildings.Building;
+import buildings.AreaBuilding;
 import buildings.UnitOwner;
 import empirebuilder.Game;
 import entities.units.Unit;
@@ -8,7 +9,8 @@ import entities.units.Unit;
 import java.util.List;
 
 public abstract class SubBuilding {
-    protected final AreaBuildingSlot areaBuilding;
+    protected AreaBuildingSlot areaBuilding;
+    private boolean active;
     public Building mainOwner;
     protected final List<SubBuildingRequirement> subBuildingRequirements;
     protected double value = 0;
@@ -85,11 +87,33 @@ public abstract class SubBuilding {
         return areaBuilding;
     }
 
+    public void setAreaBuilding(AreaBuildingSlot areaBuilding) {
+        if (this.areaBuilding != areaBuilding) {
+            active = false;
+        }
+        this.areaBuilding = java.util.Objects.requireNonNull(areaBuilding);
+    }
+
+    /** Available only after paid maintenance and while still attached to its living owner and slot. */
+    public boolean isActive() {
+        return active && mainOwner != null && mainOwner.isAlive()
+                && areaBuilding.getMainOwner() == mainOwner
+                && areaBuilding.getSubBuilding() == this
+                && areaBuilding instanceof AreaBuilding area && area.isAlive();
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
     public Building getMainOwner() {
         return mainOwner;
     }
 
     public void setMainOwner(Building owner) {
+        if (mainOwner != owner) {
+            active = false;
+        }
         this.mainOwner = owner;
     }
 }

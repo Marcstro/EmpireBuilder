@@ -1,5 +1,7 @@
 package buildings;
 
+import buildings.subBuildings.Market;
+import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import empirebuilder.Point;
 
 import java.awt.*;
@@ -12,6 +14,7 @@ public abstract class FarmOwningBuilding extends LandOwningBuilding{
     double food;
     int foodNeededToCreateNewFarm;
     private double foodIncomeThisRound;
+    private final Set<Farm> farmsNeedingTools = new LinkedHashSet<>();
 
 
     public FarmOwningBuilding(Point point, int foodNeededToCreateNewFarm, Color color, double health) {
@@ -53,7 +56,7 @@ public abstract class FarmOwningBuilding extends LandOwningBuilding{
         } else if (goldIncome < getWealth()) {
             decreaseWealth();
         }*/
-        gold += goldIncome;
+        addGold(goldIncome);
     }
 
     void payFoodTax(double foodIncome){
@@ -67,6 +70,107 @@ public abstract class FarmOwningBuilding extends LandOwningBuilding{
     }
 
     public abstract void processTotalFoodIncome();
+
+    @Override
+    public void setOwner(Building owner) {
+        super.setOwner(owner);
+        updateOwnedFarmsTechLevel();
+    }
+
+    public void updateOwnedFarmsTechLevel() {
+        for (Farm farm : farms) {
+            farm.checkAndUpdateTechLevel();
+        }
+    }
+
+    public void updateToolRequest(Farm farm) {
+        if (farm.getFarmOwningBuilding() == this && farms.contains(farm) && farm.needsTools()) {
+            farmsNeedingTools.add(farm);
+        } else {
+            farmsNeedingTools.remove(farm);
+        }
+    }
+
+    public void removeToolRequest(Farm farm) {
+        farmsNeedingTools.remove(farm);
+    }
+
+    public int getFarmsNeedingToolsCount() {
+        return farmsNeedingTools.size();
+    }
+
+    protected <T extends SubBuilding> T findActiveSupplier(Class<T> type) {
+        for (Building owner = this; owner != null; owner = owner.getOwner()) {
+            if (!owner.isAlive()) {
+                return null;
+            }
+            for (SubBuilding supplier : owner.getSubBuildings()) {
+                if (type.isInstance(supplier) && supplier.isActive()) {
+                    return type.cast(supplier);
+                }
+            }
+        }
+        return null;
+    }
+
+    protected void paySupplier(SubBuilding supplier, int price) {
+        Building seller = supplier.getMainOwner();
+        if (seller == this) {
+            return;
+        }
+        addGold(-price);
+        seller.addGold(price);
+    }
+
+    protected void purchaseFarmTools() {
+        boolean freeTools = this instanceof VillageOwningBuilding;
+        if (farmsNeedingTools.isEmpty() || (!freeTools && getGold() < Market.TOOL_PRICE)) {
+            return;
+        }
+        Market market = freeTools ? null : findActiveSupplier(Market.class);
+        if (!freeTools && market == null) {
+            return;
+        }
+        while (!farmsNeedingTools.isEmpty() && (freeTools || getGold() >= Market.TOOL_PRICE)) {
+            Farm farm = farmsNeedingTools.iterator().next();
+            if (farm.getFarmOwningBuilding() != this || !farm.needsTools()) {
+                farmsNeedingTools.remove(farm);
+                continue;
+            }
+            farm.equipTools();
+            if (market != null) {
+                paySupplier(market, Market.TOOL_PRICE);
+            }
+        }
+    }
+
+    protected boolean canPurchaseFertiliser() {
+        return this instanceof Village && getTopOwner() instanceof City;
+    }
+
+    protected void purchaseFarmFertiliser() {
+        if (!canPurchaseFertiliser() || getGold() < Market.FERTILISER_PRICE) {
+            return;
+        }
+        Market market = findActiveSupplier(Market.class);
+        if (market == null) {
+            return;
+        }
+        for (Farm farm : farms) {
+            if (farm.getFarmOwningBuilding() == this && farm.canUseFertiliser()) {
+                farm.applyFertiliser();
+                paySupplier(market, Market.FERTILISER_PRICE);
+                return;
+            }
+        }
+    }
+
+    /** Towns and cities supply their direct farms with free tools, never fertiliser. */
+    public void purchaseFarmSuppliesForDirectlyLargeOwnedBuildingsFarms() {
+        if (isAlive()) {
+            purchaseFarmTools();
+        }
+    }
     
     public Farm getRandomFarm(){
         return farms.peekLast();
@@ -74,6 +178,7 @@ public abstract class FarmOwningBuilding extends LandOwningBuilding{
         
     public void removeFromFarmList(Farm farm){
         farms.remove(farm);
+        removeToolRequest(farm);
         addEmptyPoint(farm.getPoint());
     }
     
@@ -102,11 +207,16 @@ public abstract class FarmOwningBuilding extends LandOwningBuilding{
 
     public void setFarms(LinkedList<Farm> farms) {
         this.farms = farms;
+        farmsNeedingTools.clear();
+        updateOwnedFarmsTechLevel();
     }
     
     public void addFarm(Farm farm){
-        farms.add(farm);
+        if (!farms.contains(farm)) {
+            farms.add(farm);
+        }
         emptyLand.remove(farm.getPoint());
+        farm.checkAndUpdateTechLevel();
     }
 
     public void increasePeopleByOne(){

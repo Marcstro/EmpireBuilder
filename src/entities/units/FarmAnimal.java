@@ -9,7 +9,8 @@ public abstract class FarmAnimal extends Unit{
     Point idleBasePoint;
     int lifeRemaining;
     private boolean expired = false;
-    final static int lifeSpan = 3000;
+    public static final int LIFESPAN_BUILDING_TICKS = 300;
+    final static int lifeSpan = LIFESPAN_BUILDING_TICKS * 10;
     private static final int VALUE = 200;
 
     public FarmAnimal(double x, double y, double speed, double health, double damage, int factionId, double size, int attackCooldownBase) {

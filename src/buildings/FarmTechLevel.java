@@ -6,7 +6,7 @@ public enum FarmTechLevel {
     LEVEL_3( 2), // belongs to village
     LEVEL_4( 3), // belongs to town
     LEVEL_5( 4), // belongs to city
-    LEVEL_6( 5);
+    LEVEL_6( 7); // fertilised city farm with tools
 
     private final int level;
 

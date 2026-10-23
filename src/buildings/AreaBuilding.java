@@ -4,6 +4,8 @@ import buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot;
 import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import buildings.subBuildings.SimpleGoblinScoutHut;
 import buildings.subBuildings.ShootingTower;
+import buildings.subBuildings.Market;
+import buildings.subBuildings.subBuildingFunctions.SubBuildingRequirementsRegistry;
 import buildings.subBuildings.UnitProducingSubBuilding;
 import empirebuilder.Game;
 import empirebuilder.Point;
@@ -71,6 +73,7 @@ public abstract class AreaBuilding extends Building
         }
 
         info.append(", subBuilding=").append(subBuilding.getClass().getSimpleName())
+                .append(", subBuildingActive=").append(subBuilding.isActive())
                 .append(", subBuildingPermanent=").append(subBuilding.isPermanent())
                 .append(", subBuildingMaintenance=")
                 .append(String.format("%.1f", subBuilding.getMaintenanceCost()));
@@ -114,13 +117,23 @@ public abstract class AreaBuilding extends Building
         if (!isAlive()) {
             throw new IllegalStateException("Cannot build on a destroyed area building");
         }
+        if (subBuilding.getAreaBuilding() != this
+                && subBuilding.getAreaBuilding().getSubBuilding() == subBuilding) {
+            throw new IllegalStateException("Sub-building must be detached before moving to another area");
+        }
+        if (subBuilding instanceof Market
+                && !SubBuildingRequirementsRegistry.canBuildType(Market.class, getMainOwner())) {
+            throw new IllegalStateException("Settlement already contains a Market");
+        }
 
+        subBuilding.setAreaBuilding(this);
         subBuilding.setMainOwner(getMainOwner());
         registerSubBuilding(subBuilding);
         this.subBuilding = subBuilding;
         game.getMapCellByPoint(getPoint()).addBuilding(this);
 
-        if (subBuilding instanceof ShootingTower) {
+        if (subBuilding instanceof ShootingTower tower) {
+            tower.getAttackCapableBuildingComponent().setBuilding(this);
             game.getMapCellByPoint(getPoint()).addAttackCapableBuildings(this);
             game.addAttackCapableBuilding(this);
         }

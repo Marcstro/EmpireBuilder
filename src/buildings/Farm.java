@@ -12,6 +12,14 @@ public class Farm extends Building {
     double food;
     int timeUntilNextDeath;
     private FarmTechLevel techLevel;
+    private FarmTechLevel technologyPotential = FarmTechLevel.LEVEL_1;
+    private boolean haveTools;
+    private int toolDuration;
+    private boolean haveFertiliser;
+    private int fertiliserDuration;
+    public static final int TOOL_BASE_DURATION = 100;
+    public static final int TOOL_REORDER_THRESHOLD = 50;
+    public static final int FERTILISER_BASE_DURATION = 100;
     boolean partOfVillageCenter = false;
     public double successLevel;
     public double successLevelChange;
@@ -67,12 +75,52 @@ public class Farm extends Building {
         return techLevel;
     }
 
-    public void increaseTechLevel(){
-        techLevel = this.techLevel.increaseLevel();
+    public FarmTechLevel getTechnologyPotential() {
+        return technologyPotential;
     }
 
-    public void decreaseTechLevel(){
-        techLevel = this.techLevel.decreaseLevel();
+    public boolean hasTools() {
+        return haveTools;
+    }
+
+    public int getToolDuration() {
+        return toolDuration;
+    }
+
+    public boolean hasFertiliser() {
+        return haveFertiliser;
+    }
+
+    public int getFertiliserDuration() {
+        return fertiliserDuration;
+    }
+
+    public boolean needsTools() {
+        return isAlive() && getPeople() > 0 && toolDuration <= TOOL_REORDER_THRESHOLD
+                && technologyPotential.ordinal() >= FarmTechLevel.LEVEL_4.ordinal();
+    }
+
+    public boolean canUseFertiliser() {
+        return isAlive() && getPeople() > 0 && haveTools && !haveFertiliser
+                && techLevel == FarmTechLevel.LEVEL_5;
+    }
+
+    public void equipTools() {
+        if (!needsTools()) {
+            throw new IllegalStateException("Farm is not eligible for tools: " + getId());
+        }
+        haveTools = true;
+        toolDuration += TOOL_BASE_DURATION;
+        checkAndUpdateTechLevel();
+    }
+
+    public void applyFertiliser() {
+        if (!canUseFertiliser()) {
+            throw new IllegalStateException("Farm is not eligible for fertiliser: " + getId());
+        }
+        haveFertiliser = true;
+        fertiliserDuration = FERTILISER_BASE_DURATION;
+        checkAndUpdateTechLevel();
     }
 
     public boolean isPartOfVillageCenter(){
@@ -93,6 +141,33 @@ public class Farm extends Building {
         else {
             independentTick();
         }
+        tickSupplies();
+    }
+
+    private void tickSupplies() {
+        boolean expired = false;
+        if (haveTools && --toolDuration == 0) {
+            haveTools = false;
+            expired = true;
+        }
+        if (haveFertiliser && --fertiliserDuration == 0) {
+            haveFertiliser = false;
+            expired = true;
+        }
+        if (expired) {
+            checkAndUpdateTechLevel();
+        } else if (haveTools && toolDuration == TOOL_REORDER_THRESHOLD
+                && getFarmOwningBuilding() != null) {
+            getFarmOwningBuilding().updateToolRequest(this);
+        }
+    }
+
+    private void resetSupplies() {
+        haveTools = false;
+        toolDuration = 0;
+        haveFertiliser = false;
+        fertiliserDuration = 0;
+        technologyPotential = FarmTechLevel.LEVEL_1;
     }
 
     public void independentTick(){
@@ -156,9 +231,10 @@ public class Farm extends Building {
     public void resetState(){
         setPeople(0);
         food = 0;
+        resetSupplies();
+        partOfVillageCenter = false;
         setOwner(null);
         techLevel = FarmTechLevel.LEVEL_1;
-        partOfVillageCenter = false;
         successLevel = 1;
         successLevelChange = 0.0;
         active = false;
@@ -166,6 +242,9 @@ public class Farm extends Building {
     }
 
     public void activate(Point point, int people){
+        resetSupplies();
+        partOfVillageCenter = false;
+        setOwner(null);
         setIsAlive(true);
         setHealth(DEFAULT_BUILDING_HEALTH);
         setCurrentFoodTaxIncome(0);
@@ -178,6 +257,7 @@ public class Farm extends Building {
         setPoint(point);
         setPeople(people);
         active = true;
+        checkAndUpdateTechLevel();
     }
 
     public boolean timeToSearchForNewOwner(){
@@ -203,25 +283,30 @@ public class Farm extends Building {
         if (hasOwner()) {
             Building topOwner = getFarmOwningBuilding().getTopOwner();
             if (topOwner instanceof Village){
-                techLevel = FarmTechLevel.LEVEL_3;
+                technologyPotential = FarmTechLevel.LEVEL_3;
             }
             else if (topOwner instanceof Town) {
-                techLevel = FarmTechLevel.LEVEL_4;
+                technologyPotential = FarmTechLevel.LEVEL_4;
             }
             else if (topOwner instanceof City){
-                techLevel = FarmTechLevel.LEVEL_5;
+                technologyPotential = haveFertiliser ? FarmTechLevel.LEVEL_6 : FarmTechLevel.LEVEL_5;
             }
+            techLevel = haveTools ? technologyPotential : FarmTechLevel.LEVEL_3;
         }
         else {
             if (getPeople() >= PEOPLE_REQUIRED_FOR_TECHNOLOGY_LEVEL_2) {
-                techLevel = FarmTechLevel.LEVEL_2;
+                technologyPotential = FarmTechLevel.LEVEL_2;
             }
             else {
-                techLevel = FarmTechLevel.LEVEL_1;
+                technologyPotential = FarmTechLevel.LEVEL_1;
             }
+            techLevel = technologyPotential;
         }
         if (!isPartOfVillageCenter()){
             setColor(FarmFertilityColors.getColor(getTechLevel().getLevel()));
+        }
+        if (getFarmOwningBuilding() != null) {
+            getFarmOwningBuilding().updateToolRequest(this);
         }
     }
 
@@ -309,6 +394,18 @@ public class Farm extends Building {
 
     public void setFarmOwningBuilding(FarmOwningBuilding farmOwningBuilding) {
         setOwner(farmOwningBuilding);
+    }
+
+    @Override
+    public void setOwner(Building owner) {
+        if (owner != null && !(owner instanceof FarmOwningBuilding)) {
+            throw new IllegalArgumentException("Farm owner must own farms");
+        }
+        FarmOwningBuilding previousOwner = getFarmOwningBuilding();
+        if (previousOwner != null && previousOwner != owner) {
+            previousOwner.removeToolRequest(this);
+        }
+        super.setOwner(owner);
         checkAndUpdateTechLevel();
     }
     
@@ -338,6 +435,9 @@ public class Farm extends Building {
         return "Farm(id:" + getId() + "){" + "people=" + getPeople() + "/" +calculateMaxPopulation()
                 + ",point=" + getPoint().getX() + ","+getPoint().getY()
                 + ", Tech=" + getTechLevel()
+                + ", technologyPotential=" + technologyPotential
+                + ", tools=" + toolDuration
+                + ", fertiliser=" + fertiliserDuration
                 + ", food=" + String.format("%.2f", food)
                 + ", foodIncome=" + String.format("%.2f",getCurrentFoodTaxIncome())
                 + (getFarmOwningBuilding()!=null ? " (" + String.format("%.2f",(calculateTaxRate()*getLastIterationFoodTaxIncome())) + " taxed)" : "")

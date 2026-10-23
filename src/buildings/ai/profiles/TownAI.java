@@ -5,6 +5,7 @@ import buildings.ai.BuildingAI;
 import buildings.ai.GoodSideBuildingStates;
 import buildings.ai.ThreatFact;
 import buildings.subBuildings.AnimalHusbandry;
+import buildings.subBuildings.Market;
 import buildings.subBuildings.Barracks;
 import buildings.subBuildings.ElvenArcheryRange;
 import buildings.subBuildings.ShootingTower;
@@ -14,6 +15,10 @@ public class TownAI extends SettlementAI {
 
     @Override
     public void determineWhatToBuildNext(Building building, Game game, BuildingAI ai) {
+        if (canBuildSubBuilding(building, Market.class)) {
+            ai.setSubBuildingToBuildNext(Market.class);
+            return;
+        }
 
         if (assessment.getBand() == GoodSideBuildingStates.SAFE && 
             !assessment.has(ThreatFact.ALLY_NEEDS_HELP)) {

@@ -7,6 +7,7 @@ import buildings.subBuildings.ElvenArcheryRange;
 import buildings.subBuildings.GoblinArcheryRange;
 import buildings.subBuildings.GoblinHut;
 import buildings.subBuildings.MountedKnightSchool;
+import buildings.subBuildings.Market;
 import buildings.subBuildings.OrcDen;
 import buildings.subBuildings.OrcFortress;
 import buildings.subBuildings.ShootingTower;
@@ -22,6 +23,7 @@ public class SubBuildingRequirementsRegistry {
     private static final Map<Class<? extends SubBuilding>, List<SubBuildingRequirement>> REQUIREMENTS_BY_TYPE =
             Map.ofEntries(
                     Map.entry(AnimalHusbandry.class, AnimalHusbandry.SUB_BUILDING_REQUIREMENTS),
+                    Map.entry(Market.class, Market.SUB_BUILDING_REQUIREMENTS),
                     Map.entry(Barracks.class, Barracks.SUB_BUILDING_REQUIREMENTS),
                     Map.entry(ElvenArcheryRange.class, ElvenArcheryRange.SUB_BUILDING_REQUIREMENTS),
                     Map.entry(GoblinArcheryRange.class, GoblinArcheryRange.SUB_BUILDING_REQUIREMENTS),

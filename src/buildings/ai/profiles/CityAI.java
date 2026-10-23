@@ -6,6 +6,7 @@ import buildings.ai.BuildingAI;
 import buildings.ai.GoodSideBuildingStates;
 import buildings.ai.ThreatFact;
 import buildings.subBuildings.AnimalHusbandry;
+import buildings.subBuildings.Market;
 import buildings.subBuildings.Barracks;
 import buildings.subBuildings.ElvenArcheryRange;
 import buildings.subBuildings.MountedKnightSchool;
@@ -20,12 +21,16 @@ public class CityAI extends SettlementAI {
         if (!(building instanceof City)) {
             return;
         }
+        if (canBuildSubBuilding(building, Market.class)) {
+            ai.setSubBuildingToBuildNext(Market.class);
+            return;
+        }
 
         if (assessment.getBand() == GoodSideBuildingStates.SAFE &&
             !assessment.has(ThreatFact.ALLY_NEEDS_HELP) &&
             !assessment.has(ThreatFact.ENEMY_SCOUT_DETECTED)) {
             int animalCount = countSubBuildingType(building, AnimalHusbandry.class);
-            if (animalCount < 2) {
+            if (animalCount == 0) {
                 if (canBuildSubBuilding(building, AnimalHusbandry.class)) {
                     ai.setSubBuildingToBuildNext(AnimalHusbandry.class);
                     return;

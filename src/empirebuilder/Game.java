@@ -345,6 +345,17 @@ public class Game{
             city.tick(this);
         }
 
+        // Purchases use this tick's maintenance status, including newly built suppliers.
+        for (Town town : towns) {
+            town.purchaseFarmSuppliesForDirectlyLargeOwnedBuildingsFarms();
+        }
+        for (City city : cities) {
+            city.purchaseFarmSuppliesForDirectlyLargeOwnedBuildingsFarms();
+        }
+        for (Village village : villages) {
+            village.tick(this);
+        }
+
         for (EvilBase evilBase: evilBases){
             if (!evilBase.isAlive()){
                 evilBasesToRemove.add(evilBase);
@@ -729,6 +740,7 @@ public class Game{
 
     public void createTown(Village village, List<Village> nearbyVillages){
 
+        village.returnAnimal(this);
         Point midPoint = village.getPoint();
         Set<Point> inheritedLand = new HashSet<>(village.getControlledLand());
         inheritedLand.add(midPoint);
@@ -792,7 +804,7 @@ public class Game{
 
         List<SubBuilding> subBuildingsToPreserve = new ArrayList<>(town.getSubBuildings());
         for (SubBuilding subBuilding : subBuildingsToPreserve) {
-            town.removeSubBuilding(subBuilding);
+            subBuilding.getAreaBuilding().cleanupDestruction(this);
         }
 
         attackCapableBuildings.remove(town);
@@ -804,7 +816,6 @@ public class Game{
         newCity.setPeople(town.getPeople());
         newCity.setFood(town.getFood());
         newCity.setGold(town.getGold());
-        newCity.setWealth(town.getWealth());
         gm.getMap().replaceBuilding(midPoint, newCity);
 
         // first change the points making up cityArea/townArea
@@ -1285,6 +1296,7 @@ public class Game{
         areaBuilding.setAlive(false);
     }
 
+    /** Removes the sub-building without destroying its reusable area slot. */
     public void destroySubBuilding(SubBuilding subBuilding) {
         if (subBuilding == null) {
             throw new IllegalArgumentException("Sub-building cannot be null");
@@ -1295,7 +1307,7 @@ public class Game{
         if (areaBuilding.getSubBuilding() != subBuilding) {
             throw new IllegalStateException("Sub-building is not the active sub-building in its area slot");
         }
-        destroySubBuilding(areaBuilding);
+        areaBuilding.cleanupDestruction(this);
     }
 
     public void wakeAttackCapableBuildings(Unit unit, int distanceOut) {
@@ -1558,6 +1570,7 @@ public class Game{
                 }
             }
             case Village village -> {
+                village.returnAnimal(this);
                 gm.getMap().removeBuildingFromPoint(village.getPoint());
                 divideLootFromBuilding(village);
                 village.unmarkCenter();

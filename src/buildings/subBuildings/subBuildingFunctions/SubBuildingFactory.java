@@ -6,6 +6,7 @@ import buildings.subBuildings.ElvenArcheryRange;
 import buildings.subBuildings.GoblinArcheryRange;
 import buildings.subBuildings.GoblinHut;
 import buildings.subBuildings.MountedKnightSchool;
+import buildings.subBuildings.Market;
 import buildings.subBuildings.OrcDen;
 import buildings.subBuildings.OrcFortress;
 import buildings.subBuildings.ShootingTower;
@@ -21,6 +22,7 @@ public class SubBuildingFactory {
     private static final Map<Class<? extends SubBuilding>, Function<AreaBuildingSlot, SubBuilding>> FACTORIES_BY_TYPE =
             Map.ofEntries(
                     Map.entry(AnimalHusbandry.class, AnimalHusbandry::new),
+                    Map.entry(Market.class, Market::new),
                     Map.entry(Barracks.class, Barracks::new),
                     Map.entry(ElvenArcheryRange.class, ElvenArcheryRange::new),
                     Map.entry(GoblinArcheryRange.class, GoblinArcheryRange::new),

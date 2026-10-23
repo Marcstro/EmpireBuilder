@@ -50,6 +50,7 @@ public class City extends VillageOwningBuilding implements AttackCapableBuilding
         timeSinceLastShot=0;
         initBuildingAI();
         if (previousTown != null) {
+            inheritIncomeHistory(previousTown);
             getBuildingAI().ticksSinceLastEvaluation = getBuildingAI().evaluationInterval;
         }
     }

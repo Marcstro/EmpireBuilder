@@ -15,6 +15,7 @@ import buildings.ai.ThreatFact;
 import buildings.subBuildings.subBuildingFunctions.AreaBuildingSlot;
 import buildings.subBuildings.subBuildingFunctions.SubBuilding;
 import buildings.subBuildings.subBuildingFunctions.SubBuildingFactory;
+import buildings.subBuildings.Market;
 import empirebuilder.Game;
 
 /** Shared AI for Towns and Cities — covers their overlap */
@@ -94,6 +95,12 @@ public class SettlementAI extends SubBuildingAIProfile {
 
     private void buildFocusedBuilding(Building building, Game game) {
         BuildingAI ai = building.getBuildingAI();
+        if (canBuildSubBuilding(building, Market.class)) {
+            ai.setSubBuildingToBuildNext(Market.class);
+        } else if (ai.getSubBuildingToBuildNext() == Market.class) {
+            ai.clearSubBuildingToBuildNext();
+            ai.ticksSinceLastEvaluation = ai.evaluationInterval;
+        }
         Class<? extends SubBuilding> nextBuilding = ai.getSubBuildingToBuildNext();
 
         if (nextBuilding == null) {

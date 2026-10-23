@@ -230,7 +230,7 @@ public class TestFunctions {
     }
 
     private void checkQuickstartProgress() {
-        if (!quickstartActive || game().evilBases.isEmpty()) {
+        if (!quickstartActive || (game().getDarkside().isEvilSideSpawningEnabled() && game().evilBases.isEmpty()) || (!game().getDarkside().isEvilSideSpawningEnabled() && game().cities.isEmpty())) {
             return;
         }
 

@@ -77,6 +77,7 @@ public abstract class Building extends Entity {
 
     public void removeSubBuilding(SubBuilding subBuilding) {
         subBuildings.remove(subBuilding);
+        subBuilding.setActive(false);
     }
 
     public List<SubBuilding> getSubBuildings() {
@@ -98,10 +99,12 @@ public abstract class Building extends Entity {
             if (subBuilding != null) {
                 double maintenanceCost = subBuilding.getMaintenanceCost();
                 if (maintenanceCost > 0 && this.getGold() < maintenanceCost) {
+                    subBuilding.setActive(false);
                     continue;
                 }
                 subBuilding.tick(game);
                 this.addGold(-maintenanceCost);
+                subBuilding.setActive(true);
                 if (subBuilding.hasExpired()) {
                     game.destroySubBuilding(subBuilding);
                 }
